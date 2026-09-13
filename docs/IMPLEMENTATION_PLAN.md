@@ -1,6 +1,6 @@
 # FSSE Handbook — Implementation Plan
 
-> **Status:** v1.2 — B1–B6 done; content batch C1 (Module 2) in progress
+> **Status:** v1.3 — B1–B6 done; content batch C1 done (awaiting learner review ✋)
 > **Last updated:** 2026-09-13
 > **Owner:** Muhammad Ismail Hasan (learner) · written with Claude Code
 
@@ -103,6 +103,8 @@ This document is the roadmap for the whole project: **what** we build (a local h
 | D22 | Milestone fix | Module 6 (AI-Assisted Development) belongs to **Milestone 2** (it was missing from the milestone table) | Core for every role; needed before AI engineering |
 | D23 | Lesson ids | Lesson id, module and week are **derived from the file path**, not written in frontmatter | Less duplication, no id typos |
 | D24 | Best practices | Every lesson from Module 2 on has a **🏆 Best practices** section (learner request after the Module 1 review) | Learn how professionals actually do it, not only the concept |
+| D25 | Testing exercises | Exercises where the learner writes tests are **graded by mutants** (buggy copies of correct code) | Proves tests catch bugs, not just that they run |
+| D26 | Project kits | Project acceptance tests are validated against a **private reference implementation** that is not committed | Correct tests without handing out the solution |
 
 ---
 
@@ -724,6 +726,14 @@ type LessonMeta = {
 | C6 | Module 6 · CareerPilot Phase 6 |
 | C7 | Module 7 W0, W6–W8 · case studies · Architecture I (AI) · CareerPilot Phase 7 · StudyMind |
 | C8 | DSA Stages 5–6 · Architecture J · remaining Module 8 |
+
+#### C1 — progress
+- [x] Module 2 W1–W6 lessons, placement checks, exercises, 🔍 RevoShop boxes, weekly LinkedIn templates
+- [x] 🎤 Defend Your RevoShop + Module 2 reflection template
+- [x] CareerPilot Phase 2 brief + starter kit (113 acceptance tests)
+- [x] DSA Stage 2 (4 lessons) and Stage 3 (5 lessons), 36 problems
+- [x] Architecture Stages C (2), D (4), E (3) with exercises
+- [ ] **Learner reviews C1** ✋
 
 Batch order follows the **milestone path**, not module numbers.
 
