@@ -24,6 +24,9 @@ dev = [
     "marshmallow>=4",
     "flask-smorest>=0.46",
     "flask-jwt-extended>=4.7",
+    "gunicorn>=23",
+    "pyyaml>=6",
+    "locust>=2.30",
 ]
 
 [tool.uv]
