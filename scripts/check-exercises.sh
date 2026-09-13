@@ -24,12 +24,11 @@ while IFS= read -r solution_dir; do
     status=1
   fi
 
-  # Solution must PASS: copy tests + solution files into a temp folder
+  # Solution must PASS: copy the whole exercise (helpers, data, seeds), then overlay the solution files.
   tmp="$tmp_root/$(echo "$exercise_dir" | tr '/' '_')"
   mkdir -p "$tmp"
-  cp "$exercise_dir"/test_*.py "$tmp"/
-  [[ -d "$exercise_dir/data" ]] && cp -R "$exercise_dir/data" "$tmp"/
-  for extra in "$exercise_dir"/*.sql; do [[ -f "$extra" ]] && cp "$extra" "$tmp"/; done
+  cp -R "$exercise_dir"/. "$tmp"/
+  rm -rf "$tmp/solution"
   cp -R "$solution_dir"/. "$tmp"/
   if uv run pytest "$tmp" -q -p no:cacheprovider >/dev/null 2>&1; then
     echo "✅ $exercise_dir"
