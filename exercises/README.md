@@ -24,6 +24,16 @@ pip install pytest
 Then replace `uv run pytest` with `python -m pytest` in every command.
 </details>
 
+## Frontend exercises (Module 4 onward)
+
+JavaScript, TypeScript and React exercises live in [`web/`](./web/README.md) and use Node + Vitest:
+
+```bash
+cd exercises/web
+npm install
+npx vitest run m4/w1/04-js-basics
+```
+
 ## Doing an exercise
 
 ```bash

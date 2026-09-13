@@ -105,6 +105,7 @@ This document is the roadmap for the whole project: **what** we build (a local h
 | D24 | Best practices | Every lesson from Module 2 on has a **🏆 Best practices** section (learner request after the Module 1 review) | Learn how professionals actually do it, not only the concept |
 | D25 | Testing exercises | Exercises where the learner writes tests are **graded by mutants** (buggy copies of correct code) | Proves tests catch bugs, not just that they run |
 | D26 | Project kits | Project acceptance tests are validated against a **private reference implementation** that is not committed | Correct tests without handing out the solution |
+| D27 | Frontend exercises | JS/TS/React exercises run **locally with Vitest + jsdom + Testing Library** in `exercises/web/` (verified by `scripts/check-web-exercises.sh`); Sandpack stays for ungraded playgrounds | Works offline, same starter/solution workflow as Python, and every exercise is verifiable |
 
 ---
 
@@ -427,7 +428,8 @@ Every lesson also ends with a small **📖 Kamus (glossary)** of its key terms.
 ### Where exercises run
 | Kind | Runs in | Checks | Needs |
 |---|---|---|---|
-| JS / TS / React / Tailwind toys | Browser (**Sandpack**) | Built-in test runner | Internet (Sandpack loads its bundler online) |
+| JS / TS / React / Tailwind toys | Local folder `exercises/web/` (see D27) | Vitest + jsdom + Testing Library | Node 20+ |
+| Quick playgrounds (ungraded) | Browser (**Sandpack**) | — | Internet |
 | Python (M1, M2 core, DSA) | Local folder | `pytest` | Python 3.11+ |
 | Flask / FastAPI | Local folder | `pytest` + API test client | Python 3.11+, sometimes Docker/Postgres |
 | Next.js | Local folder | Vitest / Playwright | Node 20+ |

@@ -10,6 +10,7 @@ import type { ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import { useStudy } from '../../hooks/useStudy'
 import type { ProblemDifficulty } from '../../lib/spaced-repetition'
+import { exerciseRunner } from '../../lib/exercise-commands'
 import { CommandLine } from './CommandLine'
 
 const DIFFICULTY: Record<ProblemDifficulty, string> = {
@@ -59,11 +60,7 @@ export function ProblemCard({
       <div>{children}</div>
 
       <div className="not-prose mt-3 space-y-3">
-        {path && (
-          <CommandLine
-            command={`cd exercises && uv run pytest ${path.replace(/^exercises\//, '')}`}
-          />
-        )}
+        {path && <CommandLine command={exerciseRunner(path).command} />}
 
         {id &&
           (item ? (

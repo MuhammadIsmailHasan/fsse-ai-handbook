@@ -10,6 +10,7 @@
  * the exact command to run — fewer "how do I start?" moments.
  */
 import type { ReactNode } from 'react'
+import { exerciseRunner } from '../../lib/exercise-commands'
 import { CommandLine } from './CommandLine'
 
 type ExerciseCardProps = {
@@ -41,7 +42,7 @@ export function AiPolicyBadge({ ai }: { ai?: string }) {
 }
 
 export function ExerciseCard({ path, ai, title, children }: ExerciseCardProps) {
-  const relative = path?.replace(/^exercises\//, '')
+  const runner = path ? exerciseRunner(path) : undefined
 
   return (
     <section className="my-8 overflow-hidden rounded-xl border-2 border-indigo-200 dark:border-indigo-500/30">
@@ -53,7 +54,7 @@ export function ExerciseCard({ path, ai, title, children }: ExerciseCardProps) {
       <div className="px-5 pt-1 pb-4">
         {children}
 
-        {relative && (
+        {runner && (
           <div className="not-prose mt-4 space-y-2 text-sm">
             <p className="text-slate-600 dark:text-slate-400">
               📦 Folder: <code className="text-xs">{path}</code>
@@ -61,12 +62,20 @@ export function ExerciseCard({ path, ai, title, children }: ExerciseCardProps) {
             <p className="text-slate-600 dark:text-slate-400">
               🧪 Run the checks (from the project root):
             </p>
-            <CommandLine command={`cd exercises && uv run pytest ${relative}`} />
-            <p className="text-xs text-slate-500">
-              No uv? Use <code>python -m pytest {relative}</code> inside <code>exercises/</code> —
-              see <code>exercises/README.md</code>. Stuck? Try the hints first; open{' '}
-              <code>solution/</code> only after a real attempt.
-            </p>
+            <CommandLine command={runner.command} />
+            {runner.kind === 'python' ? (
+              <p className="text-xs text-slate-500">
+                No uv? Use <code>python -m pytest {runner.relative}</code> inside{' '}
+                <code>exercises/</code> — see <code>exercises/README.md</code>. Stuck? Try the hints
+                first; open <code>solution/</code> only after a real attempt.
+              </p>
+            ) : (
+              <p className="text-xs text-slate-500">
+                First time? Run <code>npm install</code> inside <code>exercises/web</code>. Add{' '}
+                <code>--watch</code> to re-run on every save. Open <code>solution/</code> only after
+                a real attempt.
+              </p>
+            )}
           </div>
         )}
       </div>
