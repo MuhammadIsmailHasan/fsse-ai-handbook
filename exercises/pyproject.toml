@@ -21,6 +21,9 @@ dev = [
     "flask-sqlalchemy>=3.1",
     "flask-migrate>=4.1",
     "sqlalchemy>=2.0",
+    "marshmallow>=4",
+    "flask-smorest>=0.46",
+    "flask-jwt-extended>=4.7",
 ]
 
 [tool.uv]
