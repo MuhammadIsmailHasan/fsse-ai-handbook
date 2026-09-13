@@ -1,0 +1,41 @@
+# Production-like stack on one machine:
+#   JWT_SECRET_KEY=... POSTGRES_PASSWORD=... docker compose -f compose.prod.yaml up -d --build
+name: careerpilot-prod
+
+services:
+  api:
+    build: .
+    image: careerpilot-api:local
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      DATABASE_URL: postgresql+psycopg://careerpilot:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/careerpilot
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+    ports:
+      - "${API_PORT:-5093}:5091"
+    depends_on:
+      db:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: careerpilot
+      POSTGRES_DB: careerpilot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U careerpilot -d careerpilot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # No "ports": the database is reachable only from the api container.
+
+volumes:
+  pgdata:

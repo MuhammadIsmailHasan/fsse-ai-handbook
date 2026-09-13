@@ -1,0 +1,19 @@
+# ⚠️ Naive compose file. Improve it — see README.md.
+services:
+  api:
+    build: .
+    ports:
+      - "5091:5091"
+    environment:
+      DATABASE_URL: postgresql+psycopg://careerpilot:password123@db:5432/careerpilot
+    depends_on:
+      - db
+
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: careerpilot
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: careerpilot
+    ports:
+      - "5432:5432"
