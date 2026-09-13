@@ -1,0 +1,53 @@
+/* Base = phones. Media queries only ADD complexity for larger screens. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+}
+
+.container {
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+/* Flexbox: one-dimensional alignment (a row that can wrap). */
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding-block: 1rem;
+}
+
+/* Grid: two-dimensional page layout. One column by default. */
+.page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.jobs {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); /* as many columns as fit */
+  list-style: none;
+  padding: 0;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+@media (min-width: 48rem) {
+  .page {
+    grid-template-columns: 16rem 1fr;
+  }
+}

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Backend Engineer at Kopi Data · CareerPilot</title>
+  </head>
+  <body>
+    <header>
+      <a href="/">CareerPilot</a>
+      <nav aria-label="Main">
+        <ul>
+          <li><a href="/jobs">Jobs</a></li>
+          <li><a href="/saved">Saved jobs</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <article>
+        <h1>Backend Engineer</h1>
+        <img src="kopi-data.png" alt="Kopi Data logo" width="64" height="64" />
+        <p>
+          Kopi Data · Jakarta · Posted <time datetime="2026-09-01">1 September 2026</time>
+        </p>
+        <p>
+          Salary: <data value="9000000">Rp 9.000.000</data> –
+          <data value="14000000">Rp 14.000.000</data>
+        </p>
+
+        <section>
+          <h2>Requirements</h2>
+          <ul>
+            <li>Python</li>
+            <li>PostgreSQL</li>
+            <li>Docker</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Apply</h2>
+          <p>Before applying, read <a href="/companies/kopi-data">the Kopi Data company profile</a>.</p>
+          <form action="/applications" method="post">
+            <label for="name">Name</label>
+            <input id="name" name="name" autocomplete="name" required />
+
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email" required />
+
+            <label for="motivation">Why are you a good fit?</label>
+            <textarea id="motivation" name="motivation"></textarea>
+
+            <button type="submit">Send application</button>
+          </form>
+        </section>
+      </article>
+    </main>
+
+    <footer>
+      <p><small>© 2026 CareerPilot</small></p>
+    </footer>
+  </body>
+</html>

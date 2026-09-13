@@ -11,7 +11,10 @@
     "skipLibCheck": true,
     "types": ["vitest/globals", "@testing-library/jest-dom"],
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "allowJs": true,
+    "checkJs": false,
+    "paths": { "@support/*": ["./_support/*"] }
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", "**/solution/**", ".check-tmp"]

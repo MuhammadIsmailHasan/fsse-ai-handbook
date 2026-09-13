@@ -1,0 +1,4 @@
+/* Mobile-first layout. See README.md. */
+.page {
+  width: 1200px; /* 🚩 breaks on phones */
+}
