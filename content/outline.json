@@ -1,0 +1,231 @@
+{
+  "_note": "Course outline (module/week/lesson titles only) mapped from the the bootcamp FSSE Handbook syllabus. All lesson content in this project is original.",
+  "modules": [
+    {
+      "id": "m1",
+      "title": "Algorithm & Programming",
+      "weeks": [
+        {
+          "id": "m1-w0",
+          "title": "Logic Foundations & Web Application Architecture",
+          "lessons": [
+            "Web Architecture & Data Containers",
+            "Operators: Arithmetic, Comparison, and Logic",
+            "Conditionals: Logic Flow (IF, ELSE IF, ELSE)",
+            "Arrays (Lists) and Loops (Repetition)",
+            "Functions: Creating Reusable Blocks of Logic"
+          ]
+        },
+        {
+          "id": "m1-w1",
+          "title": "Algorithms & System Logic",
+          "lessons": [
+            "Counting & Frequency Algorithms",
+            "Searching Algorithms",
+            "Sorting Algorithms",
+            "Filtering, Aggregation & Combining Algorithms",
+            "Problem Solving & Mini Project"
+          ]
+        }
+      ],
+      "assignment": ["Full Brief", "Advanced (Optional)"]
+    },
+    {
+      "id": "m2",
+      "title": "Backend Development",
+      "weeks": [
+        {
+          "id": "m2-w1",
+          "title": "Software Engineer Toolkit",
+          "lessons": [
+            "Introduction to Software Engineering",
+            "Code Editor & Markdown",
+            "Terminal & CLI",
+            "Git: Version Control Fundamentals",
+            "Git Collaboration"
+          ]
+        },
+        {
+          "id": "m2-w2",
+          "title": "Database with PostgreSQL",
+          "lessons": [
+            "Setup & SQL Client",
+            "Database Schema Design",
+            "Basic SQL Queries: INSERT, SELECT, UPDATE, DELETE",
+            "Relationships & Foreign Keys",
+            "Advanced Queries: JOIN & Nested Queries"
+          ]
+        },
+        {
+          "id": "m2-w3",
+          "title": "Python Core Fundamentals",
+          "lessons": [
+            "Setup, Basics & Control Flow",
+            "Loops: for & while",
+            "Python Functions",
+            "Data Structures: Lists & Dictionaries",
+            "OOP Basics: Classes, Objects, and Methods"
+          ]
+        },
+        {
+          "id": "m2-w4",
+          "title": "Flask Development Framework",
+          "lessons": [
+            "Flask Intro: Routes & Application Structure",
+            "SQLAlchemy: Connecting Flask to PostgreSQL",
+            "Models: Defining Database Tables as Python Classes",
+            "Migrations: Managing Schema Changes with Flask-Migrate",
+            "Relationships: One-to-Many & Many-to-Many in Flask Models"
+          ]
+        },
+        {
+          "id": "m2-w5",
+          "title": "API Development",
+          "lessons": [
+            "REST Concepts & GET Endpoints",
+            "POST & PUT: Creating and Updating Data",
+            "Validation & Status Codes",
+            "Build Day — Project Work Session",
+            "Error Handling & Complete CRUD Review"
+          ]
+        },
+        {
+          "id": "m2-w6",
+          "title": "Quality Assurance & Deployment",
+          "lessons": [
+            "Introduction to Testing & pytest Basics",
+            "Unit Testing Flask API Endpoints",
+            "Performance Testing with Locust",
+            "Security: Environment Variables & GitHub",
+            "Deployment: Hosting the Flask API"
+          ]
+        }
+      ],
+      "assignment": ["Full Brief", "Checkpoint 1", "Checkpoint 2", "Checkpoint 3", "Advanced (Optional)"]
+    },
+    {
+      "id": "m3",
+      "title": "Frontend Development",
+      "weeks": [
+        {
+          "id": "m3-w1",
+          "title": "HTML, CSS, Javascript Basic",
+          "lessons": [
+            "HTML & CSS Fundamentals",
+            "CSS Layout & Responsive Design",
+            "JavaScript Basics & Functions",
+            "DOM Manipulation & Event Handling",
+            "JavaScript Arrays & Exercise"
+          ]
+        },
+        {
+          "id": "m3-w2",
+          "title": "TypeScript & Tailwind CSS",
+          "lessons": [
+            "TypeScript Setup & Basics",
+            "TypeScript Advanced Types — Interfaces, Type Aliases & Union Types",
+            "TypeScript Arrays, Objects & Tailwind Setup",
+            "Tailwind Typography, Responsive Design & Components",
+            "TypeScript & Tailwind: Integration Patterns & Exercise"
+          ]
+        },
+        {
+          "id": "m3-w3",
+          "title": "React Components with Next.js Environment",
+          "lessons": [
+            "Next.js Setup & React Components",
+            "Props & TypeScript Interfaces",
+            "State Management & Event Handling",
+            "Conditional Rendering & Dynamic Lists",
+            "Controlled Inputs & Exercise"
+          ]
+        },
+        {
+          "id": "m3-w4",
+          "title": "Next.js App Router and API Integration",
+          "lessons": [
+            "File-based Routing, Pages & Layouts",
+            "Navigation: Link, Active Styling & Programmatic Routing",
+            "Environment Variables & Metadata",
+            "API Integration & Error Handling",
+            "Multi-page Data-driven Application: Server vs Client Components"
+          ]
+        },
+        {
+          "id": "m3-w5",
+          "title": "Forms, Authentication, and Complete Backend Integration",
+          "lessons": [
+            "Form Submission & Async Response Handling",
+            "Client State Management & Authentication Flow",
+            "Role-based Access Control & Conditional Rendering",
+            "Build Day — Project Work Session",
+            "Context API, HTTP Methods & Side Effects"
+          ]
+        },
+        {
+          "id": "m3-w6",
+          "title": "Quality Assurance & Deployment",
+          "lessons": [
+            "Playwright Setup & Browser Automation Basics",
+            "E2E Test Scenarios: Forms & User Flows",
+            "E2E Test Scenarios: Navigation & Multi-page Journeys",
+            "Build Optimization & Production Configuration",
+            "Deployment & Full Production Launch"
+          ]
+        }
+      ],
+      "assignment": ["Full Brief", "Checkpoint 1", "Checkpoint 2", "Checkpoint 3", "Advanced (Optional)"]
+    },
+    {
+      "id": "m4",
+      "title": "AI Development",
+      "weeks": [
+        {
+          "id": "m4-w1",
+          "title": "AI Development Life Cycle & Requirements Engineering",
+          "lessons": [
+            "Introduction to AI Development Lifecycle",
+            "Requirements Gathering for AI Projects",
+            "Spec-Driven Workflow with Kiro",
+            "Reviewing AI-Generated Documents",
+            "Iterating AI Output to Production Quality"
+          ]
+        },
+        {
+          "id": "m4-w2",
+          "title": "Steering Guidelines & Code Generation with Kiro",
+          "lessons": [
+            "Introduction to Kiro AI",
+            "Steering Guidelines & Context Management",
+            "Effective Prompting for Code Generation",
+            "Code Review & AI-Generated Code",
+            "Iterative Development with AI"
+          ]
+        },
+        {
+          "id": "m4-w3",
+          "title": "Complete Implementation, Testing, and Production Deployment",
+          "lessons": [
+            "Full-Stack AI Application Development",
+            "Frontend Pages & Advanced Features",
+            "Frontend-Backend Integration & Error Handling",
+            "E2E Testing with Playwright & Environment Configuration",
+            "Production Deployment & Documentation"
+          ]
+        }
+      ],
+      "assignment": ["Full Brief", "Advanced (Optional)"]
+    },
+    {
+      "id": "special",
+      "title": "Special Module",
+      "weeks": [
+        {
+          "id": "special-1",
+          "title": "Special Module",
+          "lessons": ["Enhancing Your Software Engineering Portfolio"]
+        }
+      ]
+    }
+  ]
+}

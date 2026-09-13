@@ -1,0 +1,26 @@
+id,title,company,city,remote,salary_min,salary_max,skills,posted_on
+1,Junior Backend Engineer,Nusantara Tech,Jakarta,yes,9000000,14000000,"Python, SQL, Docker",2026-09-01
+2,Data Analyst,Kopi Data,Bandung,no,7000000,10000000,"SQL, Excel, Python",2026-08-28
+3,Frontend Developer,Batik Soft,Jakarta,no,8000000,13000000,"React, TypeScript, Tailwind",2026-09-05
+4, ML Engineer ,Lintas AI, jakarta ,TRUE,15000000,25000000,"python, PyTorch, Docker, python",2026-09-10
+5,QA Engineer,Awan Cloud,Surabaya,no,,,"Playwright, Python",2026-08-15
+6,,Ghost Corp,Jakarta,yes,10000000,12000000,"Python",2026-09-02
+7,Full-Stack Developer,Rempah Digital,Yogyakarta,1,9000000,15000000,"React, Python, PostgreSQL, Docker",
+8,DevOps Engineer,Awan Cloud,Jakarta,no,14000000,22000000,"AWS, Docker, Terraform, Linux",2026-09-08
+9,Backend Engineer (Go),Garuda Pay,Jakarta,no,13000000,20000000,"Go, PostgreSQL, Kubernetes",2026-09-03
+10,AI Engineer,Lintas AI,Bandung,yes,14000000,21000000,"Python, LLM, RAG, FastAPI",2026-09-11
+11,Junior Data Engineer,Kopi Data,Jakarta,no,8000000,11000000,"Python, SQL, Airflow",2026-08-30
+12,Mobile Developer,Sambal Apps,Surabaya,no,9000000,14000000,"Kotlin, Flutter",2026-08-20
+13,Frontend Engineer,Garuda Pay,Jakarta,yes,,,"React, Next.js, TypeScript",2026-09-09
+14,Backend Developer,Rempah Digital,Yogyakarta,no,7000000,11000000,"PHP, Laravel, SQL",2026-08-25
+15,Site Reliability Engineer,Nusantara Tech,Jakarta,no,16000000,24000000,"Linux, Kubernetes, AWS, Python",2026-09-07
+16,Junior Full-Stack Developer,Batik Soft,Bandung,yes,6000000,9000000,"JavaScript, React, Node.js, SQL",2026-09-04
+17,Data Scientist,Lintas AI,Jakarta,no,12000000,18000000,"Python, SQL, scikit-learn, Statistics",2026-09-06
+18,Cloud Engineer,Awan Cloud,Remote Indonesia,yes,13000000,19000000,"AWS, Terraform, Python",2026-09-12
+19,Backend Engineer,Sambal Apps,Surabaya,no,10000000,15000000,"Python, Django, PostgreSQL, Redis",2026-08-18
+20,QA Automation Engineer,Garuda Pay,Jakarta,no,9000000,13000000,"Python, Selenium, SQL",
+21,Product Engineer,Kopi Data,Bandung,yes,11000000,16000000,"TypeScript, React, Python, SQL",2026-09-01
+22,Junior Backend Developer,Rempah Digital,Jakarta,no,6500000,9500000,"python , flask, SQL , ",2026-09-13
+23,AI Product Engineer,Nusantara Tech,Jakarta,Yes,15000000,23000000,"Python, LLM, Next.js, RAG",2026-09-12
+24,Frontend Developer,Sambal Apps,Yogyakarta,no,7000000,,"Vue, JavaScript",2026-08-22
+25,Platform Engineer,Garuda Pay,Jakarta,no,17000000,26000000,"Kubernetes, Go, AWS, Terraform",2026-09-10

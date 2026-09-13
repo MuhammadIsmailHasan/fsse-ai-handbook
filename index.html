@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FSSE Handbook</title>
+    <script>
+      // Runs BEFORE React loads, so the page doesn't "flash" light then dark.
+      // It reads the same localStorage key as src/providers/ThemeProvider.tsx.
+      try {
+        const pref = JSON.parse(localStorage.getItem('fsse:theme') || '"system"')
+        const dark =
+          pref === 'dark' || (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.classList.toggle('dark', dark)
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

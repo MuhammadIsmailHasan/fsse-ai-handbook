@@ -1,0 +1,5 @@
+dist
+node_modules
+content
+exercises
+package-lock.json

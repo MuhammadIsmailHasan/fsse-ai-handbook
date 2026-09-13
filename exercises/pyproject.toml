@@ -1,0 +1,26 @@
+# One Python environment for ALL Python exercises in this handbook.
+#
+#   cd exercises
+#   uv sync                 # creates .venv and installs pytest
+#   uv run pytest <folder>  # runs one exercise's checks
+#
+# Later modules add groups (flask, fastapi, ai…) so you only install what you need.
+[project]
+name = "fsse-exercises"
+version = "0.1.0"
+description = "Local exercises for the FSSE Handbook"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.pytest.ini_options]
+# Each exercise folder has its own uniquely named module (e.g. word_count.py),
+# so tests can simply `from word_count import ...`.
+python_files = ["test_*.py"]
+norecursedirs = [".venv", "solution", "__pycache__"]
+addopts = "-q"

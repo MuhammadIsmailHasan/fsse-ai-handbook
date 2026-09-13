@@ -1,0 +1,46 @@
+/*
+ * index.css — global styles.
+ *
+ * Teaches (Tailwind CSS v4):
+ * - `@import 'tailwindcss'` pulls in Tailwind's base styles + utility classes.
+ * - `@plugin` adds official plugins (typography gives nice defaults to Markdown via `prose`).
+ * - `@custom-variant dark` makes `dark:` classes follow a `.dark` class on <html>
+ *   (instead of only the OS setting), so users can choose a theme.
+ * - `@theme` defines design tokens that become utilities (e.g. `font-sans`).
+ */
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-white font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200;
+  }
+
+  /* Visible keyboard focus for accessibility */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-indigo-500;
+  }
+}
+
+/* ── Shiki code highlighting: pick light or dark colors from CSS variables ── */
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg);
+}
+.shiki {
+  @apply overflow-x-auto p-4 text-[0.85rem] leading-relaxed;
+}

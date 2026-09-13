@@ -1,0 +1,520 @@
+{
+  "modules": [
+    {
+      "id": "m1",
+      "number": 1,
+      "title": "Algorithm & Programming",
+      "source": "core",
+      "sourceRef": "M1",
+      "summary": "Think like a programmer: how the web works, data, logic, loops, functions, and the classic algorithms every developer uses.",
+      "roles": {
+        "be": "core",
+        "fe": "core",
+        "fs": "core",
+        "ai": "core",
+        "ops": "core"
+      },
+      "weeks": [
+        {
+          "id": "w0",
+          "title": "Logic Foundations & Web Architecture",
+          "summary": "From a URL in the browser to a response from a server — and the building blocks of every program."
+        },
+        {
+          "id": "w1",
+          "title": "Algorithms & System Logic",
+          "summary": "Counting, searching, sorting and combining data — then solving real problems step by step."
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "number": 2,
+      "title": "Backend: Flask",
+      "source": "mixed",
+      "sourceRef": "M2",
+      "summary": "Rebuild your backend understanding: tools, PostgreSQL, Python, Flask, REST APIs, auth, testing and deployment.",
+      "roles": {
+        "be": "core",
+        "fe": "optional",
+        "fs": "core",
+        "ai": "recommended",
+        "ops": "recommended"
+      },
+      "weeks": [
+        {
+          "id": "w1",
+          "title": "Software Engineer Toolkit"
+        },
+        {
+          "id": "w2",
+          "title": "Database with PostgreSQL"
+        },
+        {
+          "id": "w3",
+          "title": "Python Core"
+        },
+        {
+          "id": "w4",
+          "title": "Flask Framework"
+        },
+        {
+          "id": "w5",
+          "title": "API Development"
+        },
+        {
+          "id": "w6",
+          "title": "Quality Assurance & Deployment"
+        }
+      ]
+    },
+    {
+      "id": "m3",
+      "number": 3,
+      "title": "Backend: FastAPI",
+      "source": "original",
+      "summary": "The modern, typed Python API framework: Pydantic, async, dependency injection, and a real AI service.",
+      "roles": {
+        "be": "recommended",
+        "fe": "none",
+        "fs": "recommended",
+        "ai": "core",
+        "ops": "optional"
+      },
+      "weeks": [
+        {
+          "id": "w1",
+          "title": "Foundations"
+        },
+        {
+          "id": "w2",
+          "title": "Core"
+        },
+        {
+          "id": "w3",
+          "title": "Real Apps"
+        }
+      ]
+    },
+    {
+      "id": "m4",
+      "number": 4,
+      "title": "Frontend: Next.js",
+      "source": "mixed",
+      "sourceRef": "M3",
+      "summary": "HTML, CSS and JavaScript up to TypeScript, Tailwind, React and Next.js — with forms, auth and end-to-end tests.",
+      "roles": {
+        "be": "optional",
+        "fe": "core",
+        "fs": "core",
+        "ai": "recommended",
+        "ops": "none"
+      },
+      "weeks": [
+        {
+          "id": "w1",
+          "title": "HTML, CSS & JavaScript"
+        },
+        {
+          "id": "w2",
+          "title": "TypeScript & Tailwind CSS"
+        },
+        {
+          "id": "w3",
+          "title": "React with Next.js"
+        },
+        {
+          "id": "w4",
+          "title": "App Router & APIs"
+        },
+        {
+          "id": "w5",
+          "title": "Forms & Authentication"
+        },
+        {
+          "id": "w6",
+          "title": "Quality Assurance & Deployment"
+        }
+      ]
+    },
+    {
+      "id": "m5",
+      "number": 5,
+      "title": "Cloud, DevOps & AWS",
+      "source": "original",
+      "summary": "Ship it for real: containers, CI/CD, AWS, microservices, Kubernetes and Terraform — without a surprise bill.",
+      "roles": {
+        "be": "recommended",
+        "fe": "optional",
+        "fs": "recommended",
+        "ai": "recommended",
+        "ops": "core"
+      },
+      "weeks": [
+        {
+          "id": "w1",
+          "title": "Containers"
+        },
+        {
+          "id": "w2",
+          "title": "CI/CD"
+        },
+        {
+          "id": "w3",
+          "title": "AWS Foundations"
+        },
+        {
+          "id": "w4",
+          "title": "Deploying to AWS"
+        },
+        {
+          "id": "w5",
+          "title": "Microservices"
+        },
+        {
+          "id": "w6",
+          "title": "Orchestration"
+        },
+        {
+          "id": "w7",
+          "title": "Infrastructure as Code & Operations"
+        }
+      ]
+    },
+    {
+      "id": "m6",
+      "number": 6,
+      "title": "AI-Assisted Development",
+      "source": "core",
+      "sourceRef": "M4",
+      "summary": "Work with AI coding agents like a professional: specs, steering, reviewing AI output, and shipping a full-stack feature.",
+      "roles": {
+        "be": "core",
+        "fe": "core",
+        "fs": "core",
+        "ai": "core",
+        "ops": "core"
+      },
+      "weeks": [
+        {
+          "id": "w1",
+          "title": "AI Dev Lifecycle & Requirements"
+        },
+        {
+          "id": "w2",
+          "title": "Steering & Code Generation"
+        },
+        {
+          "id": "w3",
+          "title": "Implementation, Testing & Deployment"
+        }
+      ]
+    },
+    {
+      "id": "m7",
+      "number": 7,
+      "title": "AI Engineering in Production",
+      "source": "original",
+      "summary": "Build AI features companies actually ship: LLM APIs, tool calling, RAG, evals, agents, MCP, security and cost control.",
+      "roles": {
+        "be": "optional",
+        "fe": "optional",
+        "fs": "recommended",
+        "ai": "core",
+        "ops": "optional"
+      },
+      "weeks": [
+        {
+          "id": "w0",
+          "title": "ML Foundations"
+        },
+        {
+          "id": "w1",
+          "title": "How LLMs Work & LLM APIs"
+        },
+        {
+          "id": "w2",
+          "title": "Prompting & Tools"
+        },
+        {
+          "id": "w3",
+          "title": "Embeddings & Search"
+        },
+        {
+          "id": "w4",
+          "title": "RAG in Depth"
+        },
+        {
+          "id": "w5",
+          "title": "Evaluation & Observability"
+        },
+        {
+          "id": "w6",
+          "title": "Agents & MCP"
+        },
+        {
+          "id": "w7",
+          "title": "Production"
+        },
+        {
+          "id": "w8",
+          "title": "Decisions & Case Studies"
+        }
+      ]
+    },
+    {
+      "id": "m8",
+      "number": 8,
+      "title": "Career & Portfolio",
+      "source": "mixed",
+      "sourceRef": "Special",
+      "summary": "Turn your skills into offers: portfolio, LinkedIn, CV, job search and every type of interview.",
+      "roles": {
+        "be": "core",
+        "fe": "core",
+        "fs": "core",
+        "ai": "core",
+        "ops": "core"
+      },
+      "weeks": [
+        {
+          "id": "w1",
+          "title": "Portfolio & Personal Brand"
+        },
+        {
+          "id": "w2",
+          "title": "Job Search & Interviews"
+        }
+      ]
+    }
+  ],
+  "tracks": [
+    {
+      "id": "dsa",
+      "title": "DSA for Interviews",
+      "summary": "Data structures and algorithm patterns in Python, practiced with spaced review until they stick.",
+      "stages": [
+        {
+          "id": "stage-1",
+          "title": "Foundations",
+          "startsWith": "Module 1"
+        },
+        {
+          "id": "stage-2",
+          "title": "Core Structures",
+          "startsWith": "Module 2 · Week 1"
+        },
+        {
+          "id": "stage-3",
+          "title": "Patterns",
+          "startsWith": "Module 2 · Week 4"
+        },
+        {
+          "id": "stage-4",
+          "title": "Trees & Graphs",
+          "startsWith": "Module 3"
+        },
+        {
+          "id": "stage-5",
+          "title": "Advanced",
+          "startsWith": "Module 4"
+        },
+        {
+          "id": "stage-6",
+          "title": "Interview Skills",
+          "startsWith": "Milestone 1"
+        }
+      ]
+    },
+    {
+      "id": "architecture",
+      "title": "Architecture",
+      "summary": "From clean code to design patterns to system design — learned right when you need each idea.",
+      "stages": [
+        {
+          "id": "a-principles",
+          "title": "A · Principles",
+          "startsWith": "Module 1"
+        },
+        {
+          "id": "b-system-design-basics",
+          "title": "B · System Design Basics",
+          "startsWith": "Module 1 · Week 0"
+        },
+        {
+          "id": "c-oop-design",
+          "title": "C · OOP Design",
+          "startsWith": "Module 2 · Week 3"
+        },
+        {
+          "id": "d-design-patterns",
+          "title": "D · Design Patterns",
+          "startsWith": "Module 2 · Week 3"
+        },
+        {
+          "id": "e-backend-architecture",
+          "title": "E · Backend Architecture",
+          "startsWith": "Module 2 · Week 4"
+        },
+        {
+          "id": "f-data-api-design",
+          "title": "F · Data & API Design",
+          "startsWith": "Module 2 · Week 5"
+        },
+        {
+          "id": "g-frontend-patterns",
+          "title": "G · Frontend Patterns",
+          "startsWith": "Module 4"
+        },
+        {
+          "id": "h-distributed-systems",
+          "title": "H · Distributed Systems",
+          "startsWith": "Module 5"
+        },
+        {
+          "id": "i-system-design-practice",
+          "title": "I · System Design Practice",
+          "startsWith": "Module 5"
+        },
+        {
+          "id": "j-interviews",
+          "title": "J · Interviews",
+          "startsWith": "Module 8"
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": "careerpilot",
+      "title": "CareerPilot",
+      "tagline": "An AI job-hunt assistant that grows with every module.",
+      "kind": "main"
+    },
+    {
+      "id": "supportdesk-ai",
+      "title": "SupportDesk AI",
+      "tagline": "A help-desk assistant with RAG, tools, guardrails and human handoff.",
+      "kind": "standalone"
+    },
+    {
+      "id": "studymind",
+      "title": "StudyMind",
+      "tagline": "An AI tutor over this handbook — extra practice.",
+      "kind": "practice"
+    }
+  ],
+  "milestones": [
+    {
+      "id": "junior-full-stack",
+      "title": "🎯 1 · Junior Full-Stack",
+      "applyFor": "Junior backend, frontend or full-stack developer roles — start applying here.",
+      "estimate": "~320–370 h · ~4–5 months at 18 h/week",
+      "include": [
+        "modules/m1",
+        "modules/m2",
+        "modules/m4",
+        "modules/m8/w1",
+        "modules/m8/w2",
+        "tracks/dsa/stage-1",
+        "tracks/dsa/stage-2",
+        "tracks/dsa/stage-3",
+        "tracks/dsa/stage-6",
+        "tracks/architecture/a-principles",
+        "tracks/architecture/b-system-design-basics",
+        "tracks/architecture/c-oop-design",
+        "tracks/architecture/d-design-patterns",
+        "tracks/architecture/e-backend-architecture",
+        "projects/careerpilot/00",
+        "projects/careerpilot/01",
+        "projects/careerpilot/02",
+        "projects/careerpilot/04"
+      ]
+    },
+    {
+      "id": "ai-integrated-full-stack",
+      "title": "🎯 2 · AI-Integrated Full-Stack",
+      "applyFor": "Full-stack roles with AI features, junior applied AI engineer roles.",
+      "estimate": "+~250 h · ~7–8 months total",
+      "include": [
+        "modules/m3",
+        "modules/m6",
+        "modules/m7/w1",
+        "modules/m7/w2",
+        "modules/m7/w3",
+        "modules/m7/w4",
+        "modules/m7/w5",
+        "tracks/dsa/stage-4",
+        "tracks/architecture/g-frontend-patterns",
+        "projects/careerpilot/03",
+        "projects/careerpilot/06",
+        "projects/supportdesk-ai"
+      ]
+    },
+    {
+      "id": "stronger-candidate",
+      "title": "🎯 3 · Stronger Candidate",
+      "applyFor": "AI engineer roles, cloud-heavy teams, better salary negotiation.",
+      "estimate": "+~300–400 h · ~11–13 months total",
+      "include": [
+        "modules/m5",
+        "modules/m7/w0",
+        "modules/m7/w6",
+        "modules/m7/w7",
+        "modules/m7/w8",
+        "tracks/architecture/f-data-api-design",
+        "tracks/architecture/h-distributed-systems",
+        "tracks/architecture/i-system-design-practice",
+        "tracks/architecture/j-interviews",
+        "projects/careerpilot/05",
+        "projects/careerpilot/07"
+      ]
+    }
+  ],
+  "studyPath": {
+    "module": [
+      "modules/m1",
+      "modules/m2",
+      "modules/m4",
+      "modules/m8/w1",
+      "modules/m8/w2",
+      "modules/m3",
+      "modules/m6",
+      "modules/m7/w1",
+      "modules/m7/w2",
+      "modules/m7/w3",
+      "modules/m7/w4",
+      "modules/m7/w5",
+      "modules/m5",
+      "modules/m7/w0",
+      "modules/m7/w6",
+      "modules/m7/w7",
+      "modules/m7/w8"
+    ],
+    "dsa": [
+      "tracks/dsa/stage-1",
+      "tracks/dsa/stage-2",
+      "tracks/dsa/stage-3",
+      "tracks/dsa/stage-6",
+      "tracks/dsa/stage-4",
+      "tracks/dsa/stage-5"
+    ],
+    "architecture": [
+      "tracks/architecture/a-principles",
+      "tracks/architecture/b-system-design-basics",
+      "tracks/architecture/c-oop-design",
+      "tracks/architecture/d-design-patterns",
+      "tracks/architecture/e-backend-architecture",
+      "tracks/architecture/f-data-api-design",
+      "tracks/architecture/g-frontend-patterns",
+      "tracks/architecture/h-distributed-systems",
+      "tracks/architecture/i-system-design-practice",
+      "tracks/architecture/j-interviews"
+    ],
+    "project": [
+      "projects/careerpilot",
+      "projects/supportdesk-ai",
+      "projects/studymind"
+    ]
+  }
+}
