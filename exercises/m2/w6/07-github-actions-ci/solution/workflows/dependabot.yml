@@ -1,0 +1,12 @@
+version: 2
+updates:
+  # Keeps the pinned action SHAs up to date (it updates the version comments too).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  # Python dependencies from uv.lock
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly

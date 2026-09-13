@@ -1,0 +1,16 @@
+# ⚠️ A first-try workflow that "works" but has many problems. Improve it — see README.md.
+name: CI
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - uses: astral-sh/setup-uv@v7
+      - run: uv sync
+      - run: uv run pytest
+        env:
+          DATABASE_URL: sqlite:///:memory:
+          JWT_SECRET_KEY: super-secret-key-change-in-production
