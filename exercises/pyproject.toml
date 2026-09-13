@@ -13,7 +13,7 @@ requires-python = ">=3.11"
 dependencies = []
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "psycopg[binary]>=3.2"]
 
 [tool.uv]
 default-groups = ["dev"]
@@ -22,5 +22,5 @@ default-groups = ["dev"]
 # Each exercise folder has its own uniquely named module (e.g. word_count.py),
 # so tests can simply `from word_count import ...`.
 python_files = ["test_*.py"]
-norecursedirs = [".venv", "solution", "__pycache__"]
+norecursedirs = [".venv", "solution", "__pycache__", ".check-tmp", "practice", "conflict-lab"]
 addopts = "-q"

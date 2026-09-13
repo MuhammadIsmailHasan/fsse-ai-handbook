@@ -1,0 +1,2 @@
+-- M2 · W2 · 02 — CareerPilot core schema: users, companies, applications.
+-- YOUR SQL HERE

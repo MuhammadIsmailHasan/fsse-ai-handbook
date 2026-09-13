@@ -9,7 +9,9 @@ set -uo pipefail
 cd "$(dirname "$0")/../exercises"
 filter="${1:-}"
 status=0
-tmp_root="$(mktemp -d)"
+# Temp copies live INSIDE exercises/ so the shared conftest.py (db fixture) applies.
+tmp_root="$(pwd)/.check-tmp"
+rm -rf "$tmp_root" && mkdir -p "$tmp_root"
 trap 'rm -rf "$tmp_root"' EXIT
 
 while IFS= read -r solution_dir; do
@@ -27,6 +29,7 @@ while IFS= read -r solution_dir; do
   mkdir -p "$tmp"
   cp "$exercise_dir"/test_*.py "$tmp"/
   [[ -d "$exercise_dir/data" ]] && cp -R "$exercise_dir/data" "$tmp"/
+  for extra in "$exercise_dir"/*.sql; do [[ -f "$extra" ]] && cp "$extra" "$tmp"/; done
   cp -R "$solution_dir"/. "$tmp"/
   if uv run pytest "$tmp" -q -p no:cacheprovider >/dev/null 2>&1; then
     echo "✅ $exercise_dir"
@@ -35,6 +38,6 @@ while IFS= read -r solution_dir; do
     uv run pytest "$tmp" -q -p no:cacheprovider 2>&1 | tail -15
     status=1
   fi
-done < <(find . -type d -name solution -not -path "./.venv/*" | sort)
+done < <(find . -type d -name solution -not -path "./.venv/*" -not -path "./.check-tmp/*" | sort)
 
 exit $status

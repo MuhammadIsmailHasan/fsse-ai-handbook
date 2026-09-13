@@ -1,0 +1,2 @@
+-- M2 · W2 · 01 — Create the study_log table and insert 3 rows.
+-- YOUR SQL HERE

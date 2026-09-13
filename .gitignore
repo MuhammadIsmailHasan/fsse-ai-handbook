@@ -30,3 +30,4 @@ npm-debug.log*
 # Git practice repos created by exercises (nested repos must not be committed)
 exercises/m2/w1/04-git-fundamentals/practice/
 exercises/m2/w1/05-git-collaboration/conflict-lab/
+exercises/.check-tmp/

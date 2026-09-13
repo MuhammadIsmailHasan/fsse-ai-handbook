@@ -1,0 +1,2 @@
+-- M2 · W2 · 04 — applications, skills, application_skills, interviews, user_profiles.
+-- YOUR SQL HERE
