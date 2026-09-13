@@ -15,14 +15,17 @@ function webRoot(start: string): string {
 
 export type TypecheckResult = { ok: boolean; output: string };
 
-/** Type-checks every .ts/.tsx file directly inside `dir` (not solution/). */
-export function typecheckFolder(dir: string): TypecheckResult {
+/** Type-checks .ts/.tsx files directly inside `dir` (or all subfolders with `recursive`), never tests or solution/. */
+export function typecheckFolder(dir: string, options: { recursive?: boolean } = {}): TypecheckResult {
   const root = webRoot(dir);
-  const files = readdirSync(dir).filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith(".test.ts") && !f.endsWith(".test.tsx"));
+  const files = options.recursive
+    ? ["**/*.ts", "**/*.tsx"]
+    : readdirSync(dir).filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith(".test.ts") && !f.endsWith(".test.tsx"));
+  const exclude = options.recursive ? ["**/*.test.ts", "**/*.test.tsx", "solution/**"] : [];
   const config = join(dir, "tsconfig.check.json");
   writeFileSync(
     config,
-    JSON.stringify({ extends: relative(dir, join(root, "tsconfig.json")), compilerOptions: { noEmit: true }, include: files, exclude: [] }),
+    JSON.stringify({ extends: relative(dir, join(root, "tsconfig.json")), compilerOptions: { noEmit: true }, include: files, exclude }),
   );
   try {
     execFileSync(join(root, "node_modules", ".bin", "tsc"), ["-p", config, "--pretty", "false"], { encoding: "utf8", stdio: "pipe" });
