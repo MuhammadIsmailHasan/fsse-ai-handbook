@@ -1,0 +1,30 @@
+[project]
+name = "careerpilot-api"
+version = "0.2.0"
+description = "CareerPilot Phase 2 — job application tracker API"
+requires-python = ">=3.12"
+dependencies = [
+    "flask>=3.1",
+    "flask-sqlalchemy>=3.1",
+    "flask-migrate>=4.1",
+    "flask-jwt-extended>=4.7",
+    "marshmallow>=4",
+    "psycopg[binary]>=3.2",
+    "gunicorn>=23",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pyjwt>=2.10",
+    "ruff>=0.12",
+    "mypy>=1.17",
+    "locust>=2.30",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 120
