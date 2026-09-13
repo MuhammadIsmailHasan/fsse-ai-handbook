@@ -36,5 +36,5 @@ default-groups = ["dev"]
 # Each exercise folder has its own uniquely named module (e.g. word_count.py),
 # so tests can simply `from word_count import ...`.
 python_files = ["test_*.py"]
-norecursedirs = [".venv", "solution", "__pycache__", ".check-tmp", "practice", "conflict-lab"]
+norecursedirs = [".venv", "solution", "__pycache__", ".check-tmp", ".grader-tmp", "practice", "conflict-lab"]
 addopts = "-q"

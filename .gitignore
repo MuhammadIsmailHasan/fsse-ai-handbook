@@ -31,3 +31,4 @@ npm-debug.log*
 exercises/m2/w1/04-git-fundamentals/practice/
 exercises/m2/w1/05-git-collaboration/conflict-lab/
 exercises/.check-tmp/
+exercises/.grader-tmp/
