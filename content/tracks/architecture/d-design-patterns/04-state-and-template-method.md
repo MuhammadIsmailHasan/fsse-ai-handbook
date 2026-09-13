@@ -214,7 +214,7 @@ Framework examples: `unittest.TestCase` (`setUp` → test → `tearDown`), Flask
 - Overriding the template method itself in a subclass and changing the order of steps.
 
 :::revoshop
-RevoShop's orders have statuses (`waiting_for_payment → processing → shipped → delivered`, plus cancellation). (1) Find where allowed transitions are defined (`NEXT_STATUS` in the Locust file hints at them; look in `OrderService.update_status` and the `orders` status CHECK constraint migration). Is it a transition table, an if-chain, or both? (2) Draw the state diagram from the code. Are there transitions the code allows that the business shouldn't (e.g. cancelling a shipped order)? (3) Which role may trigger which transition — where is that enforced?
+RevoShop's orders have statuses (`waiting_for_payment → processing → shipped → delivered`, plus cancellation). (1) `OrderService.update_status` imports `ALLOWED_TRANSITIONS`, `ROLE_ALLOWED_TARGET_STATUSES` and `TERMINAL_STATUSES` — a **transition table** plus role rules ✅. Find where they're defined and compare them with the status CHECK constraint migration. Which checks still use `if role == ...` chains? (2) Draw the state diagram from the code. Are there transitions the code allows that the business shouldn't (e.g. cancelling a shipped order)? (3) The same method checks the role **and** the transition: in what order, and does a seller get a clear error for an invalid transition vs a forbidden one?
 :::
 
 ::part[Explain & Design]{n="2"}
