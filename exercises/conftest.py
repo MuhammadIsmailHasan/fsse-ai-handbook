@@ -66,3 +66,16 @@ def run_sql():
 def query_sql():
     """Fixture form of query_file."""
     return query_file
+
+
+@pytest.fixture
+def pg_url(db):
+    """A SQLAlchemy URL whose connections use the same fresh schema as the `db` fixture.
+
+    Use it for Flask-SQLAlchemy / Alembic exercises:
+        app.config["SQLALCHEMY_DATABASE_URI"] = pg_url
+    """
+    schema = db.execute("SELECT current_schema()").fetchone()[0]
+    base = os.environ.get("DATABASE_URL", DEFAULT_URL).replace("postgresql://", "postgresql+psycopg://", 1)
+    separator = "&" if "?" in base else "?"
+    return f"{base}{separator}options=-csearch_path%3D{schema}"
