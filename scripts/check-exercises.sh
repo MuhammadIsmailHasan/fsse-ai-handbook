@@ -37,6 +37,6 @@ while IFS= read -r solution_dir; do
     uv run pytest "$tmp" -q -p no:cacheprovider 2>&1 | tail -15
     status=1
   fi
-done < <(find . -type d -name solution -not -path "./.venv/*" -not -path "./.check-tmp/*" | sort)
+done < <(find . -type d -name solution -not -path "./.venv/*" -not -path "./.check-tmp/*" -not -path "./web/*" | sort)  # exercises/web has its own checker
 
 exit $status
