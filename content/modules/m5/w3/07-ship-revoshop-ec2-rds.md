@@ -32,7 +32,7 @@ flowchart LR
 ```
 
 :::danger[Costs are real]
-Budgets and alerts **before** anything else (lesson 01). With the sample prices from exercise 02 this design is roughly **USD 30–35/month** in a US region (more in Singapore/Jakarta); on the **Free plan** that uses credits and can't bill you, but remember the plan ends after six months or when credits run out and the account then **closes**. Follow the teardown section when you're done, or keep only what Week 4 reuses (the VPC and RDS).
+Budgets and alerts **before** anything else (lesson 01). With the sample prices from exercise 02 this design is roughly **USD 35/month** (t3.small ≈ 15, RDS ≈ 14, public IPv4 ≈ 3.65, storage and a secret) in a US region (more in Singapore/Jakarta); on the **Free plan** that uses credits and can't bill you, but remember the plan ends after six months or when credits run out and the account then **closes**. Follow the teardown section when you're done, or keep only what Week 4 reuses (the VPC and RDS).
 :::
 
 ## 🧭 Checkpoints
