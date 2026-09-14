@@ -4,17 +4,20 @@
 import { useParams } from 'react-router'
 import { SectionedLessonList } from '../components/lesson/SectionedLessonList'
 import { PageHeader } from '../components/ui/PageHeader'
-import { getLessonsInGroup, getProject } from '../content'
+import { useContent } from '../hooks/useContent'
+import { useLocale } from '../hooks/useLocale'
 import { NotFoundPage } from './NotFoundPage'
 
 const KIND_LABEL = {
-  main: '⭐ Main portfolio project',
-  standalone: '🧠 Standalone AI project',
-  practice: '📚 Extra practice project',
-}
+  main: 'project.main',
+  standalone: 'project.standalone',
+  practice: 'project.practice',
+} as const
 
 export function ProjectPage() {
   const { projectId = '' } = useParams()
+  const { getLessonsInGroup, getProject } = useContent()
+  const { t } = useLocale()
   const project = getProject(projectId)
 
   if (!project) return <NotFoundPage />
@@ -22,7 +25,7 @@ export function ProjectPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader
-        eyebrow={KIND_LABEL[project.kind]}
+        eyebrow={t(KIND_LABEL[project.kind])}
         title={project.title}
         description={project.tagline}
       />
@@ -30,7 +33,7 @@ export function ProjectPage() {
         sections={[
           {
             id: 'pages',
-            title: 'Brief & phases',
+            title: t('project.pages'),
             lessons: getLessonsInGroup('projects', project.id),
           },
         ]}

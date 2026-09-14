@@ -11,6 +11,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router'
+import { LocaleProvider } from './providers/LocaleProvider'
 import { StudyProvider } from './providers/StudyProvider'
 import { ThemeProvider } from './providers/ThemeProvider'
 import { router } from './routes'
@@ -25,9 +26,11 @@ createRoot(rootElement).render(
   // to reveal bugs early. It does nothing in production builds.
   <StrictMode>
     <ThemeProvider>
-      <StudyProvider>
-        <RouterProvider router={router} />
-      </StudyProvider>
+      <LocaleProvider>
+        <StudyProvider>
+          <RouterProvider router={router} />
+        </StudyProvider>
+      </LocaleProvider>
     </ThemeProvider>
   </StrictMode>,
 )

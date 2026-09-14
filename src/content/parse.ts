@@ -13,8 +13,8 @@
  */
 import { parse as parseYaml } from 'yaml'
 import { z } from 'zod'
-import type { LessonLocation, LessonMeta } from '../types/content.ts'
-import { lessonFrontmatterSchema } from './schema.ts'
+import type { LessonLocation, LessonMeta, TranslationMeta } from '../types/content.ts'
+import { lessonFrontmatterSchema, translationFrontmatterSchema } from './schema.ts'
 
 export class ContentError extends Error {
   constructor(filePath: string, detail: string) {
@@ -102,9 +102,8 @@ export function markdownToPlainText(markdown: string): string {
     .trim()
 }
 
-export function buildLessonMeta(filePath: string, source: string): LessonMeta {
-  const location = parseLessonPath(filePath)
-
+/** Reads and validates the frontmatter block with any Zod schema. */
+function parseFrontmatter<T extends z.ZodType>(filePath: string, source: string, schema: T) {
   const parts = splitFrontmatter(source)
   if (!parts) {
     throw new ContentError(filePath, 'Missing frontmatter. The file must start with a --- block.')
@@ -117,23 +116,79 @@ export function buildLessonMeta(filePath: string, source: string): LessonMeta {
     throw new ContentError(filePath, `Invalid YAML in frontmatter: ${(error as Error).message}`)
   }
 
-  const result = lessonFrontmatterSchema.safeParse(data)
+  const result = schema.safeParse(data)
   if (!result.success) {
     throw new ContentError(filePath, z.prettifyError(result.error))
   }
+  return { data: result.data as z.output<T>, body: parts.body }
+}
 
-  const plain = markdownToPlainText(parts.body)
+/** Reading time, headings and excerpt — the same for any language. */
+function bodyStats(body: string) {
+  const plain = markdownToPlainText(body)
   const wordCount = plain ? plain.split(' ').length : 0
-  const headings = [...parts.body.matchAll(/^#{2,3}\s+(.+)$/gm)].map((m) =>
-    markdownToPlainText(m[1] ?? ''),
-  )
-
   return {
-    ...result.data,
-    ...location,
-    filePath,
     readingMinutes: Math.max(1, Math.round(wordCount / WORDS_PER_MINUTE)),
-    headings,
+    headings: [...body.matchAll(/^#{2,3}\s+(.+)$/gm)].map((m) => markdownToPlainText(m[1] ?? '')),
     excerpt: plain.slice(0, 280),
   }
+}
+
+export function buildLessonMeta(filePath: string, source: string): LessonMeta {
+  if (isTranslationPath(filePath)) {
+    throw new ContentError(filePath, 'This is a translation file; use buildTranslationMeta().')
+  }
+  const location = parseLessonPath(filePath)
+  const { data, body } = parseFrontmatter(filePath, source, lessonFrontmatterSchema)
+
+  return { ...data, ...location, filePath, ...bodyStats(body), language: 'en' }
+}
+
+// ── Translations ─────────────────────────────────────────────────────────────
+//   content/modules/m4/w1/01-intro.md     ← English (the source of truth)
+//   content/modules/m4/w1/01-intro.id.md  ← Bahasa Indonesia
+
+const TRANSLATION_RE = /\.(id)\.md$/
+
+export function isTranslationPath(filePath: string): boolean {
+  return TRANSLATION_RE.test(filePath)
+}
+
+/** "01-intro.id.md" → "01-intro.md" */
+export function sourcePathOf(translationPath: string): string {
+  return translationPath.replace(TRANSLATION_RE, '.md')
+}
+
+/** "01-intro.md" + "id" → "01-intro.id.md" */
+export function translationPathOf(sourcePath: string, locale: TranslationMeta['locale']): string {
+  return sourcePath.replace(/\.md$/, `.${locale}.md`)
+}
+
+export function buildTranslationMeta(filePath: string, source: string): TranslationMeta {
+  const match = TRANSLATION_RE.exec(filePath)
+  if (!match) throw new ContentError(filePath, 'Translation files must end with .id.md')
+  const location = parseLessonPath(sourcePathOf(filePath))
+  const { data, body } = parseFrontmatter(filePath, source, translationFrontmatterSchema)
+
+  return {
+    locale: match[1] as TranslationMeta['locale'],
+    sourceId: location.id,
+    filePath,
+    sourceHash: data.sourceHash,
+    title: data.title,
+    summary: data.summary,
+    ...bodyStats(body),
+  }
+}
+
+/**
+ * The English text a translation must follow: title, summary and body.
+ * (Roles, tags, duration… are NOT included — changing them doesn't need re-translation.)
+ * Scripts hash this to detect stale translations.
+ */
+export function translatableText(source: string): string {
+  const parts = splitFrontmatter(source)
+  if (!parts) return source
+  const data = (parseYaml(parts.yaml) ?? {}) as { title?: unknown; summary?: unknown }
+  return `${String(data.title ?? '')}\n${String(data.summary ?? '')}\n${parts.body.trim()}\n`
 }

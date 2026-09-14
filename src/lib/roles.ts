@@ -3,19 +3,25 @@
  *
  * Teaches: keeping business rules in plain functions (easy to test), separate from UI.
  */
+import type { MessageKey } from '../i18n/messages'
 import type { Level, RoleCode, RoleLabels } from '../types/content'
 
 /** A single role, or the ⭐ AI Full-Stack preset (FS + AI combined). */
 export type TargetRole = RoleCode | 'ai-fs'
 
-export const TARGET_ROLES: { id: TargetRole; label: string; description: string }[] = [
-  { id: 'ai-fs', label: '⭐ AI Full-Stack', description: 'Full-Stack + AI Engineer combined' },
-  { id: 'fs', label: '🟪 Full-Stack Developer', description: 'Backend + frontend' },
-  { id: 'ai', label: '🤖 AI Engineer', description: 'Building products with LLMs' },
-  { id: 'be', label: '🟦 Backend Developer', description: 'APIs, databases, services' },
-  { id: 'fe', label: '🟩 Frontend Developer', description: 'UI, React, Next.js' },
-  { id: 'ops', label: '☁️ Cloud / DevOps Engineer', description: 'CI/CD, cloud, infrastructure' },
+/** Job titles stay in English in both languages (that's how job ads write them). */
+export const TARGET_ROLES: { id: TargetRole; label: string; descriptionKey: MessageKey }[] = [
+  { id: 'ai-fs', label: '⭐ AI Full-Stack', descriptionKey: 'role.aiFs.description' },
+  { id: 'fs', label: '🟪 Full-Stack Developer', descriptionKey: 'role.fs.description' },
+  { id: 'ai', label: '🤖 AI Engineer', descriptionKey: 'role.ai.description' },
+  { id: 'be', label: '🟦 Backend Developer', descriptionKey: 'role.be.description' },
+  { id: 'fe', label: '🟩 Frontend Developer', descriptionKey: 'role.fe.description' },
+  { id: 'ops', label: '☁️ Cloud / DevOps Engineer', descriptionKey: 'role.ops.description' },
 ]
+
+export function targetRoleLabel(id: TargetRole): string {
+  return TARGET_ROLES.find((role) => role.id === id)?.label ?? id
+}
 
 const RANK: Record<Level, number> = { none: 0, optional: 1, recommended: 2, core: 3 }
 

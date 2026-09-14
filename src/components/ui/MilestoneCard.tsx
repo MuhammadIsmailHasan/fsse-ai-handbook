@@ -1,14 +1,17 @@
 /**
  * MilestoneCard.tsx — one job-ready milestone with core-lesson progress.
  */
-import { allLessons } from '../../content'
 import { milestoneProgress } from '../../content/planning'
+import { useContent } from '../../hooks/useContent'
+import { useLocale } from '../../hooks/useLocale'
 import { useStudy } from '../../hooks/useStudy'
 import type { Course } from '../../types/content'
 import { ProgressBar } from './ProgressBar'
 
 export function MilestoneCard({ milestone }: { milestone: Course['milestones'][number] }) {
   const { completed, targetRole } = useStudy()
+  const { allLessons } = useContent()
+  const { t } = useLocale()
   const progress = milestoneProgress(milestone, allLessons, completed, targetRole)
 
   return (
@@ -17,9 +20,14 @@ export function MilestoneCard({ milestone }: { milestone: Course['milestones'][n
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{milestone.applyFor}</p>
       <p className="mt-1 text-xs text-slate-500">{milestone.estimate}</p>
       <div className="mt-4 flex items-center gap-3">
-        <ProgressBar percent={progress.percent} label={`${milestone.title} progress`} />
+        <ProgressBar
+          percent={progress.percent}
+          label={t('list.progress', { title: milestone.title })}
+        />
         <span className="shrink-0 text-xs text-slate-500 tabular-nums">
-          {progress.total === 0 ? 'content coming' : `${progress.done}/${progress.total} core`}
+          {progress.total === 0
+            ? t('milestones.comingContent')
+            : t('targetRole.core', { done: progress.done, total: progress.total })}
         </span>
       </div>
     </article>

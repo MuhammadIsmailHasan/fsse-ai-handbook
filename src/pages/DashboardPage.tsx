@@ -4,15 +4,17 @@
 import { Link } from 'react-router'
 import { MilestoneCard } from '../components/ui/MilestoneCard'
 import { PageHeader } from '../components/ui/PageHeader'
-import { allLessons, course, getLesson } from '../content'
 import { orderedStream, pickForBudget } from '../content/planning'
+import { useContent } from '../hooks/useContent'
+import { useLocale } from '../hooks/useLocale'
 import { useStudy } from '../hooks/useStudy'
-import { TARGET_ROLES } from '../lib/roles'
+import { targetRoleLabel } from '../lib/roles'
 import { dueItems } from '../lib/spaced-repetition'
 
 export function DashboardPage() {
   const { completed, targetRole, reviewQueue } = useStudy()
-  const role = TARGET_ROLES.find((r) => r.id === targetRole)!
+  const { allLessons, course, getLesson } = useContent()
+  const { t } = useLocale()
   const next = pickForBudget(
     orderedStream(course.studyPath.module, allLessons),
     completed,
@@ -26,9 +28,9 @@ export function DashboardPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        eyebrow={`🎯 ${role.label}`}
-        title="Welcome back 👋"
-        description="Small steps every day beat big weekends. Here's where you are."
+        eyebrow={`🎯 ${targetRoleLabel(targetRole)}`}
+        title={t('dashboard.title')}
+        description={t('dashboard.description')}
       />
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -36,15 +38,15 @@ export function DashboardPage() {
           to={next?.url ?? '/roadmap'}
           className="rounded-xl bg-indigo-600 p-5 text-white shadow-sm hover:bg-indigo-700 md:col-span-2"
         >
-          <p className="text-sm text-indigo-100">Continue learning</p>
-          <p className="mt-1 text-xl font-semibold">{next?.title ?? 'Open the roadmap'}</p>
+          <p className="text-sm text-indigo-100">{t('dashboard.continue')}</p>
+          <p className="mt-1 text-xl font-semibold">{next?.title ?? t('dashboard.openRoadmap')}</p>
           {next && <p className="mt-1 line-clamp-2 text-sm text-indigo-100">{next.summary}</p>}
         </Link>
 
         <div className="grid gap-4">
-          <Stat to="/schedule" label="This week's plan" value="📅 Open" />
-          <Stat to="/tracks/dsa/review" label="DSA reviews due" value={`🔁 ${due}`} />
-          <Stat to="/roadmap" label="Lessons done" value={`✅ ${doneCount}`} />
+          <Stat to="/schedule" label={t('dashboard.weekPlan')} value={t('dashboard.open')} />
+          <Stat to="/tracks/dsa/review" label={t('dashboard.reviewsDue')} value={`🔁 ${due}`} />
+          <Stat to="/roadmap" label={t('dashboard.lessonsDone')} value={`✅ ${doneCount}`} />
         </div>
       </div>
 
@@ -53,12 +55,13 @@ export function DashboardPage() {
           to={guide.url}
           className="mt-4 block rounded-xl border border-dashed border-slate-300 px-5 py-3 text-sm hover:border-indigo-400 dark:border-slate-700"
         >
-          📖 New here? Read <strong>{guide.title}</strong> first (10 minutes).
+          {t('dashboard.newHereBefore')} <strong>{guide.title}</strong>{' '}
+          {t('dashboard.newHereAfter')}
         </Link>
       )}
 
       <h2 className="mt-12 mb-4 text-xl font-bold text-slate-900 dark:text-white">
-        Job-ready milestones
+        {t('milestones.heading')}
       </h2>
       <div className="grid gap-4 md:grid-cols-3">
         {course.milestones.map((milestone) => (

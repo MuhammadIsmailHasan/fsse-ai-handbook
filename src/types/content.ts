@@ -9,10 +9,12 @@
 import type { z } from 'zod'
 import type {
   courseSchema,
+  courseTranslationSchema,
   lessonFrontmatterSchema,
   LEVELS,
   ROLE_CODES,
 } from '../content/schema.ts'
+import type { Locale } from '../i18n/messages.ts'
 
 export type RoleCode = (typeof ROLE_CODES)[number]
 export type Level = (typeof LEVELS)[number]
@@ -22,6 +24,8 @@ export type Course = z.infer<typeof courseSchema>
 export type CourseModule = Course['modules'][number]
 export type CourseTrack = Course['tracks'][number]
 export type CourseProject = Course['projects'][number]
+
+export type CourseTranslation = z.output<typeof courseTranslationSchema>
 
 export type LessonFrontmatter = z.output<typeof lessonFrontmatterSchema>
 
@@ -49,4 +53,23 @@ export type LessonMeta = LessonFrontmatter &
     readingMinutes: number
     headings: string[]
     excerpt: string
+    /** The language this lesson's text is in. In Indonesian mode, untranslated lessons stay 'en'. */
+    language: Locale
   }
+
+/** Languages that lessons can be translated INTO (English is the source). */
+export type TranslationLocale = Exclude<Locale, 'en'>
+
+/** What a translation file (`01-lesson.id.md`) adds on top of the English lesson. */
+export type TranslationMeta = {
+  locale: TranslationLocale
+  /** The English lesson it translates, e.g. "modules/m4/w1/01-intro". */
+  sourceId: string
+  filePath: string
+  sourceHash: string
+  title: string
+  summary: string
+  readingMinutes: number
+  headings: string[]
+  excerpt: string
+}

@@ -8,8 +8,10 @@
  */
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
-import { allLessons, course } from '../../content'
+import type { ContentApi } from '../../content'
 import { countProgress, isVisibleForRole } from '../../content/progress'
+import { useContent } from '../../hooks/useContent'
+import { useLocale } from '../../hooks/useLocale'
 import { useStudy } from '../../hooks/useStudy'
 import { levelFor } from '../../lib/roles'
 import type { LessonMeta } from '../../types/content'
@@ -27,6 +29,9 @@ type TreeGroupProps = {
 }
 
 export function CourseTree({ onNavigate }: { onNavigate: () => void }) {
+  const content = useContent()
+  const { course } = content
+
   return (
     <ul className="space-y-0.5">
       {course.modules.map((module) => (
@@ -38,7 +43,7 @@ export function CourseTree({ onNavigate }: { onNavigate: () => void }) {
             sections={module.weeks.map((week) => ({
               id: week.id,
               title: week.title,
-              lessons: lessonsIn('modules', module.id, week.id),
+              lessons: lessonsIn(content, 'modules', module.id, week.id),
             }))}
             onNavigate={onNavigate}
           />
@@ -49,6 +54,9 @@ export function CourseTree({ onNavigate }: { onNavigate: () => void }) {
 }
 
 export function TrackTree({ onNavigate }: { onNavigate: () => void }) {
+  const content = useContent()
+  const { course } = content
+
   return (
     <ul className="space-y-0.5">
       {course.tracks.map((track) => (
@@ -60,7 +68,7 @@ export function TrackTree({ onNavigate }: { onNavigate: () => void }) {
             sections={track.stages.map((stage) => ({
               id: stage.id,
               title: stage.title,
-              lessons: lessonsIn('tracks', track.id, stage.id),
+              lessons: lessonsIn(content, 'tracks', track.id, stage.id),
             }))}
             onNavigate={onNavigate}
           />
@@ -71,6 +79,9 @@ export function TrackTree({ onNavigate }: { onNavigate: () => void }) {
 }
 
 export function ProjectTree({ onNavigate }: { onNavigate: () => void }) {
+  const content = useContent()
+  const { course } = content
+
   return (
     <ul className="space-y-0.5">
       {course.projects.map((project) => (
@@ -79,7 +90,9 @@ export function ProjectTree({ onNavigate }: { onNavigate: () => void }) {
             id={`projects/${project.id}`}
             label={project.title}
             to={`/projects/${project.id}`}
-            sections={[{ id: null, title: '', lessons: lessonsIn('projects', project.id, null) }]}
+            sections={[
+              { id: null, title: '', lessons: lessonsIn(content, 'projects', project.id, null) },
+            ]}
             onNavigate={onNavigate}
           />
         </li>
@@ -88,15 +101,19 @@ export function ProjectTree({ onNavigate }: { onNavigate: () => void }) {
   )
 }
 
-function lessonsIn(collection: LessonMeta['collection'], group: string, section: string | null) {
-  return allLessons.filter(
-    (l) => l.collection === collection && l.group === group && l.section === section,
-  )
+function lessonsIn(
+  content: ContentApi,
+  collection: LessonMeta['collection'],
+  group: string,
+  section: string | null,
+) {
+  return content.getLessonsInSection(collection, group, section)
 }
 
 function TreeGroup({ id, label, to, sections, onNavigate }: TreeGroupProps) {
   const { pathname } = useLocation()
   const { completed, targetRole, hideNotNeeded } = useStudy()
+  const { t } = useLocale()
   // `undefined` = the user hasn't toggled it → fall back to "open if I'm inside it".
   const [userOpen, setUserOpen] = useState<boolean | undefined>(undefined)
 
@@ -113,7 +130,7 @@ function TreeGroup({ id, label, to, sections, onNavigate }: TreeGroupProps) {
           type="button"
           onClick={() => setUserOpen(!open)}
           aria-expanded={open}
-          aria-label={`${open ? 'Collapse' : 'Expand'} ${label}`}
+          aria-label={t(open ? 'tree.collapse' : 'tree.expand', { label })}
           className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
         >
           <Icon name={open ? 'chevronDown' : 'chevronRight'} size={14} />
@@ -142,7 +159,7 @@ function TreeGroup({ id, label, to, sections, onNavigate }: TreeGroupProps) {
       {open && (
         <div className="mt-0.5 mb-2 ml-3 border-l border-slate-200 pl-2 dark:border-slate-800">
           {allInGroup.length === 0 && (
-            <p className="px-2 py-1 text-xs text-slate-400 italic">Content coming soon</p>
+            <p className="px-2 py-1 text-xs text-slate-400 italic">{t('tree.comingSoon')}</p>
           )}
           {sections.map((section) => {
             const visible = section.lessons.filter((lesson) =>

@@ -7,6 +7,8 @@
  * - `aria-label` for icon-only buttons (screen readers need a name).
  */
 import { Link } from 'react-router'
+import { useLocale } from '../../hooks/useLocale'
+import { LanguageToggle } from './LanguageToggle'
 import { ThemeToggle } from './ThemeToggle'
 import { Icon } from '../ui/Icon'
 
@@ -19,6 +21,8 @@ type TopBarProps = {
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent)
 
 export function TopBar({ onMenuClick, onSearchClick }: TopBarProps) {
+  const { t } = useLocale()
+
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/85 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
       <div className="mx-auto flex h-14 max-w-screen-2xl items-center gap-3 px-4 sm:px-6">
@@ -26,7 +30,7 @@ export function TopBar({ onMenuClick, onSearchClick }: TopBarProps) {
           type="button"
           onClick={onMenuClick}
           className="rounded-md p-2 text-slate-600 hover:bg-slate-100 lg:hidden dark:text-slate-300 dark:hover:bg-slate-800"
-          aria-label="Open navigation"
+          aria-label={t('topbar.openNavigation')}
         >
           <Icon name="menu" />
         </button>
@@ -45,11 +49,12 @@ export function TopBar({ onMenuClick, onSearchClick }: TopBarProps) {
             className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:border-slate-800 dark:hover:border-slate-700 dark:hover:text-slate-300"
           >
             <Icon name="search" size={16} />
-            <span className="hidden sm:inline">Search</span>
+            <span className="hidden sm:inline">{t('topbar.search')}</span>
             <kbd className="hidden rounded bg-slate-100 px-1.5 font-sans text-xs sm:inline dark:bg-slate-800">
               {isMac ? '⌘' : 'Ctrl'} K
             </kbd>
           </button>
+          <LanguageToggle />
           <ThemeToggle />
         </div>
       </div>

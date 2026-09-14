@@ -24,6 +24,7 @@ import {
   SandpackProvider,
   SandpackTests,
 } from '@codesandbox/sandpack-react'
+import { useLocale } from '../../hooks/useLocale'
 import { useTheme } from '../../hooks/useTheme'
 
 const TEMPLATES = ['vanilla-ts', 'react-ts', 'test-ts', 'vanilla', 'react'] as const
@@ -58,6 +59,7 @@ export default function SandpackBlock({
   console: showConsole,
 }: SandpackBlockProps) {
   const { resolved } = useTheme()
+  const { t } = useLocale()
   const fileMap = parseFiles(files)
   const names = Object.keys(fileMap)
   const hasTests = names.some((name) => /\.test\.[jt]sx?$/.test(name))
@@ -73,9 +75,9 @@ export default function SandpackBlock({
     <section className="not-prose my-8">
       <div className="mb-2 flex items-center justify-between text-sm">
         <p className="font-semibold text-slate-900 dark:text-white">
-          🧸 {title ?? 'Try it in the browser'}
+          🧸 {title ?? t('sandpack.defaultTitle')}
         </p>
-        <span className="text-xs text-slate-500">Runs in your browser · needs internet</span>
+        <span className="text-xs text-slate-500">{t('sandpack.note')}</span>
       </div>
       <SandpackProvider
         template={chosenTemplate}

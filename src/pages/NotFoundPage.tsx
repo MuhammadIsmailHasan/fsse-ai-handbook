@@ -3,17 +3,20 @@
  */
 import { Link } from 'react-router'
 import { PageHeader } from '../components/ui/PageHeader'
+import { useLocale } from '../hooks/useLocale'
 
 export function NotFoundPage() {
+  const { t } = useLocale()
+
   return (
     <div>
       <PageHeader
         eyebrow="404"
-        title="Page not found"
-        description="This page doesn't exist (yet)."
+        title={t('notFound.title')}
+        description={t('notFound.description')}
       />
       <Link to="/" className="font-medium text-indigo-600 hover:underline dark:text-indigo-400">
-        ← Back to dashboard
+        {t('common.backToDashboard')}
       </Link>
     </div>
   )

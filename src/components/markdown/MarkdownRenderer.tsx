@@ -14,6 +14,7 @@ import rehypeSlug from 'rehype-slug'
 import remarkDirective from 'remark-directive'
 import remarkGfm from 'remark-gfm'
 import { remarkHandbookDirectives } from '../../content/remark-directives'
+import { useLocale } from '../../hooks/useLocale'
 import { AiReviewSlot } from './AiReviewSlot'
 import { Callout } from './Callout'
 import { CodeBlock } from './CodeBlock'
@@ -33,6 +34,15 @@ type WithChildren = { children?: ReactNode }
 const SandpackBlock = lazy(() => import('./SandpackBlock'))
 
 /** Custom element names produced by our remark plugin → their components. */
+function SandpackLoader(props: ComponentProps<typeof SandpackBlock>) {
+  const { t } = useLocale()
+  return (
+    <Suspense fallback={<p className="text-sm text-slate-400">{t('sandpack.loading')}</p>}>
+      <SandpackBlock {...props} />
+    </Suspense>
+  )
+}
+
 const customComponents = {
   callout: Callout,
   term: Term,
@@ -48,11 +58,7 @@ const customComponents = {
   linkedin: LinkedInCard,
   placement: PlacementCheck,
   'ai-review': AiReviewSlot,
-  sandpack: (props: ComponentProps<typeof SandpackBlock>) => (
-    <Suspense fallback={<p className="text-sm text-slate-400">Loading code editor…</p>}>
-      <SandpackBlock {...props} />
-    </Suspense>
-  ),
+  sandpack: SandpackLoader,
 }
 
 const components = {

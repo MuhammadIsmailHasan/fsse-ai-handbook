@@ -8,8 +8,9 @@
  */
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router'
-import { getLessonsInGroup } from '../../content'
 import { OVERVIEW_LINKS, type NavItem } from '../../config/navigation'
+import { useContent } from '../../hooks/useContent'
+import { useLocale } from '../../hooks/useLocale'
 import { Icon } from '../ui/Icon'
 import { CourseTree, ProjectTree, TrackTree } from './CourseTree'
 import { TargetRoleSummary } from './TargetRoleSummary'
@@ -20,6 +21,8 @@ type SidebarProps = {
 }
 
 export function Sidebar({ open, onClose }: SidebarProps) {
+  const { getLessonsInGroup } = useContent()
+  const { t } = useLocale()
   const guides = getLessonsInGroup('guides', 'guides')
 
   return (
@@ -39,14 +42,14 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           'lg:sticky lg:top-14 lg:z-0 lg:h-[calc(100dvh-3.5rem)] lg:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
-        aria-label="Handbook navigation"
+        aria-label={t('sidebar.label')}
       >
         <div className="flex h-14 items-center justify-end lg:hidden">
           <button
             type="button"
             onClick={onClose}
             className="rounded-md p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-            aria-label="Close navigation"
+            aria-label={t('sidebar.close')}
           >
             <Icon name="close" />
           </button>
@@ -55,31 +58,31 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         <nav className="space-y-6 lg:pt-5">
           <TargetRoleSummary onNavigate={onClose} />
 
-          <NavSection title="Overview">
+          <NavSection title={t('sidebar.overview')}>
             <LinkList items={OVERVIEW_LINKS} onNavigate={onClose} />
           </NavSection>
 
-          <NavSection title="Course">
+          <NavSection title={t('sidebar.course')}>
             <CourseTree onNavigate={onClose} />
           </NavSection>
 
-          <NavSection title="Tracks">
+          <NavSection title={t('sidebar.tracks')}>
             <TrackTree onNavigate={onClose} />
           </NavSection>
 
-          <NavSection title="Projects">
+          <NavSection title={t('sidebar.projects')}>
             <ProjectTree onNavigate={onClose} />
           </NavSection>
 
-          <NavSection title="Guides & App">
+          <NavSection title={t('sidebar.guidesAndApp')}>
             <LinkList
               items={[
                 ...guides.map((guide) => ({
-                  label: guide.title,
+                  label: { text: guide.title },
                   to: guide.url,
                   icon: 'book' as const,
                 })),
-                { label: 'Settings', to: '/settings', icon: 'settings' },
+                { label: 'nav.settings', to: '/settings', icon: 'settings' },
               ]}
               onNavigate={onClose}
             />
@@ -102,6 +105,8 @@ function NavSection({ title, children }: { title: string; children: ReactNode })
 }
 
 function LinkList({ items, onNavigate }: { items: NavItem[]; onNavigate: () => void }) {
+  const { t } = useLocale()
+
   return (
     <ul className="space-y-0.5">
       {items.map((item) => (
@@ -120,7 +125,7 @@ function LinkList({ items, onNavigate }: { items: NavItem[]; onNavigate: () => v
             }
           >
             <Icon name={item.icon} size={16} />
-            {item.label}
+            {typeof item.label === 'string' ? t(item.label) : item.label.text}
           </NavLink>
         </li>
       ))}

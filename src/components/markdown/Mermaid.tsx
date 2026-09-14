@@ -8,10 +8,12 @@
  * - Re-rendering when the theme changes, so diagrams match light/dark mode.
  */
 import { useEffect, useId, useState } from 'react'
+import { useLocale } from '../../hooks/useLocale'
 import { useTheme } from '../../hooks/useTheme'
 
 export function Mermaid({ code }: { code: string }) {
   const { resolved } = useTheme()
+  const { t } = useLocale()
   const reactId = useId()
   const [state, setState] = useState<{ key: string; svg?: string; error?: string } | null>(null)
   const key = `${resolved}:${code}`
@@ -49,10 +51,10 @@ export function Mermaid({ code }: { code: string }) {
       )}
       {current?.error && (
         <pre className="text-sm whitespace-pre-wrap text-red-600 dark:text-red-400">
-          Diagram error: {current.error}
+          {t('mermaid.error', { message: current.error })}
         </pre>
       )}
-      {!current && <p className="text-sm text-slate-400">Drawing diagram…</p>}
+      {!current && <p className="text-sm text-slate-400">{t('mermaid.drawing')}</p>}
     </figure>
   )
 }

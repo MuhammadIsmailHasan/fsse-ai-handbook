@@ -10,17 +10,21 @@
  *   ::::
  */
 import type { ReactNode } from 'react'
+import { useLocale } from '../../hooks/useLocale'
 import { useStudy } from '../../hooks/useStudy'
 
 export function PlacementCheck({ id, children }: { id?: string; children?: ReactNode }) {
   const { placements, setPlacement } = useStudy()
   const result = id ? placements[id] : undefined
+  const { t } = useLocale()
 
   return (
     <section className="my-8 rounded-xl border-2 border-amber-200 px-5 py-4 dark:border-amber-500/30">
-      <p className="not-prose font-semibold text-slate-900 dark:text-white">✅ Placement check</p>
+      <p className="not-prose font-semibold text-slate-900 dark:text-white">
+        {t('placement.title')}
+      </p>
       <p className="not-prose mt-1 text-sm text-slate-600 dark:text-slate-400">
-        Answer from memory — no notes, no AI. Be honest: this only helps you.
+        {t('placement.intro')}
       </p>
 
       <div className="mt-2">{children}</div>
@@ -30,16 +34,14 @@ export function PlacementCheck({ id, children }: { id?: string; children?: React
           {result ? (
             <div className="flex flex-wrap items-center gap-3 text-sm" role="status">
               <span className="font-medium">
-                {result.result === 'pass'
-                  ? '🎉 Passed — jump to the toy exercises and skim the rest.'
-                  : '📚 Studying this week — no problem, that is what it is for.'}
+                {result.result === 'pass' ? t('placement.passed') : t('placement.studying')}
               </span>
               <button
                 type="button"
                 onClick={() => setPlacement(id, null)}
                 className="text-slate-500 underline hover:text-slate-800 dark:hover:text-slate-200"
               >
-                Retake
+                {t('placement.retake')}
               </button>
             </div>
           ) : (
@@ -49,14 +51,14 @@ export function PlacementCheck({ id, children }: { id?: string; children?: React
                 onClick={() => setPlacement(id, 'pass')}
                 className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
               >
-                I could answer everything well
+                {t('placement.pass')}
               </button>
               <button
                 type="button"
                 onClick={() => setPlacement(id, 'study')}
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
               >
-                Not yet — I'll study this week
+                {t('placement.study')}
               </button>
             </div>
           )}

@@ -3,12 +3,14 @@
  *
  * Teaches: `aria-pressed` for toggle buttons, so assistive tech announces the state.
  */
+import { useLocale } from '../../hooks/useLocale'
 import { useStudy } from '../../hooks/useStudy'
 import { Icon } from '../ui/Icon'
 
 export function DoneButton({ lessonId, size = 'md' }: { lessonId: string; size?: 'sm' | 'md' }) {
   const { isDone, toggleDone } = useStudy()
   const done = isDone(lessonId)
+  const { t } = useLocale()
 
   return (
     <button
@@ -24,7 +26,7 @@ export function DoneButton({ lessonId, size = 'md' }: { lessonId: string; size?:
       }`}
     >
       <Icon name="check" size={size === 'sm' ? 12 : 16} />
-      {done ? 'Done' : 'Mark as done'}
+      {done ? t('lesson.done') : t('lesson.markDone')}
     </button>
   )
 }

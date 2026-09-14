@@ -11,11 +11,16 @@
  * and deriving what to show from a single number in state.
  */
 import { Children, isValidElement, useState, type ReactNode } from 'react'
+import { useLocale } from '../../hooks/useLocale'
 
 export function Hints({ title, children }: { title?: string; children?: ReactNode }) {
+  const { t } = useLocale()
+
   return (
     <div className="not-prose my-6 rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
-      <p className="mb-2 font-semibold text-slate-900 dark:text-white">💡 {title ?? 'Hints'}</p>
+      <p className="mb-2 font-semibold text-slate-900 dark:text-white">
+        💡 {title ?? t('hints.title')}
+      </p>
       {children}
     </div>
   )
@@ -25,6 +30,7 @@ export function HintList({ children }: { children?: ReactNode }) {
   // react-markdown adds "\n" text between list items — keep only real elements.
   const items = Children.toArray(children).filter(isValidElement)
   const [shown, setShown] = useState(0)
+  const { t } = useLocale()
 
   return (
     <div className="space-y-2">
@@ -45,10 +51,10 @@ export function HintList({ children }: { children?: ReactNode }) {
           onClick={() => setShown((count) => count + 1)}
           className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
         >
-          Show hint {shown + 1} of {items.length}
+          {t('hints.show', { n: shown + 1, total: items.length })}
         </button>
       ) : (
-        <p className="text-sm text-slate-500">All hints shown. You've got this!</p>
+        <p className="text-sm text-slate-500">{t('hints.allShown')}</p>
       )}
     </div>
   )

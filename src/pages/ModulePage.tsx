@@ -8,17 +8,20 @@ import { useParams } from 'react-router'
 import { SectionedLessonList } from '../components/lesson/SectionedLessonList'
 import { PageHeader } from '../components/ui/PageHeader'
 import { RoleBadges } from '../components/ui/RoleBadges'
-import { getLessonsInSection, getModule } from '../content'
+import { useContent } from '../hooks/useContent'
+import { useLocale } from '../hooks/useLocale'
 import { NotFoundPage } from './NotFoundPage'
 
 const SOURCE_LABEL = {
-  core: '📘 Based on the the bootcamp outline',
-  original: '🔥 Bonus module',
-  mixed: '📘 the bootcamp outline + 🔥 bonus lessons',
-}
+  core: 'module.sourceCore',
+  original: 'module.sourceOriginal',
+  mixed: 'module.sourceMixed',
+} as const
 
 export function ModulePage() {
   const { moduleId = '' } = useParams()
+  const { getLessonsInSection, getModule } = useContent()
+  const { t } = useLocale()
   const module = getModule(moduleId)
 
   if (!module) return <NotFoundPage />
@@ -26,7 +29,10 @@ export function ModulePage() {
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader
-        eyebrow={`Module ${module.number} · ${SOURCE_LABEL[module.source]}`}
+        eyebrow={t('module.eyebrow', {
+          number: module.number,
+          source: t(SOURCE_LABEL[module.source]),
+        })}
         title={module.title}
         description={module.summary}
       />

@@ -8,10 +8,12 @@
  *   setting it synchronously in the effect body would cause extra renders.
  */
 import { useEffect, useState } from 'react'
+import { useLocale } from '../../hooks/useLocale'
 import type { TocHeading } from '../../lib/headings'
 
 export function TableOfContents({ headings }: { headings: TocHeading[] }) {
   const [activeId, setActiveId] = useState<string | null>(null)
+  const { t } = useLocale()
 
   useEffect(() => {
     const elements = headings
@@ -34,9 +36,9 @@ export function TableOfContents({ headings }: { headings: TocHeading[] }) {
   if (headings.length === 0) return null
 
   return (
-    <nav aria-label="On this page" className="text-sm">
+    <nav aria-label={t('lesson.onThisPage')} className="text-sm">
       <p className="mb-3 text-xs font-semibold tracking-wider text-slate-400 uppercase">
-        On this page
+        {t('lesson.onThisPage')}
       </p>
       <ul className="space-y-1.5 border-l border-slate-200 dark:border-slate-800">
         {headings.map((heading) => (

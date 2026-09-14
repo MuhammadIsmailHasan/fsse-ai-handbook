@@ -8,6 +8,9 @@
  * 2. Every lesson's module/week, track/stage or project exists in course.json.
  * 3. Every `:::exercise{path="..."}` points to a folder that exists.
  * 4. Every internal link like `[text](/modules/m1/w0/01-x)` points to a real page.
+ * 5. Every translation (`01-x.id.md`) has an English source, is up to date with it
+ *    (sourceHash), and keeps the same structure: directives, code, links.
+ * 6. `course.id.json` only translates modules/weeks/tracks/projects that exist.
  *
  * Teaches: writing a small CLI tool in TypeScript with Node's fs/path modules,
  * collecting ALL errors (not stopping at the first), and exit codes
@@ -15,9 +18,17 @@
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { buildLessonMeta, stripFrontmatter } from '../src/content/parse.ts'
-import { courseSchema } from '../src/content/schema.ts'
-import type { LessonMeta } from '../src/types/content.ts'
+import {
+  buildLessonMeta,
+  buildTranslationMeta,
+  isTranslationPath,
+  sourcePathOf,
+  stripFrontmatter,
+} from '../src/content/parse.ts'
+import { courseSchema, courseTranslationSchema } from '../src/content/schema.ts'
+import { compareStructure } from '../src/content/translation.ts'
+import type { LessonMeta, TranslationMeta } from '../src/types/content.ts'
+import { sourceHash } from './i18n-hash.ts'
 
 const ROOT = process.cwd()
 const errors: string[] = []
@@ -41,15 +52,23 @@ if (!courseResult.success) {
 }
 const course = courseResult.data
 
-// 2. Lessons
+// 2. Lessons (English sources) and their translations
 const files = walk(path.join(ROOT, 'content')).filter((file) => file.endsWith('.md'))
 const lessons: { meta: LessonMeta; body: string }[] = []
+const translations: { meta: TranslationMeta; body: string }[] = []
 
 for (const file of files) {
   const relative = toRelative(file)
   const source = readFileSync(file, 'utf8')
   try {
-    lessons.push({ meta: buildLessonMeta(relative, source), body: stripFrontmatter(source) })
+    if (isTranslationPath(relative)) {
+      translations.push({
+        meta: buildTranslationMeta(relative, source),
+        body: stripFrontmatter(source),
+      })
+    } else {
+      lessons.push({ meta: buildLessonMeta(relative, source), body: stripFrontmatter(source) })
+    }
   } catch (error) {
     errors.push((error as Error).message)
   }
@@ -113,6 +132,75 @@ for (const { meta, body } of lessons) {
   }
 }
 
+// 5. Translations
+const lessonsByPath = new Map(lessons.map((lesson) => [lesson.meta.filePath, lesson]))
+
+for (const { meta, body } of translations) {
+  const where = meta.filePath
+  const englishPath = sourcePathOf(meta.filePath)
+  const english = lessonsByPath.get(englishPath)
+  if (!english) {
+    errors.push(`${where}\n  No English lesson at ${englishPath}`)
+    continue
+  }
+
+  const expectedHash = sourceHash(readFileSync(path.join(ROOT, englishPath), 'utf8'))
+  if (meta.sourceHash !== expectedHash) {
+    errors.push(
+      `${where}\n  Stale translation: ${englishPath} changed since it was translated.\n` +
+        `  Update the translation, then run: npm run i18n -- stamp ${where}`,
+    )
+  }
+
+  for (const problem of compareStructure(english.body, body)) {
+    errors.push(`${where}\n  ${problem}`)
+  }
+
+  for (const match of body.matchAll(/\]\((\/[^)\s#]*)(#[^)\s]*)?\)/g)) {
+    const url = match[1]!.replace(/\/$/, '') || '/'
+    if (!knownUrls.has(url)) errors.push(`${where}\n  Broken internal link: ${url}`)
+  }
+}
+
+// 6. course.id.json
+const courseIdPath = path.join(ROOT, 'content/course.id.json')
+if (existsSync(courseIdPath)) {
+  const result = courseTranslationSchema.safeParse(JSON.parse(readFileSync(courseIdPath, 'utf8')))
+  if (!result.success) {
+    errors.push(`content/course.id.json is invalid:\n  ${JSON.stringify(result.error.issues)}`)
+  } else {
+    const t = result.data
+    const where = 'content/course.id.json'
+    for (const [id, m] of Object.entries(t.modules)) {
+      const module = course.modules.find((x) => x.id === id)
+      if (!module) errors.push(`${where}\n  Unknown module "${id}"`)
+      for (const weekId of Object.keys(m.weeks ?? {})) {
+        if (module && !module.weeks.some((w) => w.id === weekId)) {
+          errors.push(`${where}\n  Unknown week "${id}/${weekId}"`)
+        }
+      }
+    }
+    for (const [id, tr] of Object.entries(t.tracks)) {
+      const track = course.tracks.find((x) => x.id === id)
+      if (!track) errors.push(`${where}\n  Unknown track "${id}"`)
+      for (const stageId of Object.keys(tr.stages ?? {})) {
+        if (track && !track.stages.some((st) => st.id === stageId)) {
+          errors.push(`${where}\n  Unknown stage "${id}/${stageId}"`)
+        }
+      }
+    }
+    for (const id of Object.keys(t.projects)) {
+      if (!course.projects.some((p) => p.id === id))
+        errors.push(`${where}\n  Unknown project "${id}"`)
+    }
+    for (const id of Object.keys(t.milestones)) {
+      if (!course.milestones.some((m) => m.id === id)) {
+        errors.push(`${where}\n  Unknown milestone "${id}"`)
+      }
+    }
+  }
+}
+
 // Report
 if (errors.length > 0) {
   console.error(`\n❌ Found ${errors.length} problem(s):\n`)
@@ -120,4 +208,6 @@ if (errors.length > 0) {
   process.exit(1)
 }
 
-console.log(`✅ Content OK — ${lessons.length} file(s) checked.`)
+console.log(
+  `✅ Content OK — ${lessons.length} lesson(s) and ${translations.length} translation(s) checked.`,
+)

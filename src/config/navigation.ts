@@ -7,26 +7,17 @@
  * Teaches: keeping configuration (data) separate from components (UI).
  */
 import type { IconName } from '../components/ui/Icon'
+import type { MessageKey } from '../i18n/messages'
 
 export type NavItem = {
-  label: string
+  /** A message key (translated in the sidebar) or, for lessons, the title itself. */
+  label: MessageKey | { text: string }
   to: string
   icon: IconName
 }
 
 export const OVERVIEW_LINKS: NavItem[] = [
-  { label: 'Dashboard', to: '/', icon: 'home' },
-  { label: 'Roadmap', to: '/roadmap', icon: 'map' },
-  { label: 'This Week', to: '/schedule', icon: 'calendar' },
-]
-
-export const TRACK_LINKS: NavItem[] = [
-  { label: 'DSA for Interviews', to: '/tracks/dsa', icon: 'puzzle' },
-  { label: 'Architecture', to: '/tracks/architecture', icon: 'building' },
-]
-
-export const PROJECT_LINKS: NavItem[] = [
-  { label: 'CareerPilot', to: '/projects/careerpilot', icon: 'rocket' },
-  { label: 'SupportDesk AI', to: '/projects/supportdesk-ai', icon: 'rocket' },
-  { label: 'StudyMind', to: '/projects/studymind', icon: 'rocket' },
+  { label: 'nav.dashboard', to: '/', icon: 'home' },
+  { label: 'nav.roadmap', to: '/roadmap', icon: 'map' },
+  { label: 'nav.thisWeek', to: '/schedule', icon: 'calendar' },
 ]

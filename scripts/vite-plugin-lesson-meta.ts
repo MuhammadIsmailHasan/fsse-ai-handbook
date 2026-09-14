@@ -17,7 +17,7 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Plugin } from 'vite'
-import { buildLessonMeta } from '../src/content/parse.ts'
+import { buildLessonMeta, buildTranslationMeta, isTranslationPath } from '../src/content/parse.ts'
 
 const META_QUERY = '?meta'
 
@@ -41,7 +41,10 @@ export function lessonMetaPlugin(): Plugin {
 
       const source = await readFile(absolutePath, 'utf8')
       const relativePath = path.relative(root, absolutePath).split(path.sep).join('/')
-      const meta = buildLessonMeta(relativePath, source)
+      // Translations (01-lesson.id.md) return only their translated text + stats.
+      const meta = isTranslationPath(relativePath)
+        ? buildTranslationMeta(relativePath, source)
+        : buildLessonMeta(relativePath, source)
 
       return `export default ${JSON.stringify(meta)}`
     },

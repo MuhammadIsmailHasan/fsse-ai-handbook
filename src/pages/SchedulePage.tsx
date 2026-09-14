@@ -6,8 +6,9 @@
  */
 import { Link } from 'react-router'
 import { PageHeader } from '../components/ui/PageHeader'
-import { allLessons, course } from '../content'
 import { orderedStream, pickForBudget } from '../content/planning'
+import { useContent } from '../hooks/useContent'
+import { useLocale } from '../hooks/useLocale'
 import { useStudy } from '../hooks/useStudy'
 import { dueItems } from '../lib/spaced-repetition'
 import type { LessonMeta } from '../types/content'
@@ -20,29 +21,32 @@ const WEEKLY_BUDGET = {
   project: 90, // Sat: 1.5 h
 } as const
 
+// Text is stored as message keys, translated when rendered.
 const STREAMS = [
-  { key: 'module', title: '📘 Module lessons', when: 'Mon–Fri · 2 h/day' },
-  { key: 'dsa', title: '🧩 DSA', when: 'Mon–Fri · 1 h/day' },
-  { key: 'architecture', title: '🏛️ Architecture', when: 'Saturday · 1.5 h' },
-  { key: 'project', title: '⭐ Project', when: 'Saturday · 1.5 h' },
+  { key: 'module', title: 'schedule.streamModule', when: 'schedule.whenModule' },
+  { key: 'dsa', title: 'schedule.streamDsa', when: 'schedule.whenDsa' },
+  { key: 'architecture', title: 'schedule.streamArchitecture', when: 'schedule.whenSaturday' },
+  { key: 'project', title: 'schedule.streamProject', when: 'schedule.whenSaturday' },
 ] as const
 
 const ROUTINE = [
-  { day: 'Mon–Fri', plan: '2 h module lesson + 1 h DSA' },
-  { day: 'Saturday', plan: '1.5 h Architecture + 1.5 h CareerPilot' },
-  { day: 'Sunday', plan: 'Light: DSA spaced review + weekly LinkedIn post, or rest' },
-]
+  { day: 'schedule.monFri', plan: 'schedule.routineWeekday' },
+  { day: 'schedule.saturday', plan: 'schedule.routineSaturday' },
+  { day: 'schedule.sunday', plan: 'schedule.routineSunday' },
+] as const
 
 export function SchedulePage() {
   const { completed, targetRole, reviewQueue } = useStudy()
   const due = dueItems(reviewQueue, new Date()).length
+  const { allLessons, course } = useContent()
+  const { t } = useLocale()
 
   return (
     <div className="mx-auto max-w-4xl">
       <PageHeader
-        eyebrow="Overview"
-        title="This Week"
-        description="Your next lessons, picked in the recommended order and sized to ~18 hours. Only 🟢 Core and 🔵 Recommended lessons for your target role are included."
+        eyebrow={t('schedule.eyebrow')}
+        title={t('schedule.title')}
+        description={t('schedule.description')}
       />
 
       <section className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
@@ -54,9 +58,9 @@ export function SchedulePage() {
                 className="border-b border-slate-100 last:border-0 dark:border-slate-800"
               >
                 <th className="w-32 px-4 py-2.5 font-medium text-slate-900 dark:text-white">
-                  {row.day}
+                  {t(row.day)}
                 </th>
-                <td className="px-4 py-2.5 text-slate-600 dark:text-slate-400">{row.plan}</td>
+                <td className="px-4 py-2.5 text-slate-600 dark:text-slate-400">{t(row.plan)}</td>
               </tr>
             ))}
           </tbody>
@@ -68,7 +72,7 @@ export function SchedulePage() {
           to="/tracks/dsa/review"
           className="mb-8 block rounded-xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-medium text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
         >
-          🔁 {due} DSA problem{due === 1 ? '' : 's'} due for review →
+          {due === 1 ? t('schedule.dueOne') : t('schedule.dueMany', { count: due })}
         </Link>
       )}
 
@@ -83,8 +87,8 @@ export function SchedulePage() {
           return (
             <StreamCard
               key={stream.key}
-              title={stream.title}
-              when={stream.when}
+              title={t(stream.title)}
+              when={t(stream.when)}
               lessons={lessons}
             />
           )
@@ -96,6 +100,8 @@ export function SchedulePage() {
 
 function StreamCard(props: { title: string; when: string; lessons: LessonMeta[] }) {
   const minutes = props.lessons.reduce((sum, lesson) => sum + lesson.durationMinutes, 0)
+  const { t, formatNumber } = useLocale()
+  const hours = (m: number) => formatNumber(Math.round((m / 60) * 10) / 10)
 
   return (
     <section className="rounded-xl border border-slate-200 p-5 dark:border-slate-800">
@@ -104,9 +110,7 @@ function StreamCard(props: { title: string; when: string; lessons: LessonMeta[] 
         <span className="text-xs text-slate-500">{props.when}</span>
       </div>
       {props.lessons.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-400 italic">
-          Nothing planned — all done here, or content is still being written.
-        </p>
+        <p className="mt-3 text-sm text-slate-400 italic">{t('schedule.nothingPlanned')}</p>
       ) : (
         <>
           <ol className="mt-3 space-y-2">
@@ -120,14 +124,14 @@ function StreamCard(props: { title: string; when: string; lessons: LessonMeta[] 
                     {lesson.title}
                   </span>
                   <span className="text-xs text-slate-500">
-                    ~{Math.round((lesson.durationMinutes / 60) * 10) / 10} h
+                    {t('schedule.hours', { hours: hours(lesson.durationMinutes) })}
                   </span>
                 </Link>
               </li>
             ))}
           </ol>
           <p className="mt-3 text-xs text-slate-500">
-            Planned: ~{Math.round((minutes / 60) * 10) / 10} h
+            {t('schedule.planned', { hours: hours(minutes) })}
           </p>
         </>
       )}

@@ -6,24 +6,27 @@ import { MilestoneCard } from '../components/ui/MilestoneCard'
 import { PageHeader } from '../components/ui/PageHeader'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { RoleBadges } from '../components/ui/RoleBadges'
-import { course, getLessonsInGroup } from '../content'
 import { countProgress } from '../content/progress'
+import { useContent } from '../hooks/useContent'
+import { useLocale } from '../hooks/useLocale'
 import { useStudy } from '../hooks/useStudy'
 
 export function RoadmapPage() {
   const { completed } = useStudy()
+  const { course, getLessonsInGroup } = useContent()
+  const { t } = useLocale()
 
   return (
     <div className="mx-auto max-w-5xl space-y-12">
       <PageHeader
-        eyebrow="Overview"
-        title="Roadmap"
-        description="Eight modules in order, two tracks alongside them, and projects that grow with you. You can start applying for jobs at Milestone 1."
+        eyebrow={t('roadmap.eyebrow')}
+        title={t('roadmap.title')}
+        description={t('roadmap.description')}
       />
 
       <section>
         <h2 className="mb-4 text-xl font-bold text-slate-900 dark:text-white">
-          Job-ready milestones
+          {t('milestones.heading')}
         </h2>
         <div className="grid gap-4 md:grid-cols-3">
           {course.milestones.map((milestone) => (
@@ -33,7 +36,9 @@ export function RoadmapPage() {
       </section>
 
       <section>
-        <h2 className="mb-4 text-xl font-bold text-slate-900 dark:text-white">Modules</h2>
+        <h2 className="mb-4 text-xl font-bold text-slate-900 dark:text-white">
+          {t('roadmap.modules')}
+        </h2>
         <div className="grid gap-4 md:grid-cols-2">
           {course.modules.map((module) => {
             const progress = countProgress(getLessonsInGroup('modules', module.id), completed)
@@ -44,8 +49,8 @@ export function RoadmapPage() {
                 className="rounded-xl border border-slate-200 p-5 hover:border-indigo-400 dark:border-slate-800 dark:hover:border-indigo-500"
               >
                 <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400">
-                  Module {module.number} ·{' '}
-                  {module.source === 'original' ? '🔥 Bonus' : '📘 the bootcamp outline'}
+                  {t('roadmap.moduleNumber', { number: module.number })}
+                  {module.source === 'original' ? t('roadmap.bonus') : t('roadmap.coreOutline')}
                   {module.source === 'mixed' ? ' + 🔥' : ''}
                 </p>
                 <h3 className="mt-1 font-semibold text-slate-900 dark:text-white">
@@ -56,9 +61,14 @@ export function RoadmapPage() {
                   <RoleBadges roles={module.roles} />
                 </div>
                 <div className="mt-4 flex items-center gap-3">
-                  <ProgressBar percent={progress.percent} label={`${module.title} progress`} />
+                  <ProgressBar
+                    percent={progress.percent}
+                    label={t('list.progress', { title: module.title })}
+                  />
                   <span className="shrink-0 text-xs text-slate-500 tabular-nums">
-                    {progress.total ? `${progress.done}/${progress.total}` : 'coming soon'}
+                    {progress.total
+                      ? `${progress.done}/${progress.total}`
+                      : t('roadmap.comingSoon')}
                   </span>
                 </div>
               </Link>
@@ -69,7 +79,9 @@ export function RoadmapPage() {
 
       <section className="grid gap-8 md:grid-cols-2">
         <div>
-          <h2 className="mb-4 text-xl font-bold text-slate-900 dark:text-white">Parallel tracks</h2>
+          <h2 className="mb-4 text-xl font-bold text-slate-900 dark:text-white">
+            {t('roadmap.tracks')}
+          </h2>
           <div className="space-y-3">
             {course.tracks.map((track) => (
               <Link
@@ -84,7 +96,9 @@ export function RoadmapPage() {
           </div>
         </div>
         <div>
-          <h2 className="mb-4 text-xl font-bold text-slate-900 dark:text-white">Projects</h2>
+          <h2 className="mb-4 text-xl font-bold text-slate-900 dark:text-white">
+            {t('roadmap.projects')}
+          </h2>
           <div className="space-y-3">
             {course.projects.map((project) => (
               <Link

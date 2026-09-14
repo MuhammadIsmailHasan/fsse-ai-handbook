@@ -6,6 +6,7 @@
  */
 import { Link } from 'react-router'
 import { countProgress, isVisibleForRole } from '../../content/progress'
+import { useLocale } from '../../hooks/useLocale'
 import { useStudy } from '../../hooks/useStudy'
 import { levelFor } from '../../lib/roles'
 import type { LessonMeta } from '../../types/content'
@@ -23,6 +24,7 @@ export type LessonSection = {
 
 export function SectionedLessonList({ sections }: { sections: LessonSection[] }) {
   const { completed, targetRole, hideNotNeeded } = useStudy()
+  const { t, locale, formatNumber } = useLocale()
 
   return (
     <div className="space-y-6">
@@ -49,19 +51,22 @@ export function SectionedLessonList({ sections }: { sections: LessonSection[] })
               </div>
               {progress.total > 0 && (
                 <span className="text-xs text-slate-500 tabular-nums">
-                  {progress.done}/{progress.total} done
+                  {t('list.done', { done: progress.done, total: progress.total })}
                 </span>
               )}
             </div>
 
             {progress.total > 0 && (
               <div className="mt-3">
-                <ProgressBar percent={progress.percent} label={`${section.title} progress`} />
+                <ProgressBar
+                  percent={progress.percent}
+                  label={t('list.progress', { title: section.title })}
+                />
               </div>
             )}
 
             {section.lessons.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-400 italic">Content coming soon.</p>
+              <p className="mt-3 text-sm text-slate-400 italic">{t('list.comingSoon')}</p>
             ) : (
               <ul className="mt-4 divide-y divide-slate-100 dark:divide-slate-800/70">
                 {visible.map((lesson) => (
@@ -76,14 +81,26 @@ export function SectionedLessonList({ sections }: { sections: LessonSection[] })
                         <LevelDot level={levelFor(lesson.roles, targetRole)} />
                       )}
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium">{lesson.title}</span>
+                        <span className="block text-sm font-medium">
+                          {lesson.title}
+                          {lesson.language !== locale && (
+                            <span
+                              className="ml-2 rounded bg-slate-100 px-1 py-px align-middle text-[0.65rem] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                              title={t('list.englishOnlyTitle')}
+                            >
+                              {t('list.englishOnly')}
+                            </span>
+                          )}
+                        </span>
                         <span className="block truncate text-xs text-slate-500">
                           {lesson.summary}
                         </span>
                       </span>
                       <span className="hidden shrink-0 text-xs text-slate-400 sm:inline">
-                        {lesson.source === 'original' ? '🔥 Bonus · ' : ''}~
-                        {Math.round((lesson.durationMinutes / 60) * 10) / 10} h
+                        {lesson.source === 'original' ? t('list.bonusPrefix') : ''}
+                        {t('schedule.hours', {
+                          hours: formatNumber(Math.round((lesson.durationMinutes / 60) * 10) / 10),
+                        })}
                       </span>
                     </Link>
                   </li>

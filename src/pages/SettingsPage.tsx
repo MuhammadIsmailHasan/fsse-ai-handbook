@@ -8,16 +8,15 @@
  */
 import { useState, type ReactNode } from 'react'
 import { PageHeader } from '../components/ui/PageHeader'
+import { useContent } from '../hooks/useContent'
+import { useLocale } from '../hooks/useLocale'
 import { useStudy } from '../hooks/useStudy'
 import { useTheme, type ThemePreference } from '../hooks/useTheme'
 import { clearAllData, downloadBackup, restoreBackup } from '../lib/backup'
+import { LOCALE_INFO, LOCALES } from '../i18n/messages'
 import { TARGET_ROLES } from '../lib/roles'
 
-const THEME_OPTIONS = [
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'system', label: 'System' },
-] as const satisfies ReadonlyArray<{ value: ThemePreference; label: string }>
+const THEME_OPTIONS = ['light', 'dark', 'system'] as const satisfies ReadonlyArray<ThemePreference>
 
 const optionClass =
   'flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm has-checked:border-indigo-500 has-checked:bg-indigo-50 dark:border-slate-700 dark:has-checked:bg-indigo-500/10'
@@ -25,14 +24,42 @@ const optionClass =
 export function SettingsPage() {
   const { preference, setPreference } = useTheme()
   const { targetRole, setTargetRole, hideNotNeeded, setHideNotNeeded } = useStudy()
+  const { locale, setLocale, t } = useLocale()
+  const { allLessons, translatedCount } = useContent()
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <PageHeader eyebrow="App" title="Settings" />
+      <PageHeader eyebrow={t('settings.eyebrow')} title={t('settings.title')} />
 
-      <Card title="🎯 Target role" description="Lessons show how important they are for this role.">
+      <Card title={t('settings.language')} description={t('settings.languageDescription')}>
+        <fieldset className="flex flex-wrap gap-2">
+          <legend className="sr-only">{t('settings.language')}</legend>
+          {LOCALES.map((option) => (
+            <label key={option} className={optionClass}>
+              <input
+                type="radio"
+                name="locale"
+                checked={locale === option}
+                onChange={() => setLocale(option)}
+                className="mt-0.5 accent-indigo-600"
+              />
+              {LOCALE_INFO[option].flag} {LOCALE_INFO[option].name}
+            </label>
+          ))}
+        </fieldset>
+        {locale !== 'en' && (
+          <p className="mt-3 text-xs text-slate-500">
+            {t('settings.translationProgress', {
+              translated: translatedCount,
+              total: allLessons.length,
+            })}
+          </p>
+        )}
+      </Card>
+
+      <Card title={t('targetRole.heading')} description={t('settings.targetRoleDescription')}>
         <fieldset className="grid gap-2 sm:grid-cols-2">
-          <legend className="sr-only">Target role</legend>
+          <legend className="sr-only">{t('settings.targetRoleLegend')}</legend>
           {TARGET_ROLES.map((role) => (
             <label key={role.id} className={optionClass}>
               <input
@@ -44,7 +71,7 @@ export function SettingsPage() {
               />
               <span>
                 <span className="block font-medium">{role.label}</span>
-                <span className="block text-xs text-slate-500">{role.description}</span>
+                <span className="block text-xs text-slate-500">{t(role.descriptionKey)}</span>
               </span>
             </label>
           ))}
@@ -57,23 +84,23 @@ export function SettingsPage() {
             onChange={(event) => setHideNotNeeded(event.target.checked)}
             className="accent-indigo-600"
           />
-          Hide lessons marked ➖ “not needed” for my target role
+          {t('settings.hideNotNeeded')}
         </label>
       </Card>
 
-      <Card title="Theme">
+      <Card title={t('settings.theme')}>
         <fieldset className="flex flex-wrap gap-2">
-          <legend className="sr-only">Theme</legend>
+          <legend className="sr-only">{t('settings.theme')}</legend>
           {THEME_OPTIONS.map((option) => (
-            <label key={option.value} className={optionClass}>
+            <label key={option} className={optionClass}>
               <input
                 type="radio"
                 name="theme"
-                checked={preference === option.value}
-                onChange={() => setPreference(option.value)}
+                checked={preference === option}
+                onChange={() => setPreference(option)}
                 className="mt-0.5 accent-indigo-600"
               />
-              {option.label}
+              {t(`theme.${option}`)}
             </label>
           ))}
         </fieldset>
@@ -87,12 +114,13 @@ export function SettingsPage() {
 function BackupCard() {
   const [message, setMessage] = useState<string | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
+  const { t } = useLocale()
 
   async function handleImport(file: File | undefined) {
     if (!file) return
     try {
       const count = await restoreBackup(file)
-      setMessage(`Restored ${count} item(s). Reloading…`)
+      setMessage(t('settings.restored', { count }))
       window.setTimeout(() => window.location.reload(), 800)
     } catch (error) {
       setMessage((error as Error).message)
@@ -109,17 +137,14 @@ function BackupCard() {
   }
 
   return (
-    <Card
-      title="💾 Progress backup"
-      description="Progress, notes and settings live only in this browser. Export a backup regularly — clearing browser data deletes them."
-    >
+    <Card title={t('settings.backup')} description={t('settings.backupDescription')}>
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={downloadBackup} className={buttonClass}>
-          Export progress (.json)
+          {t('settings.export')}
         </button>
 
         <label className={`${buttonClass} cursor-pointer`}>
-          Import backup…
+          {t('settings.import')}
           <input
             type="file"
             accept="application/json,.json"
@@ -134,7 +159,7 @@ function BackupCard() {
           onBlur={() => setConfirmReset(false)}
           className={`${buttonClass} ${confirmReset ? 'border-red-500 bg-red-600 text-white hover:bg-red-700' : 'text-red-600 dark:text-red-400'}`}
         >
-          {confirmReset ? 'Click again to delete everything' : 'Reset all data'}
+          {confirmReset ? t('settings.resetConfirm') : t('settings.reset')}
         </button>
       </div>
       {message && (

@@ -61,6 +61,21 @@ export const lessonFrontmatterSchema = z
     path: ['sourceRef'],
   })
 
+// ── Translations (`01-lesson.id.md` next to `01-lesson.md`) ──────────────────
+
+/**
+ * A translated lesson only carries the text that changes. Everything else
+ * (roles, duration, tags…) comes from the English file, so it can't drift.
+ * `sourceHash` fingerprints the English text it was translated from — when the
+ * English lesson changes, `npm run content:check` reports the translation as stale.
+ */
+export const translationFrontmatterSchema = z.strictObject({
+  title: z.string().min(1),
+  // Indonesian runs ~20% longer than English, so allow a little more room.
+  summary: z.string().min(1).max(300),
+  sourceHash: z.string().regex(/^[0-9a-f]{12}$/, 'Run: npm run i18n -- stamp <file>'),
+})
+
 // ── course.json (modules, weeks, tracks, projects) ───────────────────────────
 
 const sectionSchema = z.strictObject({
@@ -115,4 +130,37 @@ export const courseSchema = z.strictObject({
     architecture: z.array(z.string().min(1)),
     project: z.array(z.string().min(1)),
   }),
+})
+
+// ── course.<locale>.json — translated titles for course.json ────────────────
+// Every field is optional: anything missing falls back to English.
+
+const textOverlay = z.strictObject({ title: z.string().min(1), summary: z.string().optional() })
+
+export const courseTranslationSchema = z.strictObject({
+  modules: z
+    .record(
+      z.string(),
+      textOverlay.partial().extend({ weeks: z.record(z.string(), textOverlay.partial()).optional() }),
+    )
+    .default({}),
+  tracks: z
+    .record(
+      z.string(),
+      textOverlay.partial().extend({ stages: z.record(z.string(), textOverlay.partial()).optional() }),
+    )
+    .default({}),
+  projects: z
+    .record(z.string(), z.strictObject({ title: z.string().optional(), tagline: z.string().optional() }))
+    .default({}),
+  milestones: z
+    .record(
+      z.string(),
+      z.strictObject({
+        title: z.string().optional(),
+        applyFor: z.string().optional(),
+        estimate: z.string().optional(),
+      }),
+    )
+    .default({}),
 })

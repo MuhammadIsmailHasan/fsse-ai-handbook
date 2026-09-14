@@ -11,6 +11,7 @@
  * (The first paragraph is the question; everything after it is the answer.)
  */
 import { useState, type ReactNode } from 'react'
+import { useLocale } from '../../hooks/useLocale'
 
 export function Quiz({ children }: { children?: ReactNode }) {
   return (
@@ -33,6 +34,7 @@ export function QuizQuestion({ children }: { children?: ReactNode }) {
 
 export function QuizAnswer({ children }: { children?: ReactNode }) {
   const [open, setOpen] = useState(false)
+  const { t } = useLocale()
 
   return (
     <div className="mt-2">
@@ -42,7 +44,7 @@ export function QuizAnswer({ children }: { children?: ReactNode }) {
         aria-expanded={open}
         className="not-prose text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400"
       >
-        {open ? 'Hide answer' : 'Show answer'}
+        {open ? t('quiz.hide') : t('quiz.show')}
       </button>
       {open && (
         <div className="mt-2 rounded-lg bg-slate-50 px-4 py-1 dark:bg-slate-900">{children}</div>

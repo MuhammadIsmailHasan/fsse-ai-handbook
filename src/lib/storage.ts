@@ -13,6 +13,7 @@
 /** Every key we store, in one place, so names never drift apart. */
 export const STORAGE_KEYS = {
   theme: 'fsse:theme',
+  locale: 'fsse:locale',
   progress: 'fsse:progress',
   targetRole: 'fsse:target-role',
   notes: 'fsse:notes',

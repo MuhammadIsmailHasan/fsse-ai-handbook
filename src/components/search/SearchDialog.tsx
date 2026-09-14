@@ -8,6 +8,8 @@
  */
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router'
+import { useContent } from '../../hooks/useContent'
+import { useLocale } from '../../hooks/useLocale'
 import { searchLessons } from '../../lib/search'
 import { Icon } from '../ui/Icon'
 
@@ -47,8 +49,10 @@ function SearchContent({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
+  const { allLessons } = useContent()
+  const { t } = useLocale()
 
-  const results = searchLessons(query)
+  const results = searchLessons(query, allLessons)
   const safeIndex = Math.min(activeIndex, Math.max(results.length - 1, 0))
 
   function openResult(index: number) {
@@ -83,8 +87,8 @@ function SearchContent({ onClose }: { onClose: () => void }) {
             setActiveIndex(0)
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Search lessons, topics, tags…"
-          aria-label="Search lessons"
+          placeholder={t('search.placeholder')}
+          aria-label={t('search.label')}
           className="h-14 flex-1 bg-transparent text-base outline-none placeholder:text-slate-400"
         />
         <kbd className="rounded border border-slate-300 px-1.5 text-xs text-slate-400 dark:border-slate-700">
@@ -92,14 +96,16 @@ function SearchContent({ onClose }: { onClose: () => void }) {
         </kbd>
       </div>
 
-      <ul className="max-h-[60vh] overflow-y-auto p-2" role="listbox" aria-label="Results">
+      <ul
+        className="max-h-[60vh] overflow-y-auto p-2"
+        role="listbox"
+        aria-label={t('search.results')}
+      >
         {query.trim().length >= 2 && results.length === 0 && (
-          <li className="px-3 py-6 text-center text-sm text-slate-500">No lessons found.</li>
+          <li className="px-3 py-6 text-center text-sm text-slate-500">{t('search.none')}</li>
         )}
         {query.trim().length < 2 && (
-          <li className="px-3 py-6 text-center text-sm text-slate-500">
-            Type at least 2 characters.
-          </li>
+          <li className="px-3 py-6 text-center text-sm text-slate-500">{t('search.tooShort')}</li>
         )}
         {results.map((lesson, index) => (
           <li key={lesson.id} role="option" aria-selected={index === safeIndex}>

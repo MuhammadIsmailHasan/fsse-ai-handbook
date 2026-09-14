@@ -11,6 +11,7 @@
 import { useState } from 'react'
 import { Outlet, ScrollRestoration } from 'react-router'
 import { useModHotkey } from '../../hooks/useHotkey'
+import { useLocale } from '../../hooks/useLocale'
 import { SearchDialog } from '../search/SearchDialog'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
@@ -18,6 +19,7 @@ import { TopBar } from './TopBar'
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const { t } = useLocale()
 
   useModHotkey('k', () => setSearchOpen(true))
 
@@ -27,7 +29,7 @@ export function AppLayout() {
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-indigo-600 focus:px-3 focus:py-2 focus:text-white"
       >
-        Skip to content
+        {t('layout.skipToContent')}
       </a>
 
       <TopBar onMenuClick={() => setSidebarOpen(true)} onSearchClick={() => setSearchOpen(true)} />

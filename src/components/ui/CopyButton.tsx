@@ -5,6 +5,7 @@
  * cleaning up timers so they don't fire after the component is gone.
  */
 import { useEffect, useRef, useState } from 'react'
+import { useLocale } from '../../hooks/useLocale'
 
 type CopyButtonProps = {
   /** Text to copy, or a function that returns it at click time. */
@@ -13,7 +14,8 @@ type CopyButtonProps = {
   className?: string
 }
 
-export function CopyButton({ text, label = 'Copy', className }: CopyButtonProps) {
+export function CopyButton({ text, label, className }: CopyButtonProps) {
+  const { t } = useLocale()
   const [copied, setCopied] = useState(false)
   const timer = useRef<number | undefined>(undefined)
 
@@ -39,7 +41,7 @@ export function CopyButton({ text, label = 'Copy', className }: CopyButtonProps)
         'rounded px-2 py-0.5 font-sans text-xs font-medium text-slate-500 hover:bg-slate-200 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
       }
     >
-      {copied ? 'Copied ✓' : label}
+      {copied ? t('code.copied') : (label ?? t('code.copy'))}
     </button>
   )
 }
