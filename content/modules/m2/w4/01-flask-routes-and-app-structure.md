@@ -186,7 +186,7 @@ flowchart LR
     A --> B1[auth blueprint<br/>/api/v1/auth]
     A --> B2[jobs blueprint<br/>/api/v1/jobs]
     A --> B3[applications blueprint<br/>/api/v1/applications]
-    B2 --> V[get_job(7)]
+    B2 --> V["get_job(7)"]
 ```
 
 One blueprint per feature; each file stays small.

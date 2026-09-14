@@ -171,7 +171,7 @@ sequenceDiagram
     participant R as Route Handler (Next.js)
     participant F as Flask API
     C->>R: PATCH /api/applications/7 {status:"offer"} + session cookie
-    R->>R: getSession() → accessToken; validate id; parse JSON
+    R->>R: getSession() → accessToken, validate id, parse JSON
     R->>F: PATCH /api/v1/applications/7 Authorization: Bearer …
     F-->>R: 200 {…} or 422 {error…}
     R-->>C: same status + body

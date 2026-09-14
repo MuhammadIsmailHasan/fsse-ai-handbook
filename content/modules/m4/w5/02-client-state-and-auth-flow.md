@@ -65,7 +65,7 @@ sequenceDiagram
     N->>F: POST /api/v1/auth/login
     F-->>N: 200 { access_token, user }
     N->>N: sign session { userId, role, accessToken, exp }
-    N-->>B: Set-Cookie: session=…; HttpOnly; Secure; SameSite=Lax + redirect
+    N-->>B: Set-Cookie session (HttpOnly, Secure, SameSite=Lax) + redirect
     B->>N: GET /applications (cookie sent automatically)
     N->>N: proxy.ts: cookie valid? (optimistic)
     N->>N: page → DAL verifySession()
