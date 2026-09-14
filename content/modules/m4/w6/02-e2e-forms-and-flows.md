@@ -230,6 +230,7 @@ Tools like **Stryker** (JS/TS) and **mutmut** (Python) generate mutants automati
 - `page.fill("input[name=role]")` instead of `getByLabel("Role")` (hides missing labels).
 - Mocking your own API in "E2E" tests, then shipping a broken integration.
 - Leaving data behind so the second run fails ("already exists").
+- `getByRole("alert")` in a Next.js app matching **two** elements: Next.js renders an empty `role="alert"` route announcer. Filter by text: `getByRole("alert").filter({ hasText: "Invalid email or password" })`.
 
 ::part[Explain & Design]{n="2"}
 

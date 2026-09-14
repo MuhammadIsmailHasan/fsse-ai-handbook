@@ -269,7 +269,7 @@ The compare tray should survive a page refresh, but "tray open" shouldn't. How?
 
 ## 🔗 This week in CareerPilot
 
-Week 5 is the core of **CareerPilot Phase 4** (the Next.js frontend for your Phase 2 Flask API): login with httpOnly sessions, protected routes, the new-application form, RBAC-aware navigation, BFF routes for the interactive board, and shadcn/ui components. The Phase 4 brief and acceptance tests arrive with Week 6.
+Week 5 is the core of **CareerPilot Phase 4** (the Next.js frontend for your Phase 2 Flask API): login with httpOnly sessions, protected routes, the new-application form, RBAC-aware navigation, BFF routes for the interactive board, and shadcn/ui components. Start the [Phase 4 brief](/projects/careerpilot/04-phase-4-web-app) now: checkpoints C1–C5 match this week.
 
 :::linkedin{type="weekly"}
 🔐 Week 5: forms, authentication and "who can do what" in Next.js.

@@ -242,7 +242,7 @@ Shifts that happen after load or during scrolling/interaction (late banners, laz
 
 ## 🔗 CareerPilot Phase 4
 
-This week finishes **CareerPilot Phase 4**: the Next.js frontend for your Flask API, tested with Vitest and Playwright and deployable with Docker. The project brief, starter and acceptance tests are in the CareerPilot project section.
+This week finishes **CareerPilot Phase 4**: the Next.js frontend for your Flask API, tested with Vitest and Playwright and deployable with Docker. Finish checkpoints C6–C8 in the [Phase 4 brief](/projects/careerpilot/04-phase-4-web-app).
 
 :::linkedin{type="weekly"}
 🚀 Week 6: testing and shipping the Next.js frontend.
