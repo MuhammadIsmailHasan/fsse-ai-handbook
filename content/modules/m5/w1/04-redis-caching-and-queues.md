@@ -234,6 +234,14 @@ Set short socket timeouts and decide what happens when Redis is down: a cache sh
 - Deleting another request's lock.
 - Using Redis on the same small VM without memory limits and letting it evict queue data.
 
+:::revoshop
+1. **Measure before caching.** Start the dev stack (`config/development.py` has `SQLALCHEMY_ECHO = True`) and call `GET /api/v1/products/?page=1&limit=20`. Count the SQL statements in `docker compose logs web`. Is there an N+1 on product images or categories? Fix queries first; cache second.
+2. **Product list cache.** `ProductList.get` in `app/routes/products.py` takes `name`, `category_id`, `seller_id`, `min_price`, `max_price`, `sort_by`, `order`, `page` and `limit`. Design the cache key, the TTL, and the exact places in `app/services/product_service.py` where a create/update/delete must invalidate it. Why must prices stay strings (`Numeric`) in the cached JSON?
+3. **Login.** `AuthLogin.post` in `app/routes/auth.py` has no limit. Decide limits per email and per IP, the `429` body in RevoShop's `make_response` format, and what happens when Redis is down.
+4. **Your webhook is already partly idempotent.** Read `PaymentService.handle_notification` in `app/services/payment_service.py`: it verifies the signature with a constant-time compare and ignores a notification when `payment.status == new_payment_status`. Great. Now imagine Midtrans delivers the **same** notification twice **at the same moment**: both requests read `pending` before either commits. What happens? Compare two fixes: a Redis `run_once` guard vs a conditional `UPDATE payments SET status = … WHERE id = … AND status = 'pending'` in the repository.
+5. **Background work.** Which slow things in checkout or payments would you move to a queue (confirmation emails, expiring unpaid orders after `MIDTRANS_EXPIRY_MINUTES`)? Write the job payload for one of them.
+:::
+
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it

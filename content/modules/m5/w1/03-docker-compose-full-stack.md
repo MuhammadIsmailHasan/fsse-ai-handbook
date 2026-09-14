@@ -235,6 +235,17 @@ Many real products start with Compose on a VM + a managed database — you'll do
 - `docker compose down -v` in the wrong terminal.
 - Mixing `docker-compose` (v1, retired) commands and `docker compose` (v2) docs.
 
+:::revoshop
+Compare your two Compose files side by side.
+
+1. Run `docker compose -f docker-compose.prod.yml config` **without** a `.env` file. It fails with `set POSTGRES_USER` — good, you already use `${VAR:?}` for required secrets. Which required variables does the **dev** file silently default instead (`JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-key-change-me}`)? Is that acceptable for development?
+2. **Migrations.** Both files set `RUN_MIGRATIONS: "true"` and `docker/entrypoint.sh` runs `flask db upgrade` on every container start. Rewrite that as a one-off `migrate` service with `service_completed_successfully`, like the exercise.
+3. **Exposure.** `docker-compose.prod.yml` publishes gunicorn directly on `${WEB_PORT:-8000}`. Where would Caddy go, which network would PostgreSQL move to, and which `ports:` disappear?
+4. **Scaling blockers.** Both files use fixed `container_name`s. Try `docker compose -f docker-compose.prod.yml up -d --scale web=2` and read the error.
+5. **Health.** The prod healthcheck calls `/api/v1/health`, which queries PostgreSQL (`app/routes/health.py`). Why is that a good *readiness* signal but a risky *liveness* signal? Which endpoint will you add?
+6. Draw RevoShop's target stack as a table (service · image · command · networks · ports · depends_on) before you touch the files in lesson 05.
+:::
+
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it

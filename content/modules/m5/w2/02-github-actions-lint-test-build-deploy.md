@@ -254,6 +254,14 @@ Tools: **actionlint** (syntax and expression errors) and **zizmor** (security au
 - `needs.build.outputs.image` empty because the output wasn't declared at job level.
 - Forgetting `packages: write` → "denied: installation not allowed to Create organization package".
 
+:::revoshop
+1. **SQLite vs PostgreSQL.** `tests/conftest.py` sets `os.environ['DATABASE_URL'] = 'sqlite:///:memory:'` and uses `db.create_all()`. So your 467 tests never exercise **Alembic migrations** or PostgreSQL constraints (the test output even prints your `ck_payments_status_valid` CHECK constraint DDL for SQLite). Design a separate CI job that starts a `postgres:16-alpine` service, runs `flask db upgrade` from an empty database, and then boots the app against it.
+2. **Lint.** You already have `.pylintrc` and `pylint` in `requirements-dev.txt`. Run `pylint app config` locally. Will CI fail on warnings from day one, or will you start with `--fail-under` and raise it over time?
+3. **What gets built.** In CI the `build` job should use the `prod` target from lesson W1·05. Which job outputs does the deploy job need (hint: the digest), and what should happen on a pull request?
+4. **An end-to-end job.** Your `compose.prod.yaml` from W1·05 can run inside a GitHub runner: generate throwaway secrets, `docker compose … up -d --build --wait`, then run the smoke tests with `REVOSHOP_URL=http://localhost:8080`. Where in the job graph does that belong, and how long can you afford it to take?
+5. **Deploy target.** You have no server yet (that's Week 3–4). Design `deploy-staging` now but guard it with `if: vars.STAGING_ENABLED == 'true'` so the pipeline stays green until the server exists.
+:::
+
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it

@@ -174,6 +174,14 @@ return legacy_checkout(cart)
 - A single shared `.env` file passed around in chat.
 - Webhook URLs (Midtrans notification URL) still pointing to staging after launch.
 
+:::revoshop
+1. **Config classes.** `config/__init__.py` maps only `development` and `production`, chosen by `FLASK_ENV` in `app/__init__.py`. Tests don't use a class at all — `tests/conftest.py` patches the config. After W1·05 you select with `APP_ENV`. Which class should **staging** use, and why not a new `StagingConfig` full of `if` statements?
+2. **Key drift you already have.** Compare the variable names in `.env.example` and `.env.docker.example` (names only — don't open your real `.env`). Run the parity checker from exercise 03 on the two example files. Which keys exist in one but not the other?
+3. **Midtrans per environment.** `MIDTRANS_IS_PRODUCTION` switches between `SANDBOX_SNAP_URL` and `PRODUCTION_SNAP_URL` in `app/integrations/midtrans.py`. The **notification URL** isn't in your code — it's set in the Midtrans dashboard. Write down which dashboard (sandbox vs production), which URL each environment will use, and what happens to staging payments if someone points the sandbox notification URL at production.
+4. **Staging data.** You have `seeders/seeders.py`. Which accounts and products should staging always contain so you can test buying, paying (sandbox) and seller fulfillment in five minutes?
+5. **Deploy vs release.** Pick one upcoming RevoShop change (e.g. the login rate limit) and describe how a simple environment-variable flag would let you deploy it dark and turn it on later.
+:::
+
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it

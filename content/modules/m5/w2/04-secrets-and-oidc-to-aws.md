@@ -219,6 +219,15 @@ Start narrow and add permissions when a deploy fails with `AccessDenied` — rea
 - A job with `environment: production` but a trust policy expecting `ref:refs/heads/main` (the `sub` changes when an environment is used).
 - Rotating a leaked secret *after* cleaning history (the window stays open).
 
+:::revoshop
+1. **Good news first.** `git log --all --oneline -- .env .env.docker` returns nothing in your repo, and `git check-ignore -v .env .env.docker` confirms both are ignored — your real keys were never committed. Keep it that way: add a pre-commit `gitleaks protect --staged` hook and enable push protection on your personal copy.
+2. **Scan history anyway.** Run `gitleaks detect --source . --redact` on the repository. The Midtrans examples use `SB-Mid-server-xxxx…` placeholders — confirm nothing real was ever committed in Postman collections (`postman/`) or docs.
+3. **Inventory.** List every secret RevoShop uses (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `MIDTRANS_SERVER_KEY`, …) and mark which are *not* secrets (`MIDTRANS_CLIENT_KEY` is used by clients; `MIDTRANS_IS_PRODUCTION` is config). For each secret: where it lives locally, in CI, in staging and in production.
+4. **The silent fallback.** `config/base.py` still contains `JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'super-secret-key-change-in-production')`. After W1·05 production refuses to start without a real key — but what about a `development` container accidentally exposed to the internet? Would you remove the default entirely?
+5. **Rotation drill.** Plan how you would rotate `JWT_SECRET_KEY` without logging every user out at once (hint: sign new tokens with the new key but keep verifying with the old one during a transition window — Flask-JWT-Extended lets you choose the verification key per token with `@jwt.decode_key_loader`).
+6. **Your first trust policy.** With the exercise's `trust_policy()`, generate RevoShop's staging and production policies for your personal repository name, and write the `sub` values your jobs will present.
+:::
+
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it

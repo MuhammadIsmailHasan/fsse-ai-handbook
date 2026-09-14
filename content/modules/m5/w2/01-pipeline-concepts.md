@@ -149,6 +149,14 @@ They balance each other: deploying often is only good if failures stay rare and 
 - Irreversible migrations deployed together with code that depends on them.
 - Counting deploys without tracking failures and recovery.
 
+:::revoshop
+1. **Today's pipeline.** Your repo has no `.github/workflows/`. Write down how RevoShop gets from a commit to "running" today, step by step (who runs tests, who builds, where it runs). That's your *current* pipeline — manual.
+2. **Branches.** You have long-lived `main`, `dev` and `dev-docs`. What does merging `dev` into `main` look like after a week of work? What would trunk-based development change?
+3. **Feedback time.** Time your suite: `time python -m pytest -q`. In a clean environment it took about **7.5 minutes** for 467 tests. Open `app/auth.py`: `bcrypt.gensalt()` uses the default cost for *every* test user. What does that do to change lead time? (Lesson 05 fixes it.)
+4. **A red baseline.** In a clean checkout (no `.env`), **5 tests fail** — among them `tests/integration/test_products.py::TestGetProducts::test_get_products_no_auth`, which expects `401` while the API returns `200` for the public product list. Before automating anything: is the code right or the test? A pipeline that is red from day one teaches everyone to ignore it.
+5. **DORA baseline.** Fill in RevoShop's four metrics honestly (deployment frequency "never" is a valid answer) and set a target for the end of Module 5.
+:::
+
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it

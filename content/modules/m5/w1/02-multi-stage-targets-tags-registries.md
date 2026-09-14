@@ -213,6 +213,14 @@ flowchart LR
 - Shipping the `test` stage by forgetting `--target` order.
 - `latest` pushed from feature branches.
 
+:::revoshop
+1. **One stage today.** Your `Dockerfile` has a single stage that copies the whole repo. Meanwhile `.dockerignore` excludes `tests/` and `requirements-dev.txt` — so you *can't* run your 467 tests inside any image. Sketch the `test` and `prod` targets: what does each `COPY`, and why does `prod` copy only `app/`, `config/`, `migrations/`, `run.py` and `gunicorn.conf.py`?
+2. **Dev dependencies are heavy.** Open `requirements-dev.txt`: Locust brings `gevent`, `pyzmq`, `psutil` and more. Estimate what they'd add to a production image, and why keeping them in a `test` target matters.
+3. **Tags for your branches.** Your repo has `main`, `dev` and `dev-docs`. Use your `image_meta.py` from the exercise: `image_tags("ghcr.io/<you>/revoshop-api", ref="refs/heads/dev-docs", sha=$(git rev-parse HEAD))`. Which tags would a push to `dev` produce, and which branch should get `edge`?
+4. **Labels.** `docker image inspect module-2-muhammadismailhasan-web --format '{{json .Config.Labels}}'` → no OCI labels. Which four labels would have helped you most if production broke at night?
+5. **Registry plan.** Your the bootcamp repository belongs to an organization. Where will you push images — GHCR under your personal account (Week 2) or ECR (Week 4)? Write the full image names now.
+:::
+
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it

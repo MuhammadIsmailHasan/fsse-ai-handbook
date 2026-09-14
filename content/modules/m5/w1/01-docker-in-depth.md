@@ -210,6 +210,16 @@ Plus: small base images, no secrets in layers, scan images (`docker scout cves`,
 - Mounting the Docker socket into an app "for convenience".
 - Images that only work on the developer's CPU architecture.
 
+:::revoshop
+Your repo: `~/path/to/revoshop`.
+
+1. **The 137 on your machine.** `docker ps -a` shows `revoshop-web  Exited (137)`. Run `docker inspect revoshop-web --format 'OOMKilled={{.State.OOMKilled}} ExitCode={{.State.ExitCode}}'`. On this laptop it reports `OOMKilled=false` — so it wasn't memory. What else sends SIGKILL? Look at `docker-compose.yml` (`command: flask run …`) and the production `Dockerfile` (`ENTRYPOINT ["entrypoint.sh"]` + shell-form `CMD gunicorn …`): who is PID 1, and does it receive `SIGTERM`? Test it: `docker compose up -d`, then `time docker compose stop web`.
+2. **Architecture.** `docker image inspect module-2-muhammadismailhasan-web --format '{{.Architecture}} {{.Size}}'` → `arm64`, ~221 MB. Which EC2 instance families could run this image as-is, and what must change to run it on a `t3` (x86) instance?
+3. **Networking.** In `docker-compose.yml` the database publishes `${DB_PORT:-5432}:5432` on **all** interfaces. Who on your Wi-Fi network can reach it? Change it to `127.0.0.1:${DB_PORT:-5432}:5432`.
+4. **Storage.** The `web` service has `volumes: - .:/app` and `- /app/logs`. What kind of volume is `/app/logs`, where do those files end up, and what happens to them on `docker compose down`? Why is `LOG_TO_FILE=true` (the default in `config/base.py`) a poor fit for containers?
+5. **Hardening.** Start the production image with `--read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges`. What breaks first (hint: the log directory) and how will lesson 05's changes fix it?
+:::
+
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
