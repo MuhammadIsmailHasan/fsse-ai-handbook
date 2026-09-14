@@ -28,6 +28,8 @@ dev = [
     "pyyaml>=6",
     "locust>=2.30",
     "redis>=6",
+    "boto3>=1.40",
+    "moto[ecs,events,iam,s3,secretsmanager,sqs,ssm,sts]>=5.1",
 ]
 
 [tool.uv]

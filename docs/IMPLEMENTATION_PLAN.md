@@ -1,6 +1,6 @@
 # FSSE Handbook — Implementation Plan
 
-> **Status:** v1.5 — B1–B6, C1, C2 done; **C5 moved up** at the learner's request (to deploy RevoShop) — C5a in progress
+> **Status:** v1.6 — B1–B6, C1, C2, C5a done; C5b Weeks 3–4 in progress
 > **Last updated:** 2026-09-13
 > **Owner:** Muhammad Ismail Hasan (learner) · written with Claude Code
 
@@ -753,7 +753,12 @@ type LessonMeta = {
 - [x] Module 5 W1 Containers: lessons, placement check, exercises (Dockerfile auditor, targets/tags, Compose, Redis patterns), RevoShop smoke-test tool, 🚀 Ship RevoShop 1 (validated on a scratch copy)
 - [x] Module 5 W2 CI/CD: lessons, placement check, exercises (DORA metrics, CI/CD workflow, env parity, OIDC trust policy), 🚀 Ship RevoShop 2
 - [x] 🔍 RevoShop boxes in every Module 5 lesson (learner request) — continue in W3–W7
-- [ ] **Learner reviews C5a** ✋ — before creating an AWS account
+- [x] **Learner reviews C5a** ✋ (approved: "u can continue for week 3 and 4")
+
+#### C5b — progress (part 1: Weeks 3–4)
+- [ ] Module 5 W3 AWS Foundations: lessons + RevoShop boxes, exercises (IAM simulator, cost guard, VPC & security groups, cloud-init, S3/RDS secrets with moto), 🚀 Ship RevoShop 3 (EC2 + RDS + HTTPS)
+- [ ] Module 5 W4 Deploying to AWS: lessons + RevoShop boxes, exercises, 🚀 Ship RevoShop 4 (ECS Fargate + ALB + SSM + OIDC, teardown)
+- [ ] **Learner reviews W3–W4** ✋
 
 Batch order follows the **milestone path**, not module numbers.
 

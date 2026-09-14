@@ -1,0 +1,27 @@
+{
+  "_note": "SAMPLE prices in USD for this exercise only. Real prices differ by region and change over time — always check the AWS Pricing Calculator.",
+  "hourly": {
+    "ec2:t4g.micro": 0.0084,
+    "ec2:t4g.small": 0.0168,
+    "ec2:t3.small": 0.0208,
+    "rds:db.t4g.micro": 0.016,
+    "alb": 0.0225,
+    "nat_gateway": 0.045,
+    "public_ipv4": 0.005,
+    "fargate:vcpu": 0.04048,
+    "fargate:gb": 0.004445
+  },
+  "monthly_per_gb": {
+    "ebs:gp3": 0.08,
+    "ebs:snapshot": 0.05,
+    "rds:gp3": 0.115,
+    "s3:standard": 0.023,
+    "data_transfer_out": 0.09,
+    "nat_processed": 0.045,
+    "cloudwatch_logs_ingest": 0.5
+  },
+  "monthly_each": {
+    "secretsmanager:secret": 0.4,
+    "route53:hosted_zone": 0.5
+  }
+}
