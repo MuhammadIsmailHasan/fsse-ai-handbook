@@ -1,6 +1,6 @@
 # FSSE Handbook — Implementation Plan
 
-> **Status:** v1.6 — B1–B6, C1, C2, C5a done; C5b Weeks 3–4 in progress
+> **Status:** v1.7 — B1–B6, C1, C2, C5a done; C5b Weeks 3–4 done (awaiting learner review ✋)
 > **Last updated:** 2026-09-13
 > **Owner:** Muhammad Ismail Hasan (learner) · written with Claude Code
 
@@ -110,6 +110,7 @@ This document is the roadmap for the whole project: **what** we build (a local h
 | D29 | Frontend project contract | CareerPilot Phase 4 acceptance tests find elements by **accessible names** and run against a **mock of the Phase 2 API** | Styling stays free, accessibility is enforced, and results don't depend on the learner's API data |
 | D30 | Batch order | **C5 (Module 5) moved before C3/C4**, split into **C5a** (W1–W2, local only) and **C5b** (W3–W7 + Architecture F/H/I + Phase 5) with a ✋ review before AWS | Learner wants to deploy RevoShop now; the pause keeps the AWS free-plan clock from starting early |
 | D31 | Ship RevoShop | Each Module 5 week ends with a **🚀 Ship RevoShop** lab applied to the learner's real RevoShop repo (production image, Compose, Redis, CI/CD, AWS deploy, IaC); the handbook guides, the learner changes their own repo; every M5 lesson also has a 🔍 RevoShop box (learner request) | Deploying a project you already know teaches DevOps on real constraints (Midtrans webhooks, migrations, secrets) |
+| D32 | AWS exercises | AWS exercises run **locally**: pure Python models (IAM evaluation, costs, networks) and boto3 code tested against **moto**; real AWS happens only in the 🚀 labs, whose scripts are first exercised locally (local registry, fake RDS, fake AWS CLI) | Verifiable without an account or bill; learners create resources only when they understand them |
 
 ---
 
@@ -756,8 +757,8 @@ type LessonMeta = {
 - [x] **Learner reviews C5a** ✋ (approved: "u can continue for week 3 and 4")
 
 #### C5b — progress (part 1: Weeks 3–4)
-- [ ] Module 5 W3 AWS Foundations: lessons + RevoShop boxes, exercises (IAM simulator, cost guard, VPC & security groups, cloud-init, S3/RDS secrets with moto), 🚀 Ship RevoShop 3 (EC2 + RDS + HTTPS)
-- [ ] Module 5 W4 Deploying to AWS: lessons + RevoShop boxes, exercises, 🚀 Ship RevoShop 4 (ECS Fargate + ALB + SSM + OIDC, teardown)
+- [x] Module 5 W3 AWS Foundations: 6 lessons + RevoShop boxes, 5 exercises (IAM simulator, cost guard, VPC & security groups, cloud-init, S3/RDS secrets with moto), 🚀 Ship RevoShop 3 (EC2 + RDS + HTTPS; deploy scripts tested locally incl. rollback)
+- [x] Module 5 W4 Deploying to AWS: 5 lessons + RevoShop boxes, 5 exercises (static sync plan, blue/green, ECS task definition, Lambda jobs, SSM config loader), 🚀 Ship RevoShop 4 (ECS Fargate + ALB + OIDC deploys + teardown)
 - [ ] **Learner reviews W3–W4** ✋
 
 Batch order follows the **milestone path**, not module numbers.

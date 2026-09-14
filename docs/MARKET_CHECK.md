@@ -31,7 +31,9 @@ This file records what the job market asks for, and how the handbook responds. S
 ### AWS Free Tier (affects Module 5)
 - Accounts created **on or after July 15, 2025** get **$100 credits (up to $200)** instead of the old 12-month free tier.
 - The Free plan **ends after 6 months or when credits run out**, whichever comes first.
-- → Create the AWS account **only when starting Module 5**.
+- Free plan accounts **close automatically** when the plan ends (data kept 90 days); joining **AWS Organizations** (or Control Tower) upgrades the account to the paid plan and **expires credits immediately**. Credits expire 12 months after account creation. *(Verified 2026-09-15 on AWS Free Tier FAQ and Billing docs.)*
+- AWS CLI 2.32+ supports `aws login` with console credentials — no access keys needed for local development.
+- → Create the AWS account **only when starting Module 5 Week 3**.
 
 ---
 
