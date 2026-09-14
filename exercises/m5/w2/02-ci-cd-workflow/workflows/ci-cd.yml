@@ -1,0 +1,4 @@
+# TODO: lint → test → build → deploy. See README.md.
+name: CI/CD
+on: push
+jobs: {}

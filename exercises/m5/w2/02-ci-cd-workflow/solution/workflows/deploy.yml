@@ -1,0 +1,44 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Target environment (staging or production)
+        required: true
+        type: string
+      image:
+        description: Image reference by digest
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ inputs.environment }}   # approvals + environment-scoped vars/secrets
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false               # never kill a half-finished deploy
+    permissions:
+      contents: read
+      id-token: write                         # OIDC token for AWS
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Deploy
+        env:
+          IMAGE: ${{ inputs.image }}
+        run: ./scripts/deploy.sh "$IMAGE"
+      - name: Smoke test
+        env:
+          REVOSHOP_URL: ${{ vars.APP_URL }}
+        run: python -m pytest tests/smoke
