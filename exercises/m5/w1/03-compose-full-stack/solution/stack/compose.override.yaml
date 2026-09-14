@@ -1,0 +1,19 @@
+# Development overrides — `docker compose up` loads this file automatically.
+services:
+  api:
+    build:
+      target: dev
+    volumes:
+      - ./api:/app
+    environment:
+      FLASK_DEBUG: "1"
+    ports:
+      - "5092:5091"
+
+  db:
+    ports:
+      - "5493:5432"
+
+  redis:
+    ports:
+      - "6392:6379"

@@ -1,0 +1,3 @@
+# TODO: the production-like stack. See README.md.
+name: shop
+services: {}

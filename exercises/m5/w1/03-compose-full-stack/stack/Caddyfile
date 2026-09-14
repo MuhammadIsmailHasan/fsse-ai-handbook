@@ -1,0 +1,5 @@
+# Provided: Caddy reverse proxy. On a real domain, replace ":80" with "shop.example.com" for automatic HTTPS.
+:80 {
+	encode zstd gzip
+	reverse_proxy api:5091
+}
