@@ -109,7 +109,7 @@ This document is the roadmap for the whole project: **what** we build (a local h
 | D28 | E2E exercises | Playwright exercises run against a **tiny no-build Node app** (`exercises/web/m4/w6/_app`) whose bugs are switched on with `APP_VARIANT`; the config falls back to an installed Google Chrome when Playwright's Chromium isn't downloaded | Fast, deterministic mutant grading without building a Next.js app per run |
 | D29 | Frontend project contract | CareerPilot Phase 4 acceptance tests find elements by **accessible names** and run against a **mock of the Phase 2 API** | Styling stays free, accessibility is enforced, and results don't depend on the learner's API data |
 | D30 | Batch order | **C5 (Module 5) moved before C3/C4**, split into **C5a** (W1–W2, local only) and **C5b** (W3–W7 + Architecture F/H/I + Phase 5) with a ✋ review before AWS | Learner wants to deploy RevoShop now; the pause keeps the AWS free-plan clock from starting early |
-| D31 | Ship RevoShop | Each Module 5 week ends with a **🚀 Ship RevoShop** lab applied to the learner's real RevoShop repo (production image, Compose, Redis, CI/CD, AWS deploy, IaC); the handbook guides, the learner changes their own repo | Deploying a project you already know teaches DevOps on real constraints (Midtrans webhooks, migrations, secrets) |
+| D31 | Ship RevoShop | Each Module 5 week ends with a **🚀 Ship RevoShop** lab applied to the learner's real RevoShop repo (production image, Compose, Redis, CI/CD, AWS deploy, IaC); the handbook guides, the learner changes their own repo; every M5 lesson also has a 🔍 RevoShop box (learner request) | Deploying a project you already know teaches DevOps on real constraints (Midtrans webhooks, migrations, secrets) |
 
 ---
 
@@ -750,8 +750,9 @@ type LessonMeta = {
 - [x] **Learner reviews C2** ✋ (asked to continue with Module 5)
 
 #### C5a — progress
-- [ ] Module 5 W1 Containers: lessons, placement check, exercises (Docker audit, targets, Compose, Redis), 🚀 Ship RevoShop 1
-- [ ] Module 5 W2 CI/CD: lessons, placement check, exercises, 🚀 Ship RevoShop 2
+- [x] Module 5 W1 Containers: lessons, placement check, exercises (Dockerfile auditor, targets/tags, Compose, Redis patterns), RevoShop smoke-test tool, 🚀 Ship RevoShop 1 (validated on a scratch copy)
+- [x] Module 5 W2 CI/CD: lessons, placement check, exercises (DORA metrics, CI/CD workflow, env parity, OIDC trust policy), 🚀 Ship RevoShop 2
+- [x] 🔍 RevoShop boxes in every Module 5 lesson (learner request) — continue in W3–W7
 - [ ] **Learner reviews C5a** ✋ — before creating an AWS account
 
 Batch order follows the **milestone path**, not module numbers.
