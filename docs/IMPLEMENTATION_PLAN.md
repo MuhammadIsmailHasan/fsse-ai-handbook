@@ -1,6 +1,6 @@
 # FSSE Handbook — Implementation Plan
 
-> **Status:** v1.4 — B1–B6 done; content batches C1 and C2 done (awaiting learner review ✋)
+> **Status:** v1.5 — B1–B6, C1, C2 done; **C5 moved up** at the learner's request (to deploy RevoShop) — C5a in progress
 > **Last updated:** 2026-09-13
 > **Owner:** Muhammad Ismail Hasan (learner) · written with Claude Code
 
@@ -108,6 +108,8 @@ This document is the roadmap for the whole project: **what** we build (a local h
 | D27 | Frontend exercises | JS/TS/React exercises run **locally with Vitest + jsdom + Testing Library** in `exercises/web/` (verified by `scripts/check-web-exercises.sh`); Sandpack stays for ungraded playgrounds | Works offline, same starter/solution workflow as Python, and every exercise is verifiable |
 | D28 | E2E exercises | Playwright exercises run against a **tiny no-build Node app** (`exercises/web/m4/w6/_app`) whose bugs are switched on with `APP_VARIANT`; the config falls back to an installed Google Chrome when Playwright's Chromium isn't downloaded | Fast, deterministic mutant grading without building a Next.js app per run |
 | D29 | Frontend project contract | CareerPilot Phase 4 acceptance tests find elements by **accessible names** and run against a **mock of the Phase 2 API** | Styling stays free, accessibility is enforced, and results don't depend on the learner's API data |
+| D30 | Batch order | **C5 (Module 5) moved before C3/C4**, split into **C5a** (W1–W2, local only) and **C5b** (W3–W7 + Architecture F/H/I + Phase 5) with a ✋ review before AWS | Learner wants to deploy RevoShop now; the pause keeps the AWS free-plan clock from starting early |
+| D31 | Ship RevoShop | Each Module 5 week ends with a **🚀 Ship RevoShop** lab applied to the learner's real RevoShop repo (production image, Compose, Redis, CI/CD, AWS deploy, IaC); the handbook guides, the learner changes their own repo | Deploying a project you already know teaches DevOps on real constraints (Midtrans webhooks, migrations, secrets) |
 
 ---
 
@@ -726,7 +728,7 @@ type LessonMeta = {
 | C2 | Module 4 · Architecture G · CareerPilot Phase 4 · Module 8 (Milestone 1 career lessons) |
 | C3 | Module 3 · DSA Stage 4 · CareerPilot Phase 3 |
 | C4 | Module 7 W1–W5 · SupportDesk AI |
-| C5 | Module 5 · Architecture F, H, I (part) · CareerPilot Phase 5 |
+| C5 | Module 5 · Architecture F, H, I (part) · CareerPilot Phase 5 — **moved up (D30)**: C5a = W1–W2 + 🚀 Ship RevoShop labs 1–2 ✋ · C5b = W3–W7 + tracks + Phase 5 |
 | C6 | Module 6 · CareerPilot Phase 6 |
 | C7 | Module 7 W0, W6–W8 · case studies · Architecture I (AI) · CareerPilot Phase 7 · StudyMind |
 | C8 | DSA Stages 5–6 · Architecture J · remaining Module 8 |
@@ -745,7 +747,12 @@ type LessonMeta = {
 - [x] Architecture Stage G (4 lessons) with exercises
 - [x] CareerPilot Phase 4 brief + starter kit (mock Phase 2 API, 23 Playwright acceptance tests, validated against a private reference app)
 - [x] Module 8 W1 (portfolio, GitHub, LinkedIn, learning in public, CV) and W2 (job search, hiring process, STAR, live coding, system design, teamwork, salary negotiation)
-- [ ] **Learner reviews C2** ✋
+- [x] **Learner reviews C2** ✋ (asked to continue with Module 5)
+
+#### C5a — progress
+- [ ] Module 5 W1 Containers: lessons, placement check, exercises (Docker audit, targets, Compose, Redis), 🚀 Ship RevoShop 1
+- [ ] Module 5 W2 CI/CD: lessons, placement check, exercises, 🚀 Ship RevoShop 2
+- [ ] **Learner reviews C5a** ✋ — before creating an AWS account
 
 Batch order follows the **milestone path**, not module numbers.
 

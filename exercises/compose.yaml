@@ -18,5 +18,17 @@ services:
       timeout: 3s
       retries: 10
 
+  redis:
+    image: redis:8-alpine
+    container_name: fsse-exercises-redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]   # practice data only: no persistence
+    ports:
+      - "${REDIS_PORT:-6391}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
 volumes:
   fsse-pgdata:

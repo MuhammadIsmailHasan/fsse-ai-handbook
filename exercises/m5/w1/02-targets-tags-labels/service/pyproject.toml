@@ -1,0 +1,14 @@
+[project]
+name = "careerpilot-api"
+version = "0.1.0"
+description = "Tiny Flask service used to practise production Docker images"
+requires-python = ">=3.12"
+dependencies = [
+    "flask>=3.1",
+    "flask-sqlalchemy>=3.1",
+    "psycopg[binary]>=3.2",
+    "gunicorn>=23",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
