@@ -38,3 +38,4 @@ exercises/web/.check-tmp/
 exercises/web/**/test-results/
 exercises/web/**/playwright-report/
 exercises/web/**/playwright/.auth/
+exercises/web/.grader-tmp/
