@@ -1,6 +1,6 @@
 # FSSE Handbook — Implementation Plan
 
-> **Status:** v1.3 — B1–B6 done; content batch C1 done (awaiting learner review ✋)
+> **Status:** v1.4 — B1–B6 done; content batches C1 and C2 done (awaiting learner review ✋)
 > **Last updated:** 2026-09-13
 > **Owner:** Muhammad Ismail Hasan (learner) · written with Claude Code
 
@@ -106,6 +106,8 @@ This document is the roadmap for the whole project: **what** we build (a local h
 | D25 | Testing exercises | Exercises where the learner writes tests are **graded by mutants** (buggy copies of correct code) | Proves tests catch bugs, not just that they run |
 | D26 | Project kits | Project acceptance tests are validated against a **private reference implementation** that is not committed | Correct tests without handing out the solution |
 | D27 | Frontend exercises | JS/TS/React exercises run **locally with Vitest + jsdom + Testing Library** in `exercises/web/` (verified by `scripts/check-web-exercises.sh`); Sandpack stays for ungraded playgrounds | Works offline, same starter/solution workflow as Python, and every exercise is verifiable |
+| D28 | E2E exercises | Playwright exercises run against a **tiny no-build Node app** (`exercises/web/m4/w6/_app`) whose bugs are switched on with `APP_VARIANT`; the config falls back to an installed Google Chrome when Playwright's Chromium isn't downloaded | Fast, deterministic mutant grading without building a Next.js app per run |
+| D29 | Frontend project contract | CareerPilot Phase 4 acceptance tests find elements by **accessible names** and run against a **mock of the Phase 2 API** | Styling stays free, accessibility is enforced, and results don't depend on the learner's API data |
 
 ---
 
@@ -428,7 +430,7 @@ Every lesson also ends with a small **📖 Kamus (glossary)** of its key terms.
 ### Where exercises run
 | Kind | Runs in | Checks | Needs |
 |---|---|---|---|
-| JS / TS / React / Tailwind toys | Local folder `exercises/web/` (see D27) | Vitest + jsdom + Testing Library | Node 20+ |
+| JS / TS / React / Tailwind toys | Local folder `exercises/web/` (see D27, D28) | Vitest + jsdom + Testing Library; Playwright for E2E | Node 20.9+ |
 | Quick playgrounds (ungraded) | Browser (**Sandpack**) | — | Internet |
 | Python (M1, M2 core, DSA) | Local folder | `pytest` | Python 3.11+ |
 | Flask / FastAPI | Local folder | `pytest` + API test client | Python 3.11+, sometimes Docker/Postgres |
@@ -735,7 +737,15 @@ type LessonMeta = {
 - [x] CareerPilot Phase 2 brief + starter kit (113 acceptance tests)
 - [x] DSA Stage 2 (4 lessons) and Stage 3 (5 lessons), 36 problems
 - [x] Architecture Stages C (2), D (4), E (3) with exercises
-- [ ] **Learner reviews C1** ✋
+- [x] **Learner reviews C1** ✋ (approved — "u can continue")
+
+#### C2 — progress
+- [x] Module 4 W1–W6: lessons, placement checks, weekly LinkedIn templates, 44 web exercises (Vitest; W6 adds Playwright)
+- [x] Mutation-graded test-writing exercises for the frontend (Playwright mini app with 17 mutants, component tests with 9 mutants)
+- [x] Architecture Stage G (4 lessons) with exercises
+- [x] CareerPilot Phase 4 brief + starter kit (mock Phase 2 API, 23 Playwright acceptance tests, validated against a private reference app)
+- [x] Module 8 W1 (portfolio, GitHub, LinkedIn, learning in public, CV) and W2 (job search, hiring process, STAR, live coding, system design, teamwork, salary negotiation)
+- [ ] **Learner reviews C2** ✋
 
 Batch order follows the **milestone path**, not module numbers.
 
