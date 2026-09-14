@@ -23,9 +23,13 @@ while IFS= read -r solution_dir; do
     status=1
   fi
 
-  tmp="$tmp_root/$(echo "$exercise_dir" | tr '/' '_')"
+  # Keep the folder layout (so relative paths like ../_app still work) and copy shared _folders next to it.
+  tmp="$tmp_root/${exercise_dir#./}"
   mkdir -p "$tmp"
   cp -R "$exercise_dir"/. "$tmp"/
+  for shared in "$(dirname "$exercise_dir")"/_*; do
+    [[ -d "$shared" ]] && cp -R "$shared" "$(dirname "$tmp")"/
+  done
   rm -rf "$tmp/solution"
   cp -R "$solution_dir"/. "$tmp"/
   if npx vitest run "$tmp" --reporter=dot >/dev/null 2>&1; then

@@ -33,3 +33,8 @@ exercises/m2/w1/05-git-collaboration/conflict-lab/
 exercises/.check-tmp/
 exercises/.grader-tmp/
 exercises/web/.check-tmp/
+
+# Playwright output
+exercises/web/**/test-results/
+exercises/web/**/playwright-report/
+exercises/web/**/playwright/.auth/
