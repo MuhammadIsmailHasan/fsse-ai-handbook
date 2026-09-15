@@ -1,6 +1,6 @@
 ---
 title: "Navigation: Link, Active Styling & Programmatic Routing"
-summary: Move between pages the Next.js way — Link with prefetching and client-side transitions, active links with usePathname, breadcrumbs, URL search params as state, and useRouter for navigation after actions.
+summary: Move between pages the Next.js way — Link with fast page changes, highlighting the current link, breadcrumbs, keeping filters in the URL, and useRouter to navigate after an action.
 type: lesson
 source: core
 sourceRef: "M3 · W4 · L2"
@@ -13,22 +13,35 @@ tags: [nextjs, navigation, link, userouter, search-params, url-state]
 
 ## 🎯 What you'll learn
 
-- `<Link>`: client-side transitions and prefetching (and when a plain `<a>` is right)
-- Active navigation with `usePathname` and `aria-current`
-- Breadcrumbs derived from the path
-- **URL as state**: filters, pagination and tabs in search params with `useSearchParams` + `router.replace`
-- Programmatic navigation with `useRouter` (`push`, `replace`, `back`, `refresh`) and `redirect()` on the server
-- Pending feedback with `useLinkStatus` and `loading.tsx`
+- `<Link>`: moving between pages without a full reload
+- Highlighting the current page's link
+- Breadcrumbs built from the URL
+- **URL as state**: filters, pages and tabs in `?status=…`
+- Navigating from code with `useRouter` and `redirect()`
+- Showing that a page is loading
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **`<Link>`** | Next.js's link: changes the page without reloading everything | Link Next.js |
+| **Prefetch** | Loading a page in the background before you click it | Memuat lebih dulu |
+| **Client-side transition** | Only the changed part is swapped; the rest stays | Pindah halaman tanpa reload |
+| **`usePathname`** | A hook that gives the current path, like `/applications` | Path saat ini |
+| **Search params** | The `?key=value` part of the URL | Parameter URL |
+| **`router.push` / `replace`** | Go to a URL (with / without adding a Back step) | Pindah halaman dari kode |
+| **Breadcrumb** | "Home › Applications › Detail" trail | Jejak navigasi |
+| **Open redirect** | A security bug: sending users to any website an attacker chooses | Pengalihan berbahaya |
 
 ## 🧠 The big idea
 
-The URL is the **address and the bookmark** of your app's state. If "applications filtered by Interview, page 2" lives only in `useState`, a refresh loses it and nobody can share the link. Put it in the URL and your app becomes linkable, refresh-safe and back-button-friendly — for free.
+The URL is the **address and the bookmark** of what the user is looking at. If "applications filtered by Interview, page 2" lives only in `useState`, a refresh loses it and nobody can share it. Put it in the URL, and the view can be shared, refreshed and navigated with the Back button — for free. Like a **Google Maps link**: send it to a friend and they see exactly the same place.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-A full page reload for every click (classic multi-page apps) is slow and loses client state. `<Link>` gives server-rendered apps the feel of single-page apps: it prefetches routes and swaps only what changed, keeping layouts mounted.
+A full page reload on every click is slow and throws away what's on screen. `<Link>` makes page changes feel instant.
 
-## 💥 What happens if we DON'T?
+Common mistakes:
 
 ```tsx
 <a href="/applications">Applications</a>                    // full reload: layout state lost, slower
@@ -37,7 +50,12 @@ const [status, setStatus] = useState("all");                // refresh → filte
 router.push(`/applications?status=${status}`)               // clicking filters fills history; Back cycles through filters
 ```
 
-## 📖 How it works, step by step
+- A plain `<a>` for internal pages reloads everything.
+- A clickable `div` isn't a real link: no keyboard, no "open in new tab".
+- A filter in `useState` disappears on refresh.
+- `push` for every filter click fills the Back history with filters.
+
+## 📖 Step by step
 
 ### 1. `<Link>`
 
@@ -49,12 +67,12 @@ import Link from "next/link";
 <Link href={{ pathname: "/applications", query: { status: "offer" } }}>Offers</Link>
 ```
 
-- Renders a real `<a href>` (accessible, middle-click opens a tab, SEO-friendly).
-- **Prefetches** routes when links enter the viewport (fully for static routes, partially for dynamic routes that have `loading.tsx`).
-- **Client-side transition**: keeps shared layouts, scrolls to top, no full reload.
-- Use a plain `<a>` for external sites and file downloads; `prefetch={false}` for huge link lists.
+- It renders a real `<a href>`: keyboard, screen readers and "open in new tab" all work.
+- It **prefetches** pages when the link appears on screen, so clicking feels instant — like a waiter preparing the menu before you sit down.
+- It swaps only the changed part; shared layouts stay.
+- Use a plain `<a>` for other websites and file downloads.
 
-### 2. Active links
+### 2. Highlight the current link
 
 ```tsx
 "use client";
@@ -77,13 +95,15 @@ export function NavLinks({ links }: { links: { href: string; label: string }[] }
 }
 ```
 
-`aria-current="page"` tells screen readers which link is current — style it with Tailwind's `aria-[current=page]:` variant so visuals follow semantics. Note the `startsWith(href + "/")` detail: `/jobsearch` must not activate `/jobs`.
+- `usePathname()` gives the current path.
+- `aria-current="page"` tells screen readers "you are here" — like the red dot on a mall map.
+- Careful matching: `/jobsearch` must **not** highlight `/jobs`. That's why the code checks `startsWith(href + "/")`.
 
 ### 3. Breadcrumbs
 
-Split the pathname into segments, build cumulative hrefs, and render the last one as text with `aria-current="page"` inside `<nav aria-label="Breadcrumb"><ol>`. Use a labels map (or data from the page) for segments like ids.
+Split the path into parts, build a link for each step, and show the last one as plain text with `aria-current="page"`, inside `<nav aria-label="Breadcrumb"><ol>`. Use a small labels table for parts like ids ("12" → "Backend Engineer").
 
-### 4. Search params as state
+### 4. Filters in the URL
 
 ```tsx
 "use client";
@@ -106,11 +126,13 @@ export function StatusFilter() {
 }
 ```
 
-- `replace` for filters/sorting (don't flood history); `push` for "real" navigation the user may want to go Back to.
-- The Server Component page reads the same values from its `searchParams` prop and fetches the filtered data — the URL connects client controls and server data.
-- For text search, debounce updates (Week 1).
+- `useSearchParams()` is read-only, so make a copy with `new URLSearchParams(...)`.
+- Keep the other params (like `q`), but reset `page` when the filter changes.
+- `replace` for filters and sorting (no extra Back steps). `push` for real page changes the user may want to go Back to.
+- The Server Component page reads the same values from its `searchParams` and loads the filtered data. The URL connects the browser controls and the server data.
+- For a search box, wait until typing stops (debounce, Week 1).
 
-### 5. Programmatic navigation
+### 5. Navigating from code
 
 ```tsx
 const router = useRouter();
@@ -126,100 +148,81 @@ import { redirect, notFound } from "next/navigation";
 if (!session) redirect("/login?next=/applications");
 ```
 
-Only navigate **after** the action succeeded; on failure stay and show an error.
+- Navigate only **after** the action succeeded. If it fails, stay and show an error.
+- `router.refresh()` reloads the server data but keeps what's typed in the browser.
+- `redirect()` is like a receptionist saying "please go to the login desk first".
 
-### 6. Pending feedback
+### 6. Showing loading
 
-- `loading.tsx` shows immediately for routes that render slowly.
-- `useLinkStatus()` (inside a component rendered within a `<Link>`) exposes `pending` for tiny inline indicators on slow networks.
+- `loading.tsx` shows immediately for slow pages.
+- `useLinkStatus()` (in a component inside a `<Link>`) gives `pending`, for a tiny spinner on slow networks.
 
 ### 7. Scroll and focus
 
-Next.js scrolls to the top on navigation. For accessibility in single-page transitions, make sure each page has a clear `<h1>`; many teams also move focus to the main heading or announce the page title after navigation.
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| URL search params | shareable, refresh-safe, back button works | strings only; must validate; long URLs |
-| Component state | simple, private | lost on refresh/share |
-| `router.push` | history entry | Back button noise for filters |
-| `router.replace` | clean history | can't go Back to previous filter |
-| Prefetching | instant navigation | extra requests; disable for huge lists |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ `<Link>` for all internal navigation.
-- ✅ Search params for filters, sort, pagination, selected tab — anything worth sharing.
-- 🚫 Don't put sensitive data (emails, tokens) in URLs — they're logged and shared.
-- 🚫 Don't use `useRouter().push` for simple links — users lose middle-click and prefetch.
-
-## 🏆 Best practices
-
-- [ ] Internal links with `next/link`; external with `<a>` and `rel="noopener noreferrer"` when `target="_blank"`.
-- [ ] Mark active links with `aria-current="page"`; match nested routes carefully.
-- [ ] Store shareable view state in the URL; validate it on the server.
-- [ ] `replace` + `scroll: false` for filter changes; reset pagination on new filters.
-- [ ] Navigate after success only; show errors otherwise.
-- [ ] `redirect()` for server-side auth checks; include a `next` param to return after login (validate it's a relative path).
-- [ ] Add `loading.tsx` to dynamic routes for instant feedback.
-
-## 🏭 How it's used in industry
-
-- Job portals and e-commerce put every filter in the URL so search results can be shared and indexed.
-- Libraries like `nuqs` provide typed search-param state for Next.js.
-- Analytics tools track navigation through URL changes — URL state makes funnels measurable.
+Next.js scrolls to the top when the page changes. Make sure every page has a clear `<h1>`, so screen reader users know the page changed.
 
 ## ⚠️ Common mistakes
 
-- Mutating `useSearchParams()` directly (it's read-only) — copy into `new URLSearchParams`.
-- Forgetting to preserve other params when changing one.
-- Open redirects: `redirect(searchParams.next)` with an absolute URL from an attacker.
-- Using `window.location` for internal navigation.
+- Changing `useSearchParams()` directly (it's read-only) — copy it into `new URLSearchParams`.
+- Losing the other params when changing one.
+- **Open redirect**: `redirect(searchParams.next)` with a full URL an attacker supplied. Only allow relative paths like `/applications`.
+- `window.location` for internal pages.
+- Sensitive data (emails, tokens) in URLs — URLs get logged and shared.
+- `router.push` in a `div` instead of a real `<Link>`.
+
+## 🏆 Best practices
+
+- [ ] Internal links with `next/link`; external links with `<a>` and `rel="noopener noreferrer"` when `target="_blank"`.
+- [ ] Mark the current link with `aria-current="page"`; match nested pages carefully.
+- [ ] Put shareable view state in the URL; check it on the server.
+- [ ] `replace` + `scroll: false` for filters; reset the page number when filters change.
+- [ ] Navigate only after success.
+- [ ] `redirect()` for server-side login checks, with a validated `next` path.
+- [ ] Add `loading.tsx` to dynamic pages.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain to a product manager why the applications filter should live in the URL, using an example of sending a filtered link to a mentor.
+Using the Google Maps link idea, explain to a product manager why the applications filter should live in the URL — for example, sending a filtered link to a mentor.
 
 ## 📐 Design it
 
-Design the URL scheme and navigation for CareerPilot's **applications list**: status filter, text search, company filter, sort, pagination, and an application drawer that opens on top of the list for quick preview. Decide what goes in the path vs search params, when to use push vs replace, and how Back should behave.
+Design the URL and navigation for CareerPilot's **applications list**: status filter, text search, company filter, sort, pagination, and a preview drawer that opens on top of the list. Decide what goes in the path vs the `?` part, when to use push vs replace, and how Back should behave.
 
 :::quiz
 Show a possible design
 
 - **List**: `/applications?status=interview&q=backend&company=3&sort=-updated&page=2`
-  - defaults omitted from the URL (`sort=-updated`, `page=1`)
-  - `status`, `company`, `sort` changes → `router.replace`, reset `page`
-  - `q` → debounced 300 ms `replace`
-  - pagination → `push` (users expect Back to return to page 1) — a reasonable exception
-- **Detail page**: `/applications/12` (full page, shareable, SEO-irrelevant but linkable)
-- **Quick preview drawer**: `/applications?…&preview=12` → `push` so Back closes the drawer; the list stays mounted; direct visits with `preview=12` open the drawer on load. (Next.js intercepting + parallel routes can also do `/applications/12` as a modal over the list — more advanced.)
-- **Server**: the list page validates every param (unknown status → ignore, page not a positive integer → 1) before calling the Flask API.
-- **After moving a status** in the drawer: stay, show a toast, `router.refresh()` so the list re-fetches.
+  - Default values are left out of the URL (`sort=-updated`, `page=1`).
+  - Changing `status`, `company` or `sort` → `router.replace`, and reset `page`.
+  - `q` (search text) → `replace` after 300 ms without typing.
+  - Pagination → `push` (people expect Back to return to page 1) — a reasonable exception.
+- **Detail page**: `/applications/12` — a full page that can be shared.
+- **Preview drawer**: `/applications?…&preview=12` → `push`, so Back closes the drawer. The list stays on screen. Opening that link directly opens the drawer too. (Next.js "intercepting routes" can also show `/applications/12` as a modal — more advanced.)
+- **Server**: the list page checks every param (unknown status → ignore; page not a positive whole number → 1) before calling the Flask API.
+- **After changing a status** in the drawer: stay, show a small message, and call `router.refresh()` so the list reloads.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Shareable view state in the URL, defaults omitted
-- [ ] push vs replace chosen deliberately
-- [ ] Back button behavior makes sense
-- [ ] Server validates params
+- [ ] Shareable view state is in the URL, defaults left out
+- [ ] push vs replace chosen on purpose
+- [ ] The Back button behaves as users expect
+- [ ] The server checks the params
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w4/02-navigation" ai="no-ai" title="Active links, breadcrumbs and URL filters"}
-Build `NavLinks` with correct active matching, `Breadcrumbs` derived from the path, a `StatusFilter` that keeps other search params and resets pagination with `router.replace`, and `SaveAndOpen` that navigates only after a successful save. Tests mock `next/navigation` to control the URL.
+Build `NavLinks` with correct current-link matching, `Breadcrumbs` built from the path, a `StatusFilter` that keeps the other URL params and resets pagination with `router.replace`, and `SaveAndOpen` that navigates only after a successful save. The tests fake `next/navigation` to control the URL.
 :::
 
 :::hints
-- `new URLSearchParams(searchParams.toString())` makes a mutable copy.
-- Breadcrumb hrefs: `"/" + segments.slice(0, index + 1).join("/")`.
-- In `SaveAndOpen`, `try { const { id } = await onSave(); router.push(...) } catch { … }`.
+- `new URLSearchParams(searchParams.toString())` makes a copy you can change.
+- Breadcrumb links: `"/" + segments.slice(0, index + 1).join("/")`.
+- In `SaveAndOpen`: `try { const { id } = await onSave(); router.push(...) } catch { … }`.
 :::
 
 ## ✅ Quick check
@@ -227,24 +230,14 @@ Build `NavLinks` with correct active matching, `Breadcrumbs` derived from the pa
 :::quiz
 When should you use `router.replace` instead of `router.push`?
 
-When the change shouldn't create a new history entry — typically filters, sorting or search text — so Back returns to the previous page, not every intermediate filter.
+When the change shouldn't add a Back step — usually filters, sorting or search text — so Back goes to the previous page, not through every filter.
 :::
 
 :::quiz
-Why is `<Link>` better than a `div` with `onClick` + `router.push` for navigation?
+Why is `<Link>` better than a `div` with `onClick` + `router.push`?
 
-`<Link>` renders a real anchor (keyboard, screen readers, middle-click, copy link), prefetches the route, and still does a client-side transition.
+`<Link>` is a real link (keyboard, screen readers, open in new tab, copy link), it prefetches the page, and it still changes pages without a full reload.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Client-side transition | Perpindahan halaman di sisi klien tanpa reload |
-| Prefetching | Memuat rute lebih dulu di latar belakang |
-| Search params | Parameter kueri URL |
-| Breadcrumb | Jejak navigasi |
-| Open redirect | Pengalihan terbuka (celah keamanan) |
 
 ## 📚 Keep learning
 
