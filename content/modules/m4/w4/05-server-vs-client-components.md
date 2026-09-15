@@ -1,6 +1,6 @@
 ---
 title: "Server vs Client Components"
-summary: The core App Router mental model — what runs where, the "use client" boundary, serializable props, composing server content inside client wrappers, keeping secrets server-only, and designing small client islands.
+summary: The main idea of the App Router — what runs where, the "use client" line, which props can cross it, putting server content inside client wrappers, keeping secrets on the server, and small interactive "islands".
 type: lesson
 source: core
 sourceRef: "M3 · W4 · L5"
@@ -13,24 +13,37 @@ tags: [nextjs, react-server-components, use-client, architecture, performance]
 
 ## 🎯 What you'll learn
 
-- How a request renders: Server Components → RSC payload + HTML → hydration of Client Components
-- Deciding server vs client per component
-- The `"use client"` boundary and what it pulls into the bundle
-- Serializable props, passing Server Components as `children` to Client Components
-- `server-only` / `client-only`, and keeping data access secure
-- Refactoring a "client everything" page into server content with client islands
+- How a page is built: server first, then the browser adds interactivity
+- How to decide server or client for each component
+- What the `"use client"` line pulls into the browser
+- Which props can go from server to client
+- Putting server content inside interactive client wrappers
+- Keeping data access and secrets on the server
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Server Component** | Runs on the server; sends finished HTML, no JavaScript for itself | Komponen server |
+| **Client Component** | Runs in the browser too; can use state and clicks | Komponen browser |
+| **Boundary** | The line created by `"use client"` between server and browser code | Batas server/browser |
+| **Bundle** | The JavaScript files the browser downloads | Paket JavaScript |
+| **Hydration** | The browser attaching click handlers to HTML from the server | Menghidupkan HTML |
+| **Serializable** | Simple data that can be sent over the network (text, numbers, plain objects) | Bisa dikirim |
+| **Client island** | A small interactive part inside a server-rendered page | Pulau interaktif |
+| **Data Access Layer** | Server-only files that load data and check permissions | Lapisan akses data |
 
 ## 🧠 The big idea
 
-Think of a **restaurant**. The kitchen (server) prepares the food with ingredients and recipes customers never see (database credentials, API tokens, heavy libraries). The plate that reaches the table (HTML) is ready to eat. A few things happen **at the table** (client): adding sauce, cutting, asking for more water — interactive bits.
+Think of a **restaurant**. The kitchen (the server) cooks with ingredients and recipes customers never see — database passwords, API tokens, big libraries. The plate that arrives (HTML) is ready to eat. A few things happen **at the table** (the browser): adding sambal, asking for more water — the interactive parts.
 
-You wouldn't bring the whole kitchen to every table. Server Components keep the kitchen in the kitchen; Client Components are the small table-side interactions.
+You don't bring the whole kitchen to every table. Server Components keep the kitchen in the kitchen; Client Components are the small things you do at the table.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Classic React apps shipped all component code to the browser, then fetched data after load (spinners, waterfalls, big bundles, secrets needing extra APIs). React Server Components (used by the Next.js App Router) render on the server by default, send zero JavaScript for non-interactive parts, and fetch data close to the source — while still allowing rich interactivity where needed.
+Old-style React sent **all** component code to the browser, then loaded data after the page opened: spinners, big downloads, and secrets that needed extra APIs. Server Components render on the server by default, send no JavaScript for non-interactive parts, and load data close to the source.
 
-## 💥 What happens if we DON'T?
+The old way, and its problems:
 
 ```tsx
 "use client";                                           // at the top of page.tsx
@@ -45,9 +58,13 @@ export default function JobPage({ params }) {
 }
 ```
 
-## 📖 How it works, step by step
+- The token ends up in browser code (or is simply `undefined`).
+- Users see a spinner first, and Google sees an empty page.
+- A big Markdown library is downloaded by every visitor.
 
-### 1. The render pipeline
+## 📖 Step by step
+
+### 1. How a page is built
 
 ```mermaid
 sequenceDiagram
@@ -62,14 +79,18 @@ sequenceDiagram
     B->>S: later navigations: RSC payload only (client-side transition)
 ```
 
-### 2. Decide per component
+1. The server loads the data (with the token) and builds the page.
+2. The browser gets ready-made HTML right away, plus JavaScript **only** for the interactive parts.
+3. The browser "wakes up" those parts (hydration) — like switching on the lights in a room that is already furnished.
 
-| Needs… | Component |
+### 2. Decide for each component
+
+| It needs… | Make it |
 |---|---|
-| data from DB/API, secrets, heavy libraries (markdown, syntax highlighting), static markup | **Server** |
-| `useState`, `useEffect`, event handlers, browser APIs (`localStorage`, clipboard), context consumers, animations | **Client** |
+| data from the API or database, secrets, big libraries (Markdown, code highlighting), static content | **Server** |
+| `useState`, `useEffect`, click handlers, browser features (`localStorage`, clipboard), context, animations | **Client** |
 
-Default to server; **push `"use client"` down to the leaves**.
+Start with server. Put `"use client"` as **low** as possible — on the small leaves, not the whole page.
 
 ### 3. The boundary
 
@@ -98,13 +119,15 @@ export default async function JobPage({ params }: PageProps<"/jobs/[id]">) {
 export function SaveJobButton({ jobId, initialSaved }: { jobId: number; initialSaved: boolean }) { … }
 ```
 
-A file with `"use client"` — and **everything it imports** — becomes part of the client bundle. Components it renders through `children` or other props that were created on the server are **not** pulled in.
+A file with `"use client"` — **and everything it imports** — goes into the browser bundle. It's like a suitcase: whatever you pack inside travels with it. But server content passed in as `children` is **not** packed; it's already cooked in the kitchen.
 
-### 4. Props must be serializable
+### 4. Props must be simple data
 
-Server → Client props are sent over the network: strings, numbers, booleans, `null`, arrays, plain objects, `Date`, `Map`/`Set`, Promises (for `use()`), JSX created on the server, and **Server Actions**. Not allowed: regular functions, class instances with methods, DB connections.
+Props from server to client travel over the network — like sending a package by courier:
+- ✅ Can send: text, numbers, booleans, `null`, arrays, plain objects, `Date`, `Map`/`Set`, Promises, JSX made on the server, and **Server Actions**.
+- ❌ Can't send: normal functions, class instances with methods, database connections.
 
-### 5. Server content inside client wrappers
+### 5. Server content inside a client wrapper
 
 ```tsx
 // Client wrapper with state
@@ -125,22 +148,22 @@ export function Collapsible({ title, children }: { title: string; children: Reac
 </Collapsible>
 ```
 
-This **interleaving** keeps data fetching on the server even inside interactive UI.
+The `Collapsible` box is interactive (open/close), but what's inside (`CompanyDetails`) is still loaded and built on the server. Like a **lunch box with a lid you open at the table** — the food inside was still cooked in the kitchen.
 
-### 6. Guard the boundary
+### 6. Protect the boundary
 
 ```ts
 // lib/data.ts
 import "server-only";           // build error if a Client Component imports this module
 ```
 
-- Put all data access in server-only modules (a **Data Access Layer**): check auth there, return minimal DTOs.
-- Never pass full database/API objects with secrets or internal fields to Client Components — pick fields.
-- `client-only` does the reverse for browser-only modules.
+- Put all data loading in `server-only` files (a **Data Access Layer**). Check permissions there.
+- Send only the fields a Client Component needs — never whole API or database objects with private fields.
+- `client-only` does the opposite, for browser-only files.
 
-### 7. Common pattern: provider wrappers
+### 7. Common pattern: providers
 
-Context providers (theme, TanStack Query client) must be Client Components. Wrap them in a small client file and render it in a (server) layout:
+Context providers (theme, TanStack Query) must be Client Components. Put them in one small client file, and use it in a (server) layout:
 
 ```tsx
 // app/providers.tsx
@@ -150,56 +173,35 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 ```
 
-The layout stays a Server Component; `children` pages can still be Server Components.
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Server Components | no JS for static parts, secure data access, fast first load | no interactivity; each navigation needs the server |
-| Client Components | interactivity, instant local updates | bundle size, hydration cost, can't access secrets |
-| Big client boundaries | simpler mental model | large bundles, lost server benefits |
-| Small islands | best performance and security | more files, props plumbing |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Pages and layouts as Server Components that fetch and compose.
-- ✅ Client islands for buttons, forms with live validation, menus, charts with interaction.
-- 🚫 Don't mark layouts or pages `"use client"` to silence an error — move the interactive part into its own file.
-- 🚫 Don't fetch in `useEffect` what a Server Component could fetch.
-
-## 🏆 Best practices
-
-- [ ] Server by default; `"use client"` only in leaf components that need it.
-- [ ] Keep data access in `server-only` modules with auth checks and DTOs.
-- [ ] Pass minimal, serializable props to Client Components.
-- [ ] Use `children` to nest server-rendered content inside client wrappers.
-- [ ] Wrap context providers in a small client `Providers` component.
-- [ ] Watch bundle size (`next build` output, bundle analyzer) when adding client libraries.
-- [ ] Don't import server modules from client files (enforce with `server-only`).
-
-## 🏭 How it's used in industry
-
-- The App Router with Server Components is the default for new Next.js projects; many teams migrated from the Pages Router to cut client JavaScript.
-- Data Access Layers with `server-only` are a recommended security pattern for authorization in Next.js apps.
-- AI chat UIs stream server-rendered content and keep only the input box and message list interactive.
+The layout stays a Server Component, and the pages inside (`children`) can still be Server Components.
 
 ## ⚠️ Common mistakes
 
-- "You're importing a component that needs `useState`…" → add `"use client"` to **that** component, not the page.
+- "You're importing a component that needs `useState`…" → add `"use client"` to **that** component, not the whole page.
+- Putting `"use client"` on a layout or page to silence an error.
 - Passing functions (`onSave={…}`) from a Server Component to a Client Component.
-- Importing a server-only data module into a client file "just for a type" — use `import type`.
-- Reading `window` in a Server Component.
+- Importing a server-only data file into a client file just for a type — use `import type`.
+- Using `window` in a Server Component.
+- Loading data in `useEffect` that a Server Component could load.
+
+## 🏆 Best practices
+
+- [ ] Server by default; `"use client"` only on the leaves that need it.
+- [ ] Keep data loading in `server-only` files, with permission checks.
+- [ ] Send small, simple props to Client Components.
+- [ ] Use `children` to put server content inside client wrappers.
+- [ ] Put context providers in one small client `Providers` component.
+- [ ] Watch the bundle size (`next build` output) when adding browser libraries.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain the restaurant analogy to a teammate, then explain why putting `"use client"` in `app/layout.tsx` is like moving the whole kitchen to every table.
+Explain the restaurant idea to a teammate, then explain why putting `"use client"` in `app/layout.tsx` is like moving the whole kitchen to every table.
 
 ## 📐 Design it
 
-For CareerPilot's **application detail page** (header, status pipeline with a "move" dropdown, notes list with add/delete, company sidebar, AI match score with a "recalculate" button, share button), mark each component server or client, list the props crossing the boundary, and say where data is fetched.
+For CareerPilot's **application detail page** (header, status steps with a "move" dropdown, notes list with add/delete, company sidebar, AI match score with a "recalculate" button, share button), mark each component server or client, list the props that cross the boundary, and say where data is loaded.
 
 :::quiz
 Show a possible split
@@ -219,55 +221,44 @@ app/(app)/applications/[id]/page.tsx     SERVER  getApplication(id), getNotes(id
 └── ShareButton                            CLIENT  { url }  (clipboard API)
 ```
 
-- All data fetched on the server in parallel (`Promise.all` or separate `<Suspense>` sections).
-- Only ids, statuses and display strings cross the boundary; Server Actions are passed/imported, never plain callbacks.
-- `allowedNext` is computed on the server from the domain rules so the client can't offer invalid transitions (the API still validates).
+- All data is loaded on the server, at the same time (`Promise.all` or separate `<Suspense>` sections).
+- Only ids, statuses and display text cross the boundary. Changes go through Server Actions, never plain callbacks.
+- `allowedNext` is calculated on the server from the business rules, so the browser can't offer a move that isn't allowed (the API still checks too).
 :::
 
 ### 📝 Self-review checklist
 
 - [ ] Client components are only the interactive leaves
-- [ ] Props are minimal and serializable
-- [ ] Mutations go through Server Actions or Route Handlers with auth
+- [ ] Props are small and simple
+- [ ] Changes go through Server Actions or Route Handlers with permission checks
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w4/05-server-client-components" ai="no-ai" title="Split a client-everything page"}
-A job page was written as one Client Component that leaks a secret token and fetches in `useEffect`. Refactor it into a server-only data module, an async Server Component page, a server description component and two small client islands with serializable props. Tests check directives, imports, secrets and behavior.
+A job page was written as one big Client Component that leaks a secret token and loads data in `useEffect`. Refactor it into a server-only data file, an async Server Component page, a server description component and two small client islands with simple props. The tests check the directives, imports, secrets and behavior.
 :::
 
 :::hints
 - Start with `lib/data.ts` (`import "server-only"`), then rewrite the page as `async` without hooks.
-- Client islands import `saveJob` from `lib/client-api.ts`, never `lib/data.ts`.
-- Optimistic toggle: set state first, call the API, roll back in `catch`.
+- Client islands import `saveJob` from `lib/client-api.ts`, never from `lib/data.ts`.
+- Optimistic toggle: change the state first, call the API, and undo it in `catch`.
 :::
 
 ## ✅ Quick check
 
 :::quiz
-What gets included in the client bundle when a file has `"use client"`?
+What goes into the browser bundle when a file has `"use client"`?
 
-That file and every module it imports (its module graph). Server Components passed to it as `children` or props are rendered on the server and not included.
+That file and every file it imports. Server Components passed to it as `children` or props are built on the server and not included.
 :::
 
 :::quiz
 Why can't a Server Component pass `onClick={handleSave}` to a Client Component?
 
-Props crossing the boundary must be serializable; plain functions can't be sent to the browser. Use a Server Action or define the handler inside the Client Component.
+Props crossing the boundary must be simple data; normal functions can't be sent to the browser. Use a Server Action, or write the handler inside the Client Component.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Server Component | Komponen yang dirender di server |
-| Client boundary | Batas klien (`"use client"`) |
-| RSC payload | Data hasil render Server Component yang dikirim ke klien |
-| Hydration | Hidrasi — mengaktifkan interaktivitas HTML |
-| Client island | Pulau interaktif kecil di halaman server |
-| Data Access Layer | Lapisan akses data (dengan cek otorisasi) |
 
 ## 📚 Keep learning
 
