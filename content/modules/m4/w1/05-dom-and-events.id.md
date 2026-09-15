@@ -1,50 +1,64 @@
 ---
 title: "Manipulasi DOM & Event Handling"
-summary: Buat halaman interaktif tanpa framework — pilih dan buat elemen, render data dengan aman, tangani event dengan delegation, kelola state dan re-render, lalu bereskan semuanya setelah selesai.
-sourceHash: c8469b02f5f5
+summary: Buat halaman interaktif tanpa framework — cari dan buat elemen, tampilkan data dengan aman, tanggapi klik dan ketikan, jaga data dan layar tetap sinkron, lalu bereskan setelahnya.
+sourceHash: 538d0711b6ff
 ---
 
 ::part[Pelajari Konsepnya]{n="1"}
 
 ## 🎯 Yang akan kamu pelajari
 
-- Pohon DOM dan cara JavaScript membaca serta mengubahnya
-- Memilih (`querySelector`), membuat (`createElement`), memperbarui (`textContent`, atribut, `classList`, `dataset`)
-- **Me-render data dengan aman** — kenapa `innerHTML` berisi data memicu XSS
-- Event: listener, event object, `preventDefault`, bubbling, dan **event delegation**
-- Siklus kecil **state → render** (ide yang diotomatisasi React)
-- Membereskan listener dan elemen
+- Apa itu DOM dan bagaimana JavaScript mengubah halaman
+- Mencari, membuat, dan memperbarui elemen
+- Menampilkan data dengan **aman** (menghindari serangan XSS)
+- Menanggapi klik, ketikan, dan submit form
+- Satu listener untuk seluruh list (event delegation)
+- Menjaga data dan layar tetap sinkron: state → render
+
+## 🔤 Istilah penting
+
+| Istilah | Artinya (sederhana) |
+|---|---|
+| **DOM** | Halaman dalam bentuk pohon object yang bisa dibaca dan diubah JavaScript |
+| **Event** | Sesuatu yang terjadi: klik, tekan tombol keyboard, submit form |
+| **Event listener** | Function yang berjalan saat sebuah event terjadi |
+| **Bubbling** | Event merambat naik dari elemen yang diklik ke parent-parent-nya |
+| **Event delegation** | Satu listener di parent menangani event untuk semua child-nya |
+| **XSS** | Serangan di mana seseorang menyelipkan script ke halamanmu lewat data |
+| **State** | Data yang sedang ditampilkan halaman saat ini (teks pencarian, lowongan tersimpan) |
+| **Render** | Menggambar layar berdasarkan state |
 
 ## 🧠 Ide besarnya
 
-DOM adalah **boneka wayang**: HTML menyiapkan bonekanya, dan JavaScript menarik talinya — ubah teks di sini, tambah item di sana, bereaksi saat seseorang mengeklik.
+DOM itu seperti **wayang**: HTML membuat wayangnya, dan JavaScript menarik talinya — ubah teks ini, tambah item itu, bereaksi saat ada yang mengeklik.
 
-Seiring aplikasi membesar, menarik tali satu per satu jadi kacau. Trik yang dipakai para profesional: simpan datamu di **state**, dan tulis satu function **render** yang menggambar ulang boneka dari state. Itulah persis yang dilakukan React untukmu minggu depan.
+Saat aplikasi membesar, menarik banyak tali satu per satu jadi kacau. Trik para profesional: simpan data di satu tempat (**state**), dan tulis satu function **render** yang menggambar ulang layar dari data itu. Seperti **papan skor**: kamu ubah skornya, papan menampilkan skor baru. React (Minggu 3) melakukan ini secara otomatis.
 
-## ❓ Kenapa ini ada?
+## ❓ Kenapa ini penting
 
-HTML statis tidak bisa memfilter daftar lowongan saat kamu mengetik, men-toggle tombol "Tersimpan", atau menampilkan error validasi. DOM API adalah cara bawaan browser untuk memperbarui halaman tanpa reload. Setiap framework dibangun di atasnya — memahaminya membuat perilaku (dan bug) React jadi masuk akal.
+HTML biasa tidak bisa memfilter lowongan saat kamu mengetik, men-toggle tombol "Tersimpan", atau menampilkan error form. DOM API memungkinkanmu memperbarui halaman tanpa reload. Setiap framework memakainya di balik layar, jadi memahaminya membuat React lebih mudah.
 
-## 💥 Apa yang terjadi kalau TIDAK dilakukan dengan hati-hati?
+Kalau dilakukan sembarangan, berbahaya:
 
 ```js
 list.innerHTML += `<li>${job.title}<button onclick="save(${job.id})">Save</button></li>`;
 ```
 
-- Judul lowongan seperti `<img src=x onerror="stealCookies()">` menjalankan kode penyerang (**XSS**).
-- `+=` mem-parse ulang seluruh list setiap kali, menghancurkan listener dan fokus yang ada.
-- `onclick` inline butuh function global.
-- State tinggal di DOM ("tombol ini sudah disimpan belum? cek teksnya") dan jadi tidak sinkron.
+- Judul lowongan seperti `<img src=x onerror="stealCookies()">` menjalankan kode orang lain di halamanmu (**XSS**).
+- `+=` membangun ulang seluruh list setiap kali, menghapus listener dan fokus yang ada.
+- Satu-satunya catatan "lowongan ini sudah disimpan belum?" adalah teks tombol, yang mudah jadi tidak sinkron.
 
-## 📖 Cara kerjanya, langkah demi langkah
+## 📖 Langkah demi langkah
 
-### 1. Memilih elemen
+### 1. Mencari elemen
 
 ```js
 const list = document.querySelector("#jobs");            // first match (CSS selector)
 const buttons = document.querySelectorAll(".save");       // static NodeList
 const card = button.closest("li");                        // nearest ancestor matching
 ```
+
+`querySelector` memakai selector CSS, seperti mencari ruangan di gedung berdasarkan nomornya. `closest` naik **ke atas** ke parent terdekat yang cocok.
 
 ### 2. Membuat dan memperbarui dengan aman
 
@@ -61,8 +75,12 @@ card.classList.toggle("card--saved", isSaved);
 list.replaceChildren(...newItems);                 // swap all children at once
 ```
 
+- `textContent` selalu menampilkan data sebagai **teks biasa**. Walaupun teksnya berisi `<script>`, teks itu hanya ditampilkan, tidak dijalankan.
+- `dataset.id` menyimpan data tambahan di elemen (`data-id="1"`).
+- `classList.toggle` menambah atau menghapus sebuah class.
+
 :::danger[XSS]
-`innerHTML`, `insertAdjacentHTML`, dan `outerHTML` mem-parse string sebagai HTML. Jangan pernah mengoper data pengguna atau API ke sana. Kalau kamu memang harus me-render HTML tepercaya (misalnya Markdown yang sudah disanitasi), sanitasi dulu dengan library seperti DOMPurify.
+`innerHTML`, `insertAdjacentHTML`, dan `outerHTML` membaca string **sebagai HTML**, sehingga tag tersembunyi di dalam data bisa menjalankan kode. Bayangkan bedanya membacakan surat dari orang asing dengan menuruti semua isi suratnya. Jangan pernah mengoper data dari pengguna atau API ke sana. Kalau kamu memang harus menampilkan HTML dari sumber tepercaya, bersihkan dulu dengan library seperti DOMPurify.
 :::
 
 ### 3. Event
@@ -79,20 +97,21 @@ input.addEventListener("change", ...);                                      // o
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDialog(); });
 ```
 
-- `event.target` — elemen yang benar-benar diklik (bisa jadi child-nya).
-- `event.currentTarget` — elemen tempat listener dipasang.
-- Pakai `submit` pada form (menangani Enter dan tombol) alih-alih `click` pada tombol.
+- `addEventListener("click", fn)` = "saat ini terjadi, panggil `fn`", seperti bel pintu yang memutar lagu saat ditekan.
+- `event.preventDefault()` menghentikan apa yang biasanya dilakukan browser (untuk form: me-reload halaman).
+- `event.target` = elemen persis yang diklik (bisa jadi ikon kecil di dalam tombol). `event.currentTarget` = elemen tempat listener dipasang.
+- Untuk form, dengarkan `submit` (berfungsi untuk tombol **dan** tombol Enter), bukan `click` pada tombol.
 
 ### 4. Bubbling dan event delegation
 
-Event merambat **naik** dari target melewati ancestor-nya:
+Saat kamu mengeklik tombol, event merambat **naik** melewati parent-parent-nya — seperti keluhan yang naik dari staf ke supervisor lalu ke manajer.
 
 ```mermaid
 flowchart BT
     B["button (target)"] --> LI[li] --> UL["ul (listener di sini)"] --> BODY[body] --> DOC[document]
 ```
 
-Jadi satu listener di list bisa menangani setiap tombol — termasuk tombol yang di-render belakangan:
+Jadi daripada memberi setiap tombol listener sendiri, pasang **satu** listener di list — seperti satu resepsionis untuk seluruh gedung. Cara ini juga berfungsi untuk tombol yang ditambahkan belakangan.
 
 ```js
 list.addEventListener("click", (event) => {
@@ -102,8 +121,6 @@ list.addEventListener("click", (event) => {
   toggleSaved(id);
 });
 ```
-
-Lebih sedikit listener, tidak perlu memasang ulang setelah re-render, lebih hemat memori.
 
 ### 5. State → render
 
@@ -119,19 +136,19 @@ function render() {
 input.addEventListener("input", () => { state.query = input.value; render(); });
 ```
 
-Aturannya: **ubah state, lalu panggil render**; jangan pernah membaca state balik dari DOM. React memformalkan ini: `setState` → re-render.
+Aturannya: **ubah state, lalu panggil `render()`**. Jangan pernah membaca data balik dari layar — papan skor hanya menampilkan skor, bukan yang menentukan skor.
 
-Trade-off: me-render ulang seluruh list mereset fokus di dalamnya. Diffing React menyelesaikan itu; di vanilla JS, jaga area yang di-render ulang tetap kecil (jangan me-render ulang input yang sedang kamu ketik).
+Satu jebakan: menggambar ulang sebuah elemen mereset hal seperti posisi kursor. Jadi gambar ulang hanya bagian yang berubah — bukan input yang sedang diketik pengguna. React menyelesaikan ini untukmu.
 
-### 6. Mengumumkan perubahan
+### 6. Memberi tahu screen reader tentang perubahan
 
-Screen reader tidak otomatis menyadari perubahan DOM. Live region mengumumkannya:
+Screen reader tidak menyadari perubahan halaman dengan sendirinya. **Live region** mengumumkannya:
 
 ```html
 <p aria-live="polite">3 jobs · 1 saved</p>
 ```
 
-### 7. Cleanup
+### 7. Bersih-bersih
 
 ```js
 function mount(root) {
@@ -141,91 +158,72 @@ function mount(root) {
 }
 ```
 
-Atau pakai `AbortController`: `addEventListener("click", handler, { signal })` lalu `controller.abort()` menghapus semuanya. Cleanup di `useEffect` React adalah ide yang sama (Minggu 5).
-
-## ⚖️ Trade-off
-
-| Pilihan | ✅ | ❌ |
-|---|---|---|
-| DOM vanilla | tanpa dependency, cepat untuk widget kecil | sinkronisasi state/render manual, bertele-tele |
-| `innerHTML` dengan template | pendek | risiko XSS, menghancurkan listener/fokus |
-| Event delegation | satu listener, berfungsi untuk item dinamis | sedikit logika tambahan (`closest`) |
-| Re-render semuanya | sederhana dan konsisten | kehilangan fokus/scroll; lambat untuk list besar |
-| Framework (React) | deklaratif, update efisien | ukuran bundle, kurva belajar |
-
-## ✅ Kapan dipakai / 🚫 Kapan TIDAK dipakai
-
-- ✅ Peningkatan kecil di halaman yang di-render server (template Flask/Jinja), browser extension, widget yang kritis performanya.
-- ✅ Memahami apa yang dikerjakan framework di balik layar.
-- 🚫 Aplikasi kompleks dengan banyak state bersama — pakai React (Minggu 3).
-- 🚫 `innerHTML` untuk data apa pun yang tidak kamu tulis sendiri.
-
-## 🏆 Praktik terbaik
-
-- [ ] Render data dengan `textContent`/`createElement`; sanitasi kalau HTML tak terhindarkan.
-- [ ] Simpan state di variabel JavaScript; render dari state; jangan simpan kebenaran di DOM.
-- [ ] Pakai `submit` untuk form dan `preventDefault` saat menanganinya di JS.
-- [ ] Pakai **event delegation** untuk list; pakai atribut `data-*` untuk id.
-- [ ] Perbarui state ARIA (`aria-pressed`, `aria-expanded`) dan pakai `aria-live` untuk pesan status.
-- [ ] Hapus listener yang kamu tambahkan (kembalikan function cleanup atau pakai `AbortController`).
-- [ ] Kelompokkan penulisan DOM (`replaceChildren`, `DocumentFragment`) alih-alih banyak penyisipan satu per satu.
-
-## 🏭 Cara dipakai di industri
-
-- Framework (React, Vue, Svelte) semuanya berujung pada operasi DOM; library seperti htmx dan Alpine.js meningkatkan aplikasi yang di-render server dengan update DOM kecil — populer di tim Flask/Django.
-- XSS masih ada di OWASP Top 10; React meng-escape teks secara default, salah satu alasan tim mengadopsinya.
-- Widget analytics dan support memakai event delegation di `document` untuk melacak klik di seluruh situs.
+Kalau kamu menambahkan listener, hapus saat widget-nya sudah tidak dipakai — seperti mematikan lampu saat keluar ruangan. `AbortController` bisa menghapus banyak listener sekaligus: oper `{ signal }` saat menambahkan, lalu panggil `controller.abort()`. Cleanup di `useEffect` React adalah ide yang sama (Minggu 5).
 
 ## ⚠️ Kesalahan umum
 
-- Memasang listener di setiap tombol, lalu kehilangannya setelah re-render.
-- `event.target` ternyata `<span>` di dalam tombol — pakai `closest()`.
-- Lupa `preventDefault` → form me-reload halaman dan state hilang.
-- Me-render ulang elemen input di setiap ketikan, sehingga kursor melompat.
+- `innerHTML` dengan data dari pengguna atau API (XSS).
+- Listener di setiap tombol, yang hilang setelah list digambar ulang.
+- `event.target` ternyata `<span>` di dalam tombol — pakai `closest("button")`.
+- Lupa `preventDefault()` — form me-reload halaman dan datamu hilang.
+- Menggambar ulang input di setiap ketikan, sehingga kursor melompat.
+- Memakai DOM langsung untuk aplikasi besar dengan banyak data bersama — itu tugas React (Minggu 3).
+
+## 🏆 Praktik terbaik
+
+- [ ] Tampilkan data dengan `textContent` / `createElement`; bersihkan HTML dengan DOMPurify kalau benar-benar perlu.
+- [ ] Simpan data di variabel JavaScript (state); gambar layar dari state.
+- [ ] Pakai `submit` untuk form, dengan `preventDefault()`.
+- [ ] Pakai event delegation untuk list; simpan id di atribut `data-*`.
+- [ ] Perbarui state ARIA (`aria-pressed`, `aria-expanded`) dan pakai `aria-live` untuk pesan status.
+- [ ] Hapus listener yang kamu tambahkan (kembalikan function cleanup atau pakai `AbortController`).
+- [ ] Perbarui DOM sekaligus (`replaceChildren`), bukan banyak sisipan satu per satu.
 
 ::part[Jelaskan & Rancang]{n="2"}
 
 ## 🗣️ Jelaskan
 
-Jelaskan event delegation ke rekan tim dengan analogi (misalnya resepsionis gedung yang melayani tamu untuk setiap kantor), dan kenapa tetap berfungsi setelah list di-render ulang.
+Jelaskan event delegation ke rekan tim dengan analogi resepsionis, dan kenapa tetap berfungsi setelah list digambar ulang.
 
 ## 📐 Rancang
 
-Rancang widget "catatan lamaran" dengan vanilla JS untuk halaman Flask/Jinja: menampilkan catatan, menambah catatan lewat form, menghapus catatan, menampilkan "Menyimpan…"/error, dan menjaga UI tetap benar kalau panggilan API gagal. Jelaskan object state, function render, event, dan panggilan API-nya.
+Rencanakan widget kecil "catatan lamaran" dengan JavaScript biasa untuk halaman Flask/Jinja: tampilkan catatan, tambah catatan lewat form, hapus catatan, tampilkan "Menyimpan…" dan error, dan jaga layar tetap benar kalau panggilan API gagal. Jelaskan state, function render, event, dan panggilan API-nya.
 
 :::quiz
 Tampilkan contoh desainnya
 
 **State**: `{ notes: [{ id, body, createdAt, pending?: boolean }], error: null | string, draft: "" }`
 
-**Render** (hanya list dan status; bukan textarea):
-- `ul` berisi catatan dengan body lewat `textContent`, tombol hapus `button[data-action="delete"]`, catatan yang pending dibuat abu-abu dengan "Menyimpan…".
+**Render** (hanya list dan teks status — bukan textarea):
+- `ul` berisi catatan. Setiap isi diatur dengan `textContent`, plus tombol hapus `button[data-action="delete"]`. Catatan yang masih disimpan berwarna abu-abu dengan "Menyimpan…".
 - `p[aria-live="polite"]` menampilkan error atau "3 catatan".
 
 **Event**
-- `form submit` → `preventDefault`; validasi tidak kosong; **optimistic update**: tambahkan `{ id: tempId, body, pending: true }`, render, `POST /api/v1/applications/:id/notes`. Kalau berhasil, ganti catatan sementara dengan catatan dari server; kalau gagal, hapus catatan itu, set `error = "Catatanmu gagal disimpan. Coba lagi."`, kembalikan teks draft, render.
-- `ul click` (delegation) → hapus: buang dari state dan render langsung; `DELETE /api/v1/notes/:id`; kalau gagal, kembalikan ke indeks lamanya dan tampilkan error.
+- `form submit` → `preventDefault()`; tolak teks kosong. **Tampilkan langsung** (optimistic update): tambahkan `{ id: tempId, body, pending: true }`, render, lalu `POST /api/v1/applications/:id/notes`.
+  - Berhasil: ganti catatan sementara dengan catatan dari server.
+  - Gagal: hapus catatan itu, set `error = "Catatanmu gagal disimpan. Coba lagi."`, kembalikan teksnya ke textarea, render.
+- `ul click` (delegation) → hapus: buang dari state dan render saat itu juga; `DELETE /api/v1/notes/:id`; kalau gagal, kembalikan catatan ke posisi semula dan tampilkan error.
 
-**Keamanan**: hanya `textContent`, nonaktifkan tombol submit selama pending (tanpa double post), kirim header CSRF/JWT, dan kembalikan function cleanup yang menghapus listener.
+**Keamanan**: hanya `textContent`; nonaktifkan tombol submit selama menyimpan (tanpa kiriman ganda); kirim header auth; kembalikan function cleanup yang menghapus listener.
 :::
 
 ### 📝 Checklist self-review
 
-- [ ] Satu sumber kebenaran (state), satu render
-- [ ] Jalur gagal mengembalikan UI
-- [ ] Render yang aman dan status yang aksesibel
+- [ ] Satu tempat untuk data (state), satu function render
+- [ ] Kalau API gagal, layar kembali ke keadaan yang benar
+- [ ] Output teks yang aman dan pesan status yang diumumkan
 
 ::ai-review{task="design"}
 
 ::part[Latihan Kecil]{n="3"}
 
 :::exercise{path="exercises/web/m4/w1/05-dom-events" ai="no-ai" title="Papan lowongan interaktif dengan vanilla JS"}
-Bangun daftar lowongan yang bisa dicari dengan tombol simpan: markup yang aksesibel, filter langsung, tampilan kosong, status tersimpan yang bertahan saat difilter, baris status live, render aman untuk data berbahaya, satu listener klik ber-delegation, dan function cleanup. Tes menjalankannya seperti pengguna dengan Testing Library.
+Bangun daftar lowongan yang bisa dicari dengan tombol simpan: HTML yang aksesibel, filter saat mengetik, pesan "kosong", lowongan tersimpan yang tetap tersimpan saat difilter, baris status live, output aman untuk data berbahaya, satu listener klik ber-delegation, dan function cleanup. Tes memakai halaman seperti pengguna sungguhan (Testing Library).
 :::
 
 :::hints
-- Simpan `query` dan sebuah `Set` berisi id tersimpan di variabel closure; tulis `render()` yang hanya membangun ulang list, status, dan pesan kosong.
-- Buat form dan input **sekali** di luar `render()` agar ketikan tidak terganggu.
+- Simpan `query` dan sebuah `Set` berisi id tersimpan di variabel di dalam function-mu (closure); tulis `render()` yang hanya membangun ulang list, status, dan pesan kosong.
+- Buat form dan input **sekali saja**, di luar `render()`, agar ketikan tidak terganggu.
 - Di click handler: `event.target.closest("button")`, lalu `closest("li").dataset.id`.
 :::
 
@@ -234,25 +232,14 @@ Bangun daftar lowongan yang bisa dicari dengan tombol simpan: markup yang aksesi
 :::quiz
 Apa beda `event.target` dan `event.currentTarget`?
 
-`target` adalah elemen tempat event bermula (bisa jadi child); `currentTarget` adalah elemen yang listener-nya sedang berjalan.
+`target` adalah elemen tempat event bermula (bisa jadi child). `currentTarget` adalah elemen yang listener-nya sedang berjalan.
 :::
 
 :::quiz
 Kenapa `textContent` lebih aman daripada `innerHTML` untuk data API?
 
-`textContent` menyisipkan teks biasa; `innerHTML` mem-parse markup, sehingga tag atau event handler yang disisipkan bisa dieksekusi (XSS).
+`textContent` menampilkan teks biasa. `innerHTML` membaca teks sebagai HTML, sehingga tag atau event handler tersembunyi di dalam data bisa berjalan (XSS).
 :::
-
-## 📖 Kamus (glosarium)
-
-| Istilah | Bahasa Indonesia |
-|---|---|
-| DOM manipulation | Manipulasi DOM — mengubah elemen halaman lewat JavaScript |
-| Event listener | Pendengar peristiwa |
-| Event bubbling | Penggelembungan peristiwa ke elemen induk |
-| Event delegation | Delegasi peristiwa |
-| XSS (Cross-Site Scripting) | Serangan penyisipan skrip |
-| Live region | Area yang diumumkan pembaca layar saat berubah |
 
 ## 📚 Lanjut belajar
 

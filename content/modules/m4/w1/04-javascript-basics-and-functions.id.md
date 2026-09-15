@@ -1,30 +1,41 @@
 ---
 title: "Dasar JavaScript & Function"
-summary: JavaScript untuk developer Python — nilai dan type, kesamaan dan truthiness, const/let, string dan template literal, function, arrow function, closure, module, serta keanehan yang memicu bug nyata.
-sourceHash: ce2c7ef09159
+summary: JavaScript untuk developer Python — nilai dan type, membandingkan nilai, const/let, string, function, arrow function, closure, dan module, plus perbedaan kecil yang memicu bug nyata.
+sourceHash: 28c2fe9f55b9
 ---
 
 ::part[Pelajari Konsepnya]{n="1"}
 
 ## 🎯 Yang akan kamu pelajari
 
-- Di mana JavaScript berjalan (browser, Node.js) dan bedanya dengan Python
-- `const` / `let`, type primitif, object dan array
-- `===` vs `==`, **truthiness**, `??` vs `||`, optional chaining `?.`
-- String, template literal, number (dan jebakannya)
-- Function declaration, **arrow function**, parameter default dan rest
-- **Closure** dan function sebagai nilai (callback, debounce)
-- ES module: `import` / `export`
+- Perbandingan JavaScript dengan Python
+- `const` dan `let`, type, object, dan array
+- Membandingkan nilai dengan aman (`===`), dan nilai yang "dianggap kosong"
+- String dan template literal
+- Function, arrow function, dan closure
+- Memecah kode ke beberapa file dengan `import` / `export`
+
+## 🔤 Istilah penting
+
+| Istilah | Artinya (sederhana) |
+|---|---|
+| **`const` / `let`** | Cara membuat variabel: `const` tidak bisa diisi ulang, `let` bisa |
+| **Truthy / falsy** | Nilai yang dianggap benar atau salah di dalam `if` |
+| **`===`** | Perbandingan ketat: nilai **dan** type-nya sama |
+| **`??`** | "Pakai nilai cadangan ini hanya kalau nilainya `null` atau `undefined`" |
+| **Arrow function** | Cara singkat menulis function: `(a) => a * 2` |
+| **Closure** | Function yang mengingat variabel dari tempat ia dibuat |
+| **Module** | Satu file yang membagikan kode dengan `export` dan memakai kode dengan `import` |
 
 ## 🧠 Ide besarnya
 
-Kamu sudah bisa memprogram. JavaScript adalah **dialek baru, bukan cara berpikir baru**: variabel, function, loop, dan object bekerja mirip Python. Bahayanya ada di perbedaan kecil yang *terlihat* familier — `==`, truthiness, `this`, number — jadi materi ini fokus di sana.
+Kamu sudah bisa memprogram. Belajar JavaScript setelah Python itu seperti **pindah dari Jakarta ke Bandung**: kebanyakan hal sama saja (jalan, toko, uang), tapi beberapa aturan lokal bikin kaget. Materi ini fokus ke kejutan-kejutan itu — `==`, nilai kosong, dan angka — karena di situlah bug muncul.
 
-## ❓ Kenapa ini ada?
+## ❓ Kenapa ini penting
 
-JavaScript adalah satu-satunya bahasa yang dijalankan browser secara native, jadi setiap halaman web interaktif — termasuk React, Next.js, dan UI aplikasi CareerPilot-mu — adalah JavaScript (atau TypeScript yang di-compile menjadi JavaScript). Dengan Node.js, JavaScript juga menjalankan server, build tool, dan CLI.
+JavaScript adalah satu-satunya bahasa yang dijalankan langsung oleh browser. Setiap halaman interaktif, React, dan Next.js — termasuk aplikasi CareerPilot-mu — adalah JavaScript (atau TypeScript yang diubah menjadi JavaScript).
 
-## 💥 Apa yang terjadi kalau TIDAK mempelajari keanehannya?
+Perbedaan kecil memicu bug nyata:
 
 ```js
 if (salaryMax) { showSalary() }          // 🐛 salary 0 is hidden
@@ -33,14 +44,14 @@ if (status == 0) { ... }                 // 🐛 "" == 0 is true
 0.1 + 0.2 === 0.3                        // false (same as Python!)
 ```
 
-## 📖 Cara kerjanya, langkah demi langkah
+## 📖 Langkah demi langkah
 
-### 1. Contekan Python ↔ JavaScript
+### 1. Python ↔ JavaScript
 
 | Python | JavaScript |
 |---|---|
-| `name = "Siti"` | `const name = "Siti"` (tidak bisa di-assign ulang) / `let count = 0` |
-| `None` | `null` (sengaja kosong) dan `undefined` (belum di-set) |
+| `name = "Siti"` | `const name = "Siti"` (tidak bisa diisi ulang) / `let count = 0` |
+| `None` | `null` (sengaja kosong) dan `undefined` (belum pernah diisi) |
 | `True`, `False` | `true`, `false` |
 | `f"Hi {name}"` | `` `Hi ${name}` `` |
 | `len(items)` | `items.length` |
@@ -54,11 +65,11 @@ if (status == 0) { ... }                 // 🐛 "" == 0 is true
 | `import x from y` | `import { x } from "./y.js"` |
 | blok dengan indentasi | blok `{ }` (titik koma opsional tapi umum dipakai) |
 
-Jangan pernah pakai `var` (scope-nya function, di-hoist, membingungkan). `const` sebagai default; `let` saat kamu memang harus meng-assign ulang.
+Pakai `const` sebagai default dan `let` hanya kalau nilainya harus berubah. Jangan pernah pakai `var` (cara lama yang perilakunya aneh).
 
 ### 2. Type
 
-Primitif: `string`, `number` (satu type untuk integer dan float), `bigint`, `boolean`, `null`, `undefined`, `symbol`. Selain itu semuanya **object** (array, function, date…).
+Type sederhana: `string`, `number` (satu type untuk bilangan bulat dan desimal), `boolean`, `null`, `undefined` (dan `bigint`, `symbol` yang jarang dipakai). Selain itu semuanya **object** — array, function, date.
 
 ```js
 typeof "hi"        // "string"
@@ -68,22 +79,28 @@ Array.isArray([])  // true
 Number("12abc")    // NaN  (Not a Number — and NaN !== NaN; use Number.isNaN)
 ```
 
-Uang: number adalah float. Simpan rupiah sebagai **integer** (seperti Flask API-mu), jangan pernah menghitung mata uang dengan pecahan satuan.
+Tips uang: simpan rupiah sebagai **bilangan bulat** (seperti Flask API-mu). Menghitung uang dengan desimal menimbulkan kesalahan pembulatan.
 
-### 3. Kesamaan dan truthiness
+### 3. Membandingkan nilai dan nilai "kosong"
+
+`==` mencoba mengubah type sebelum membandingkan — seperti kasir yang menerima foto uang sebagai uang asli. `===` mengecek nilai **dan** type-nya. Selalu pakai `===`.
 
 ```js
 0 == ""            // true   ← coercion
 0 === ""           // false  ✅ always use === and !==
 ```
 
-Nilai **falsy**: `false`, `0`, `-0`, `0n`, `""`, `null`, `undefined`, `NaN`. Selain itu semuanya truthy — termasuk `"0"`, `[]`, dan `{}` (berbeda dengan Python, di mana list kosong itu falsy!).
+Nilai-nilai ini dianggap **salah** di dalam `if` (falsy): `false`, `0`, `""`, `null`, `undefined`, `NaN`. Selain itu dianggap benar — **termasuk `[]` dan `{}`**. (Di Python, list kosong dianggap salah. Di JavaScript dianggap benar!)
 
 ```js
 const salary = job.salaryMax || "Not disclosed"   // 🐛 0 → "Not disclosed"
 const salary = job.salaryMax ?? "Not disclosed"   // ✅ only null/undefined fall back
 const city = job.company?.address?.city           // undefined instead of a crash
 ```
+
+- `||` memakai nilai cadangan untuk **semua** nilai yang dianggap salah, termasuk `0`.
+- `??` memakai nilai cadangan **hanya** untuk `null` atau `undefined`. Lebih tepat untuk angka.
+- `?.` (optional chaining) berhenti dengan aman kalau ada yang tidak ada, bukan crash — seperti mengecek apakah pintunya ada sebelum membukanya.
 
 ### 4. String
 
@@ -95,6 +112,8 @@ title.includes("End")                     // false (case-sensitive)
 "a-b-c".split("-")                        // ["a", "b", "c"]
 "backend engineer".replace(/\s+/g, "-")    // regex with g flag = replace all
 ```
+
+Template literal (dengan backtick `` ` ``) bekerja seperti f-string di Python: `${...}` menaruh nilai di dalam teks.
 
 ### 5. Function
 
@@ -113,11 +132,13 @@ function salaryLabel({ min = null, max = null } = {}) { ... }
 const sum = (...numbers) => numbers.reduce((a, b) => a + b, 0);
 ```
 
-Function adalah nilai: bisa dioper ke mana-mana (`button.addEventListener("click", onSave)`), dikembalikan, dan disimpan.
+- **Arrow function** adalah cara lebih singkat menulis function. Kebanyakan kode modern memakainya.
+- `...numbers` mengumpulkan semua argumen ke dalam array (seperti `*args` di Python).
+- Function adalah nilai: bisa dioper ke function lain, misalnya `button.addEventListener("click", onSave)`. Function yang dioper seperti ini disebut **callback** — "panggil aku lagi saat sesuatu terjadi".
 
 ### 6. Closure
 
-Sebuah function mengingat variabel dari scope tempat ia dibuat:
+Closure adalah function yang **mengingat** variabel dari tempat ia dibuat — seperti **tas ransel** yang selalu dibawa function itu.
 
 ```js
 function createCounter(start = 0) {
@@ -131,7 +152,9 @@ const saved = createCounter();
 saved.increment();                    // 1 — nobody else can touch `count`
 ```
 
-Closure menjadi mesin di balik event handler, React hook (Minggu 3), dan utility seperti **debounce**:
+`count` tinggal di dalam ransel. Hanya `increment` dan `value` yang bisa menjangkaunya.
+
+Contoh pemakaian yang umum adalah **debounce**: tunggu sampai pengguna berhenti mengetik, lalu cari sekali saja. Cara kerjanya seperti pintu lift yang menunggu sampai orang berhenti masuk sebelum menutup.
 
 ```js
 function debounce(fn, waitMs) {
@@ -144,7 +167,9 @@ function debounce(fn, waitMs) {
 const onSearch = debounce((text) => fetchJobs(text), 300);   // one request after typing stops
 ```
 
-### 7. Object, spread, dan destructuring
+React hook (Minggu 3) juga dibangun di atas closure.
+
+### 7. Object dan salinan
 
 ```js
 const job = { id: 1, title: "Backend Engineer", salary: { min: 9e6, max: 14e6 } };
@@ -153,7 +178,9 @@ const updated = { ...job, title: "Senior Backend Engineer" };   // copy + change
 const [first, ...rest] = ["python", "sql", "docker"];
 ```
 
-Object dan array adalah **reference** (seperti Python): `const copy = job` tidak menyalin. Spread membuat salinan **dangkal** (shallow); `structuredClone(job)` membuat salinan dalam (deep).
+- **Destructuring** mengambil nilai dari object atau array ke dalam variabel.
+- `{ ...job }` (spread) membuat salinan. Ini salinan **dangkal**: kotak luarnya baru, tapi kotak di dalamnya (seperti `salary`) masih dipakai bersama. Pakai `structuredClone(job)` untuk salinan penuh.
+- `const copy = job` **tidak** menyalin — kedua nama menunjuk ke object yang sama (sama seperti Python).
 
 ### 8. Module
 
@@ -166,57 +193,35 @@ export const CURRENCY = "IDR";
 import { slugify, CURRENCY } from "./format.js";
 ```
 
-Di browser: `<script type="module" src="app.js"></script>`. Di Node: `"type": "module"` di `package.json`. Setiap module punya scope sendiri — tidak ada global yang tak disengaja.
-
-## ⚖️ Trade-off
-
-| Pilihan | ✅ | ❌ |
-|---|---|---|
-| Arrow function | ringkas, `this` yang bisa ditebak | tidak bisa jadi constructor; tanpa `arguments` |
-| Function declaration | di-hoist, nama jelas di stack trace | `this` bergantung pada cara pemanggilannya |
-| `==` | lebih pendek | bug coercion — hindari |
-| `\|\|` untuk default | berfungsi untuk string | salah untuk `0`, `""`, `false` → pakai `??` |
-| JS biasa | tanpa build step | tanpa type safety → TypeScript minggu depan |
-
-## ✅ Kapan dipakai / 🚫 Kapan TIDAK dipakai
-
-- ✅ `const` + arrow function + `===` + `??` + `?.` sebagai default.
-- ✅ Closure untuk state privat dan callback.
-- 🚫 `var`, `==`, mengubah prototype bawaan, variabel global.
-- 🚫 Matematika number untuk uang dengan desimal.
-
-## 🏆 Praktik terbaik
-
-- [ ] `const` sebagai default, `let` hanya saat meng-assign ulang, jangan pernah `var`.
-- [ ] Selalu `===`/`!==`; `??` untuk default; `?.` untuk data opsional.
-- [ ] Function kecil yang pure dengan nama jelas; hindari state global tersembunyi.
-- [ ] Template literal alih-alih menyambung string.
-- [ ] Pakai ES module; satu tanggung jawab per module.
-- [ ] Format dengan Prettier dan lint dengan ESLint (keduanya menangkap `==`, variabel tak terpakai, shadowing).
-- [ ] Belajar memakai **Console** browser dan breakpoint **debugger** — `debugger;` bekerja seperti `breakpoint()` di Python.
-
-## 🏭 Cara dipakai di industri
-
-- Hampir semua frontend memakai JavaScript/TypeScript; banyak backend dan tool memakai Node.js, Deno, atau Bun.
-- Code review rutin menandai `==`, default `||` untuk angka, dan mutasi object yang dipakai bersama.
-- Debounce/throttle adalah standar untuk kotak pencarian dan handler scroll (TanStack, lodash, custom hook).
+`export` membagikan kode dari sebuah file; `import` memakainya di file lain. Di browser: `<script type="module" src="app.js"></script>`. Setiap module punya variabelnya sendiri, jadi file-file tidak saling menimpa.
 
 ## ⚠️ Kesalahan umum
 
-- Penyambungan string `"5" + 1` dari input form → konversi dengan `Number()`.
-- Mengecek kosong dengan `if (list)` — `[]` itu truthy; pakai `list.length === 0`.
-- Lupa `return` di arrow function multi-baris yang memakai `{ }`.
-- Memutasi object yang dioper masuk (mengejutkan pemanggilnya — dan nanti merusak React).
+- `"5" + 1` dari input form menghasilkan `"51"` — ubah dulu dengan `Number()`.
+- Mengecek list kosong dengan `if (list)` — `[]` dianggap benar. Pakai `list.length === 0`.
+- `||` untuk nilai default angka (rusak saat `0`) — pakai `??`.
+- Lupa `return` di arrow function yang memakai `{ }`.
+- Mengubah object yang dioper masuk — mengejutkan pemanggilnya (dan nanti merusak React).
+
+## 🏆 Praktik terbaik
+
+- [ ] `const` sebagai default, `let` saat perlu, jangan pernah `var`.
+- [ ] Selalu `===` dan `!==`; `??` untuk default; `?.` untuk data yang mungkin tidak ada.
+- [ ] Function kecil dengan nama jelas; hindari variabel global.
+- [ ] Template literal, bukan menyambung string dengan `+`.
+- [ ] Satu tugas per module (file).
+- [ ] Pakai Prettier (merapikan format) dan ESLint (menangkap `==`, variabel tak terpakai).
+- [ ] Pelajari **Console** browser dan breakpoint — `debugger;` bekerja seperti `breakpoint()` di Python.
 
 ::part[Jelaskan & Rancang]{n="2"}
 
 ## 🗣️ Jelaskan
 
-Jelaskan ke developer Python kenapa `if (job.salaryMax)` adalah bug di JavaScript saat gaji bisa bernilai `0`, dan operator mana yang memperbaiki kasus "nilai default".
+Jelaskan ke developer Python kenapa `if (job.salaryMax)` adalah bug di JavaScript kalau gaji bisa bernilai `0`, dan operator mana yang memperbaiki nilai default-nya.
 
 ## 📐 Rancang
 
-Kotak pencarian lowongan CareerPilot memanggil API selagi pengguna mengetik. Rancang function-function-nya (nama, input, output) yang: menormalkan query, men-debounce request, mengabaikan response yang datang tidak berurutan (response lama yang lambat tidak boleh menimpa hasil yang lebih baru), dan meng-cache 20 query terakhir.
+Kotak pencarian lowongan CareerPilot memanggil API selagi pengguna mengetik. Rencanakan function-function-nya (nama, input, output) yang: merapikan teks pencarian, menunggu sampai ketikan berhenti (debounce), mengabaikan jawaban lama yang datang terlambat, dan mengingat 20 pencarian terakhir.
 
 :::quiz
 Tampilkan contoh desainnya
@@ -248,29 +253,29 @@ export function createSearch({ fetchJobs, render, waitMs = 300, cacheSize = 20 }
 }
 ```
 
-- `normalizeQuery` yang pure sangat mudah dites.
-- Closure menyimpan cache dan penghitung request secara privat.
-- Dependency (`fetchJobs`, `render`) di-inject → bisa dites dengan fake.
-- Nanti, `AbortController` bisa membatalkan request usang alih-alih mengabaikannya (materi 07), dan TanStack Query mengerjakan sebagian besar hal ini untukmu (Minggu 4).
+- `normalizeQuery` tidak punya efek samping, jadi mudah dites.
+- Cache dan penghitung request tinggal di "ransel" closure — tidak ada yang lain bisa mengubahnya.
+- Setiap request mendapat nomor. Kalau nomor lama menjawab paling akhir, hasilnya diabaikan — seperti pelayan yang mengabaikan pesanan yang sudah kamu ganti.
+- `fetchJobs` dan `render` dioper masuk, jadi tes bisa memakai versi palsu.
 :::
 
 ### 📝 Checklist self-review
 
-- [ ] Response yang datang tidak berurutan sudah ditangani
-- [ ] State disimpan privat di dalam closure
-- [ ] Dependency di-inject
+- [ ] Jawaban lama yang datang terlambat diabaikan
+- [ ] State privat disimpan di dalam closure
+- [ ] Hal yang dibutuhkan function dioper masuk (mudah dites)
 
 ::ai-review{task="design"}
 
 ::part[Latihan Kecil]{n="3"}
 
 :::exercise{path="exercises/web/m4/w1/04-js-basics-functions" ai="no-ai" title="Slug, label gaji, closure, dan debounce"}
-Implementasikan pembersihan string, label gaji dengan beberapa kasus nilai opsional, pengecekan kosong yang tidak mengandalkan truthiness, counter berbasis closure, dan function debounce yang dites dengan fake timer — hanya dengan sintaks modern.
+Tulis function-function kecil: ubah string menjadi slug URL, buat label gaji untuk beberapa kasus "nilai tidak ada", cek teks kosong tanpa mengandalkan truthiness, buat counter dengan closure, dan tulis function debounce (dites dengan timer palsu) — hanya dengan sintaks modern.
 :::
 
 :::hints
-- `slugify`: dua kali replace dengan regex — karakter non-alfanumerik menjadi `-`, lalu buang `-` di awal/akhir.
-- `salaryLabel`: bandingkan dengan `=== null || === undefined` (atau `== null` — tapi tesnya melarang `==`, jadi tulis lengkap).
+- `slugify`: dua kali replace dengan regex — karakter selain huruf/angka menjadi `-`, lalu hapus `-` di awal dan akhir.
+- `salaryLabel`: bandingkan dengan `=== null || === undefined` (tesnya melarang `==`, jadi tulis lengkap).
 - `Math.round(x * 10) / 10` membulatkan ke satu desimal; `String(9)` adalah `"9"` dan `String(9.5)` adalah `"9.5"`.
 - `debounce`: simpan `timer` di luar function yang dikembalikan.
 :::
@@ -280,25 +285,14 @@ Implementasikan pembersihan string, label gaji dengan beberapa kasus nilai opsio
 :::quiz
 Apa beda `null` dan `undefined`?
 
-`undefined` berarti nilai tidak pernah di-set (property atau argumen yang tidak ada); `null` adalah "tidak ada nilai" yang disengaja. Keduanya falsy dan keduanya memicu `??`.
+`undefined` berarti nilai belum pernah diisi (property atau argumen yang tidak ada). `null` berarti "sengaja kosong". Keduanya memicu `??`.
 :::
 
 :::quiz
-Apa yang ditangkap oleh sebuah closure?
+Apa yang diingat oleh sebuah closure?
 
-Variabel-variabel dari scope tempat function itu dibuat, yang tetap hidup selama function itu masih ada.
+Variabel-variabel dari tempat function itu dibuat. Variabel itu tetap hidup selama function-nya masih ada.
 :::
-
-## 📖 Kamus (glosarium)
-
-| Istilah | Bahasa Indonesia |
-|---|---|
-| Truthy / falsy | Nilai yang dianggap benar / salah dalam kondisi |
-| Strict equality | Kesamaan ketat (`===`) |
-| Arrow function | Fungsi panah |
-| Closure | Penutupan — fungsi yang mengingat variabel di sekitarnya |
-| Callback | Fungsi yang dipanggil kembali oleh fungsi lain |
-| Debounce | Menunda eksekusi sampai input berhenti |
 
 ## 📚 Lanjut belajar
 
