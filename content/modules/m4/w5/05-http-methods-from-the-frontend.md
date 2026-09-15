@@ -1,6 +1,6 @@
 ---
 title: "HTTP Methods from the Frontend"
-summary: Call GET, POST, PATCH and DELETE correctly from a Next.js app — Route Handlers as a Backend-for-Frontend, forwarding the session token, status codes like 201/204/422, idempotency, and a typed browser client.
+summary: Call GET, POST, PATCH and DELETE correctly from a Next.js app — Route Handlers as a Backend-for-Frontend, passing the session token, status codes like 201/204/422, safe retries, and a typed browser client.
 type: lesson
 source: core
 sourceRef: "M3 · W5 · L5"
@@ -14,63 +14,75 @@ tags: [http, rest, route-handlers, bff, fetch, nextjs]
 
 ## 🎯 What you'll learn
 
-- Which HTTP method to use for each UI action, and what **safe** and **idempotent** mean
+- Which HTTP method fits each action, and what **safe** and **idempotent** mean
 - Three ways a Next.js frontend talks to Flask: Server Components, Server Actions, **Route Handlers**
-- The **Backend-for-Frontend (BFF)** pattern: forwarding requests with the session token
-- `route.ts` handlers for `GET`, `POST`, `PATCH`, `DELETE` with async `params`
-- Passing through status codes (`201`, `204`, `401`, `404`, `409`, `422`, `502`)
-- A small typed browser client for Client Components (and TanStack Query)
+- The **Backend-for-Frontend (BFF)** pattern
+- `route.ts` handlers for `GET`, `POST`, `PATCH`, `DELETE`
+- Passing status codes through (`201`, `204`, `401`, `404`, `409`, `422`, `502`)
+- A small typed client for Client Components
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **HTTP method** | The "verb" of a request: GET, POST, PATCH, PUT, DELETE | Kata kerja request |
+| **Safe** | The request doesn't change anything (reading) | Aman / tidak mengubah |
+| **Idempotent** | Doing it twice gives the same result as doing it once | Diulang hasilnya sama |
+| **Status code** | The number in the response that says what happened: 200, 404… | Kode status |
+| **Route Handler** | An API endpoint file in Next.js (`route.ts`) | Endpoint di Next.js |
+| **BFF** | Your Next.js server calls Flask for the browser, adding the token | Server perantara |
+| **Upstream** | The server behind yours — here, Flask | Server tujuan |
+| **Proxy** | Something that forwards requests to another server | Penerus request |
 
 ## 🧠 The big idea
 
 HTTP methods are **verbs** in a sentence to the server:
 
-- `GET /applications` — "show me" (reading, no side effects)
+- `GET /applications` — "show me" (reading, no changes)
 - `POST /applications` — "create this"
 - `PATCH /applications/7` — "change part of this"
-- `PUT /applications/7` — "replace this entirely"
+- `PUT /applications/7` — "replace this completely"
 - `DELETE /applications/7` — "remove this"
 
-The BFF is a **receptionist**: the browser talks only to the receptionist (your Next.js server, same domain, with the session cookie), and the receptionist calls the right department (Flask) with the staff badge (access token) the visitor never holds.
+The BFF is a **receptionist**. The browser only talks to the receptionist (your Next.js server, same website, with the session cookie). The receptionist calls the right department (Flask) using a staff badge (the access token) that visitors never hold.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Client Components (a drag-and-drop board, an autosave notes editor) need to call the API **from the browser**. But:
+Client Components — like a drag-and-drop board or a notes editor that saves while you type — need to call the API **from the browser**. But:
 
-- The Flask token is in an **httpOnly cookie** — browser JavaScript can't read it (lesson 02).
-- Calling Flask directly from the browser needs CORS configuration and exposes the API's address.
+- The Flask token is in an **httpOnly cookie**, which browser JavaScript can't read (lesson 02).
+- Calling Flask directly from the browser needs CORS and reveals the API's address.
 
-Route Handlers solve both: the browser calls `/api/applications` on the **same origin**; the handler reads the session on the server and forwards the request.
+Route Handlers solve both. The browser calls `/api/applications` on **your own site**; the handler reads the session on the server and forwards the request to Flask.
 
-## 💥 What happens if we DON'T?
-
-- `POST` used for everything → caches, retries and logs can't reason about requests.
-- `DELETE` returns `200` with `{"success": true}` in one place and `204` elsewhere → client code breaks on `response.json()` of an empty body.
+What goes wrong without clear rules:
+- `POST` for everything → caches, retries and logs can't understand the requests.
+- `DELETE` returns `200` with JSON in one place and an empty `204` in another → client code crashes reading an empty body.
 - A proxy that forwards **any path** (`/api/proxy/[...path]`) lets users reach admin endpoints you never meant to expose.
-- Upstream error messages (`connect ECONNREFUSED 10.0.3.7:5091`) leak internal infrastructure to users.
+- Error messages like `connect ECONNREFUSED 10.0.3.7:5091` leak your internal servers to users.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
-### 1. Methods and their guarantees
+### 1. Methods and what they promise
 
-| Method | Use | Safe (no changes)? | Idempotent (repeat = same result)? | Typical success |
+| Method | Use | Safe? | Idempotent? | Usual success |
 |---|---|---|---|---|
 | GET | read | ✅ | ✅ | 200 |
 | POST | create / run an action | ❌ | ❌ | 201 (+ `Location`) / 200 / 202 |
 | PUT | replace | ❌ | ✅ | 200 / 204 |
-| PATCH | partial update | ❌ | not guaranteed | 200 |
+| PATCH | change part | ❌ | not guaranteed | 200 |
 | DELETE | remove | ❌ | ✅ | 204 |
 
-Idempotency matters for **retries**: a network timeout on `DELETE` can be retried safely; retrying `POST` might create two applications (use an `Idempotency-Key` header for payments, see Architecture F).
+**Idempotent** matters for retries. Like pressing a **lift button** twice: the lift still comes once — safe to repeat. But ordering food twice gets you **two** meals. A timed-out `DELETE` can be retried safely; retrying a `POST` might create two applications. For payments, add an `Idempotency-Key` header (Architecture F).
 
-### 2. Picking the channel in Next.js
+### 2. Choosing the right channel in Next.js
 
-| Need | Use |
+| You need | Use |
 |---|---|
-| Render a page with data | **Server Component** calls Flask directly (DAL) |
-| Form submit / button mutation that refreshes server-rendered UI | **Server Action** (lesson 01) |
-| Client Component fetching/mutating (TanStack Query, autosave, drag and drop) | **Route Handler** (BFF) |
-| Webhooks, third-party callbacks, files, public API for other clients | **Route Handler** |
+| Show a page with data | **Server Component** calls Flask directly (DAL) |
+| A form or button that changes data and refreshes server-rendered UI | **Server Action** (lesson 01) |
+| A Client Component loading or changing data (TanStack Query, autosave, drag-and-drop) | **Route Handler** (BFF) |
+| Webhooks, callbacks from other services, files, a public API | **Route Handler** |
 
 ### 3. A shared forwarding helper
 
@@ -102,8 +114,10 @@ export async function forwardToFlask(path: string, init: { method: string; body?
 }
 ```
 
-- **Explicit routes only** — each handler decides which Flask path it calls.
-- Status codes pass through so the client sees Flask's `422` field errors.
+- No session → `401`.
+- Adds the token from the session — the browser never sees it.
+- Flask unreachable → `502` with a general error code, not internal details.
+- Passes Flask's status code through, so the browser still gets `422` field errors.
 - `204` must have **no body**.
 
 ### 4. Route Handlers
@@ -133,10 +147,14 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/applicatio
 }
 ```
 
-`RouteContext<'/api/applications/[id]'>` is a global helper type generated by Next.js (`next dev`/`next build`/`next typegen`). In the exercise we write the type by hand.
+- Export a function named after the method: `GET`, `POST`, `PATCH`, `DELETE`.
+- Each handler calls **one specific** Flask path — no "forward anything" proxy.
+- Check the id (`/^\d+$/`) before building the Flask URL, so nobody can sneak in `../admin/users`.
+- `params` is a Promise — `await` it.
+- `RouteContext<'/api/applications/[id]'>` is a type Next.js generates for you. In the exercise, you write the type by hand.
 
 :::warning[Route Handlers are public]
-Like Server Actions, every `route.ts` is reachable by anyone. Authenticate (and authorize) in each handler. `GET` handlers are **not cached** by default — keep it that way for per-user data.
+Like Server Actions, every `route.ts` can be called by anyone. Check login (and permissions) in every handler. `GET` handlers are **not cached** by default — keep it that way for personal data.
 :::
 
 ### 5. The browser client
@@ -163,7 +181,10 @@ export const applicationsClient = {
 };
 ```
 
-Cookies are sent automatically on same-origin `fetch`. Plug these functions into TanStack Query's `queryFn`/`mutationFn` (W4 L7).
+- The browser sends cookies automatically when calling your own site.
+- `204` → return `null` without reading JSON.
+- `encodeURIComponent` makes values safe inside the URL.
+- Use these functions in TanStack Query's `queryFn` / `mutationFn` (Week 4 lesson 07).
 
 ```mermaid
 sequenceDiagram
@@ -177,57 +198,37 @@ sequenceDiagram
     R-->>C: same status + body
 ```
 
-## ⚖️ Trade-offs
-
-| | ✅ | ❌ |
-|---|---|---|
-| Browser → Flask directly | fewer hops, simple | token must be JS-readable, CORS, API exposed |
-| BFF Route Handlers | token stays server-side, same-origin, can reshape data | extra hop/latency, more code to maintain |
-| Catch-all proxy (`rewrites` / `[...path]`) | little code | easy to expose unintended endpoints; auth header injection needs care |
-| Server Actions for mutations | no route code, revalidation built in | POST only, sequential, not for external clients |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ BFF handlers for interactive client features that need the user's token.
-- ✅ Route Handlers for webhooks (Midtrans in RevoShop-style apps), file downloads, RSS/sitemaps.
-- 🚫 Don't call your own Route Handler **from a Server Component** — call the data function directly (an extra HTTP hop for nothing).
-- 🚫 Don't build a generic proxy that forwards any path and method.
-
-## 🏆 Best practices
-
-- [ ] Use methods by meaning: GET reads, POST creates, PATCH updates partially, DELETE removes.
-- [ ] Return `201` for creates, `204` with no body for deletes, and keep error bodies consistent (`{ error: { code, message?, fields? } }`).
-- [ ] Authenticate in every handler; forward only allow-listed paths.
-- [ ] Validate route params and JSON before calling upstream.
-- [ ] Never leak upstream error details or internal hostnames; log them server-side.
-- [ ] `cache: "no-store"` for per-user upstream requests.
-- [ ] Set timeouts on upstream calls (`AbortSignal.timeout(10_000)`).
-- [ ] Only send `Content-Type: application/json` when there's a body.
-- [ ] Use `encodeURIComponent` / `URLSearchParams` for query strings.
-
-## 🏭 How it's used in industry
-
-- The BFF pattern is common at companies with many backend services (Netflix, SoundCloud popularised it): each frontend gets a tailored API layer.
-- Next.js Route Handlers often wrap internal microservices so browsers only ever talk to one origin.
-- Public APIs document methods and status codes with OpenAPI (Module 2 W5), and frontends generate typed clients from it.
-
 ## ⚠️ Common mistakes
 
 - `await response.json()` on a `204` → "Unexpected end of JSON input".
-- Building `/api/v1/applications/${id}` without validating `id` (`../admin/users`).
+- Building `/api/v1/applications/${id}` without checking `id`.
 - Forgetting that `params` is a Promise → `id` is `undefined`.
-- Returning `NextResponse.json(error)` with status `200` for errors.
-- Sending `GET` requests with a body.
+- Returning errors with status `200`.
+- Sending a body with `GET`.
+- Calling your own Route Handler **from a Server Component** — call the data function directly instead (an extra HTTP hop for nothing).
+- A generic proxy that forwards any path and method.
+
+## 🏆 Best practices
+
+- [ ] Use methods by meaning: GET reads, POST creates, PATCH changes part, DELETE removes.
+- [ ] `201` for creates, `204` with no body for deletes, and one error shape (`{ error: { code, message?, fields? } }`).
+- [ ] Check login in every handler; forward only paths you chose.
+- [ ] Check route params and JSON before calling Flask.
+- [ ] Never show upstream error details or internal addresses; log them on the server.
+- [ ] `cache: "no-store"` for personal data.
+- [ ] Add timeouts to upstream calls (`AbortSignal.timeout(10_000)`).
+- [ ] Only send `Content-Type: application/json` when there is a body.
+- [ ] Build query strings with `encodeURIComponent` or `URLSearchParams`.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain the receptionist analogy for the BFF, then explain to a teammate why retrying a timed-out `DELETE` is safe but retrying a `POST` might not be.
+Explain the receptionist idea for the BFF, then explain (with the lift button vs food order idea) why retrying a timed-out `DELETE` is safe but retrying a `POST` might not be.
 
 ## 📐 Design it
 
-CareerPilot's **notes editor** autosaves while typing, lets users pin a note, reorder notes by drag and drop, and delete notes. Design the Route Handlers (paths, methods, request bodies, success and error status codes) and the matching Flask endpoints. Mark which operations are idempotent.
+CareerPilot's **notes editor** saves while typing, lets users pin a note, reorder notes with drag-and-drop, and delete notes. Design the Route Handlers (paths, methods, bodies, success and error status codes) and the matching Flask endpoints. Mark which operations are idempotent.
 
 :::quiz
 Show a possible design
@@ -235,34 +236,34 @@ Show a possible design
 | Next.js route | Method | Body | Flask | Success | Errors | Idempotent |
 |---|---|---|---|---|---|---|
 | `/api/applications/[id]/notes` | GET | — | `GET /api/v1/applications/{id}/notes` | 200 `Note[]` | 401, 404 | ✅ |
-| `/api/applications/[id]/notes` | POST | `{ body }` | `POST …/notes` | **201** `Note` + `Location` | 401, 404, 422 | ❌ (send `Idempotency-Key` from a client-generated UUID to make autosave-create safe) |
-| `/api/notes/[noteId]` | PATCH | `{ body?, pinned? }` | `PATCH /api/v1/notes/{noteId}` | 200 `Note` | 401, 404, 409 (version conflict with `If-Match`/`version`), 422 | ✅ in practice (same body → same state) |
-| `/api/applications/[id]/notes/order` | PUT | `{ noteIds: number[] }` | `PUT …/notes/order` | 204 | 401, 404, 422 (ids don't match) | ✅ (full replacement) |
+| `/api/applications/[id]/notes` | POST | `{ body }` | `POST …/notes` | **201** `Note` + `Location` | 401, 404, 422 | ❌ (send an `Idempotency-Key` UUID from the browser to make autosave-create safe) |
+| `/api/notes/[noteId]` | PATCH | `{ body?, pinned? }` | `PATCH /api/v1/notes/{noteId}` | 200 `Note` | 401, 404, 409 (edited in another tab, using a `version`), 422 | ✅ in practice (same body → same result) |
+| `/api/applications/[id]/notes/order` | PUT | `{ noteIds: number[] }` | `PUT …/notes/order` | 204 | 401, 404, 422 (ids don't match) | ✅ (replaces the whole order) |
 | `/api/notes/[noteId]` | DELETE | — | `DELETE /api/v1/notes/{noteId}` | 204 | 401, 404 | ✅ |
 
-- Autosave: debounce 800 ms, `PATCH` with a `version` to avoid overwriting edits from another tab (409 → show "updated elsewhere").
-- Reorder uses **PUT** of the full order rather than many PATCHes — one request, idempotent.
-- Every handler validates ids and authenticates; Flask checks ownership.
+- Autosave: wait 800 ms after typing stops, then `PATCH` with a `version`, so edits from another tab aren't overwritten (409 → "updated elsewhere").
+- Reordering uses **one PUT** of the full order instead of many PATCHes — one request, safe to repeat.
+- Every handler checks ids and login; Flask checks ownership.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Status codes match the method semantics
-- [ ] Conflicts and validation errors are distinguishable
-- [ ] No catch-all proxy
+- [ ] Status codes match what each method means
+- [ ] Conflicts and validation errors can be told apart
+- [ ] No "forward anything" proxy
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w5/05-route-handlers" ai="no-ai" title="A BFF for applications"}
-Write a forwarding helper, collection and item Route Handlers for GET/POST/PATCH/DELETE (with id validation, invalid JSON handling, 204 passthrough and 502 on network errors), and a typed browser client.
+Write a forwarding helper, list and item Route Handlers for GET/POST/PATCH/DELETE (with id checks, invalid-JSON handling, passing `204` through and `502` on network errors), and a typed browser client.
 :::
 
 :::hints
 - `new URL(request.url).search` keeps the query string (including `?`).
 - `await request.json()` throws on invalid JSON — catch it.
-- Test the `204` path: `new Response(null, { status: 204 })`.
+- Test the `204` case: `new Response(null, { status: 204 })`.
 :::
 
 ## ✅ Quick check
@@ -270,25 +271,14 @@ Write a forwarding helper, collection and item Route Handlers for GET/POST/PATCH
 :::quiz
 A Server Component needs the applications list. Should it `fetch("/api/applications")`?
 
-No. Call the server data function (DAL) directly. Route Handlers are for the browser and external callers; calling them from the server adds an HTTP hop and needs an absolute URL and forwarded cookies.
+No. Call the server data function (DAL) directly. Route Handlers are for the browser and outside callers; calling them from the server adds an extra HTTP trip and needs a full URL and forwarded cookies.
 :::
 
 :::quiz
-What's the difference between PUT and PATCH for `{ "status": "offer" }`?
+What's the difference between PUT and PATCH with `{ "status": "offer" }`?
 
-PATCH changes only `status`. PUT means "this is the whole resource" — fields you omit would be cleared or rejected.
+PATCH changes only `status`. PUT means "this is the whole item" — fields you leave out would be cleared or rejected.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| HTTP method | Metode HTTP (kata kerja request) |
-| Idempotent | Hasil sama walau diulang |
-| Route Handler | Endpoint API di Next.js (`route.ts`) |
-| Backend-for-Frontend | Lapisan backend khusus untuk frontend |
-| Upstream | Server tujuan di belakang proxy |
-| Status code | Kode status respons |
 
 ## 📚 Keep learning
 
