@@ -1,6 +1,6 @@
 ---
 title: "Tailwind: Typography, Responsive Design & Components"
-summary: Build real interfaces with utilities — typography scale, spacing, color and states, mobile-first responsive prefixes, dark mode, and turning repeated class lists into components.
+summary: Build real screens with utility classes — text sizes, spacing, colors, hover and focus states, mobile-first prefixes, dark mode, and turning repeated class lists into components.
 type: lesson
 source: core
 sourceRef: "M3 · W2 · L4"
@@ -13,47 +13,60 @@ tags: [tailwind, responsive, typography, components, dark-mode]
 
 ## 🎯 What you'll learn
 
-- Reading and writing utility classes fluently: spacing, sizing, typography, colors, borders, shadows
-- Layout utilities: flex, grid, gap, container patterns
-- **Variants**: `hover:`, `focus-visible:`, `disabled:`, `group-hover:`, `aria-*`, `data-*`
-- **Responsive** prefixes (mobile first) and container queries
+- The most common Tailwind classes: spacing, size, text, color, borders
+- Classes for states: `hover:`, `focus-visible:`, `disabled:`, `group-hover:`, `aria-*`
+- Mobile-first prefixes (`sm:`, `md:`, `lg:`) and container queries
 - Dark mode with `dark:`
-- Extracting components instead of repeating classes
-- Keeping it accessible and avoiding class soup
+- Styling long articles with `prose`
+- Making a component instead of copying long class lists
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Scale** | Tailwind's fixed list of sizes: `p-1`, `p-2`, `p-4`… | Skala ukuran |
+| **Variant / prefix** | A condition before a class: `hover:bg-blue-500` works only on hover | Awalan kondisi |
+| **Responsive prefix** | `md:` = "from medium screens **and bigger**" | Awalan ukuran layar |
+| **`group`** | Mark a parent so children can react to its hover: `group-hover:` | Kelompok |
+| **`sr-only`** | Hidden on screen, but read by screen readers | Hanya pembaca layar |
+| **Arbitrary value** | A one-off value in brackets: `mt-[13px]` | Nilai sembarang |
 
 ## 🧠 The big idea
 
-Tailwind classes are a **vocabulary**. At first you look up every word; after a week you "speak" layout: `flex items-center justify-between gap-4` reads like a sentence. The CSS knowledge from Week 1 doesn't go away — each utility is one CSS declaration with a design-system value.
+Tailwind classes are like **learning a new language's vocabulary**. The first days you look up every word. After a week you "speak layout": `flex items-center justify-between gap-4` reads like a sentence — "put these in a row, centered vertically, spread out, with space between". Your CSS knowledge from Week 1 still applies: each class is one CSS rule with a value from the design scale.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Most UI work is combining the same few properties with consistent values. Utilities let you do that without switching files, and variants (`md:`, `hover:`, `dark:`) express responsive and interactive states inline, next to the element they affect.
+Most UI work is combining the same few properties with consistent values. Tailwind lets you do that right next to the element, and prefixes like `md:`, `hover:` and `dark:` handle screen sizes and states in the same place.
 
-## 💥 What happens if we DON'T use it well?
+Used badly, it becomes hard to maintain:
 
 ```html
 <div class="mt-[13px] ml-[7px] text-[15px] text-[#4b5563] w-[437px]">…</div>
 <button class="bg-indigo-600 text-white">Save</button>   <!-- no hover, focus or disabled states -->
 ```
 
-Arbitrary values break consistency and responsiveness; missing states hurt keyboard users. And a 40-class `<button>` copy-pasted in 30 places means 30 edits for a design change.
+- Random values break the consistent look and don't adapt to screens.
+- No hover or focus style: keyboard users can't see where they are.
+- A 40-class button copied into 30 places = 30 edits for one design change.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
-### 1. The scales
+### 1. The common classes
 
-| Category | Examples | CSS |
+| Group | Examples | Does |
 |---|---|---|
-| Spacing (0.25rem steps) | `p-4`, `px-2`, `mt-6`, `gap-3`, `space-y-2` | `padding: 1rem` … |
-| Sizing | `w-full`, `max-w-5xl`, `h-12`, `size-10`, `min-h-dvh` | widths/heights |
-| Typography | `text-sm`, `text-2xl`, `font-semibold`, `leading-relaxed`, `tracking-tight`, `line-clamp-2`, `truncate` | font properties |
-| Color | `bg-white`, `text-slate-600`, `border-slate-200`, `bg-indigo-600/90` (opacity) | colors from `@theme` |
-| Borders & effects | `border`, `rounded-xl`, `ring-1`, `shadow-sm`, `outline-2` | borders, shadows |
-| Layout | `flex`, `grid`, `grid-cols-3`, `items-center`, `justify-between`, `hidden`, `sr-only` | display, alignment |
+| Spacing (steps of 0.25rem) | `p-4`, `px-2`, `mt-6`, `gap-3`, `space-y-2` | padding, margin, gaps |
+| Size | `w-full`, `max-w-5xl`, `h-12`, `size-10`, `min-h-dvh` | width and height |
+| Text | `text-sm`, `text-2xl`, `font-semibold`, `leading-relaxed`, `tracking-tight`, `line-clamp-2`, `truncate` | font size, weight, lines |
+| Color | `bg-white`, `text-slate-600`, `border-slate-200`, `bg-indigo-600/90` | colors (`/90` = 90% opacity) |
+| Borders & shadows | `border`, `rounded-xl`, `ring-1`, `shadow-sm`, `outline-2` | edges and depth |
+| Layout | `flex`, `grid`, `grid-cols-3`, `items-center`, `justify-between`, `hidden`, `sr-only` | placing things |
 
-`sr-only` hides content visually but keeps it for screen readers — great for icon buttons.
+- `truncate` cuts long text with "…" on one line; `line-clamp-2` allows 2 lines.
+- `sr-only` hides text visually but screen readers still read it — perfect for icon-only buttons.
 
-### 2. States and variants
+### 2. States
 
 ```html
 <button class="rounded-lg bg-indigo-600 px-4 py-2 text-white
@@ -72,9 +85,11 @@ Arbitrary values break consistency and responsiveness; missing states hurt keybo
 <div data-state="open" class="data-[state=open]:block hidden">…</div>
 ```
 
-Style **from accessibility state** (`aria-pressed:`, `aria-invalid:`) so visuals and semantics can't drift apart.
+- `hover:` — when the mouse is over it. `focus-visible:` — when reached by keyboard. `disabled:` — when the button is disabled.
+- `group` + `group-hover:` — hovering the **parent** changes a **child**, like one light switch controlling several lamps.
+- `aria-pressed:` — style from the accessibility state. The look and the meaning always match, because they come from the same attribute.
 
-### 3. Responsive (mobile first)
+### 3. Mobile first
 
 ```html
 <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">…</ul>
@@ -82,7 +97,7 @@ Style **from accessibility state** (`aria-pressed:`, `aria-invalid:`) so visuals
 <aside class="hidden md:block">Filters</aside>
 ```
 
-| Prefix | Min width |
+| Prefix | From width |
 |---|---|
 | `sm:` | 40rem (640px) |
 | `md:` | 48rem (768px) |
@@ -90,9 +105,9 @@ Style **from accessibility state** (`aria-pressed:`, `aria-invalid:`) so visuals
 | `xl:` | 80rem (1280px) |
 | `2xl:` | 96rem (1536px) |
 
-Unprefixed = all sizes; a prefix means "**from this width up**". `max-md:` targets below a breakpoint when needed.
+A class **without** a prefix applies to all screens. A prefix means "**from this width and bigger**" — like an age rule "17+": it doesn't mean "only 17". Use `max-md:` if you need "smaller than md".
 
-Container queries are built in:
+Container queries are built in, so a card can adapt to the box it's in:
 
 ```html
 <div class="@container">
@@ -106,11 +121,11 @@ Container queries are built in:
 <article class="bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100">…</article>
 ```
 
-By default `dark:` follows the OS (`prefers-color-scheme`); with the custom variant from lesson 04 it follows a `.dark` class you toggle.
+`dark:` classes apply in dark mode. By default this follows the phone or computer setting; with the custom variant from lesson 04, it follows a `.dark` class you switch on.
 
-### 5. Typography for content
+### 5. Long articles: `prose`
 
-For Markdown/CMS content, the official Typography plugin gives beautiful defaults with one class:
+For Markdown or blog content, the Typography plugin styles everything with one class:
 
 ```css
 @plugin "@tailwindcss/typography";
@@ -120,11 +135,11 @@ For Markdown/CMS content, the official Typography plugin gives beautiful default
 <article class="prose dark:prose-invert max-w-none">…rendered markdown…</article>
 ```
 
-(This handbook renders lessons with `prose`.)
+(This handbook uses `prose` for its lessons.)
 
 ### 6. Components, not copy-paste
 
-When the same class list repeats, extract a **component** (React, Week 3) or a **class helper** (lesson 06):
+When the same long class list appears again and again, make a **component** (React, Week 3) — like saving a recipe instead of remembering the ingredients every time:
 
 ```tsx
 function Badge({ children }: { children: React.ReactNode }) {
@@ -132,61 +147,40 @@ function Badge({ children }: { children: React.ReactNode }) {
 }
 ```
 
-`@apply` inside CSS exists, but overusing it rebuilds the CSS-naming problem Tailwind solved — reserve it for third-party markup you can't add classes to.
+`@apply` in CSS also exists, but using it everywhere brings back the naming problems Tailwind solved. Use it only for HTML you can't add classes to (from a third-party library).
 
 ### 7. Reading long class lists
 
-Group mentally: **layout → box → typography → color → states → responsive**. Prettier's Tailwind plugin sorts classes in a consistent order so diffs stay clean.
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Utilities in markup | local, fast, consistent | verbose markup |
-| Components for repeated UI | one place to change | need a component system (React) |
-| `@apply` | shorter HTML for third-party markup | reintroduces custom class naming |
-| Arbitrary values | pixel-perfect one-offs | erode the design system |
-| `dark:` everywhere | explicit | doubles color classes → semantic CSS variables can reduce it |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Utilities for layout and component styling; `prose` for content.
-- ✅ Extract components after the second or third repetition.
-- 🚫 Arbitrary values unless there's a real reason (third-party size constraint).
-- 🚫 Hiding focus rings or relying on color alone for state.
-
-## 🏆 Best practices
-
-- [ ] Mobile first: base classes for phones, prefixes for larger screens.
-- [ ] Every interactive element: `hover:`, `focus-visible:`, `disabled:` states.
-- [ ] Use `sr-only` labels for icon-only buttons; style from `aria-*` states.
-- [ ] Stay on the scale; add missing values to `@theme` rather than using `[…]`.
-- [ ] Extract components/class helpers for repeated combinations.
-- [ ] Sort classes with Prettier; keep class lists readable.
-- [ ] Test dark mode and 200% zoom.
-
-## 🏭 How it's used in industry
-
-- Tailwind UI, shadcn/ui and many design systems ship components as React + Tailwind code you own and customize.
-- Product teams prototype directly in code with Tailwind, often from AI-generated starting points, then refine.
-- Code reviews focus on consistency (scale usage), states and accessibility rather than CSS architecture.
+Read them in groups: **layout → box → text → color → states → screen sizes**. The Prettier Tailwind plugin sorts classes in this kind of order automatically.
 
 ## ⚠️ Common mistakes
 
-- `md:` thinking it means "only medium" (it means "medium and up").
-- Forgetting `min-w-0` on flex children, so long text overflows (`truncate` needs it).
-- Missing `focus-visible:` styles.
-- Copy-pasting 30-class buttons instead of creating a component.
+- Thinking `md:` means "only medium screens" (it means medium **and bigger**).
+- Forgetting `min-w-0` on a flex child, so `truncate` doesn't work and long text overflows.
+- No `focus-visible:` style on buttons and links.
+- Random values like `mt-[13px]` instead of the scale.
+- Copy-pasting a 30-class button instead of creating a component.
+- Showing a state only with color.
+
+## 🏆 Best practices
+
+- [ ] Mobile first: base classes for phones, prefixes for bigger screens.
+- [ ] Every interactive element has `hover:`, `focus-visible:` and `disabled:` styles.
+- [ ] Icon-only buttons have an `sr-only` label; style from `aria-*` states.
+- [ ] Stay on the scale; add missing values to `@theme` instead of `[…]`.
+- [ ] Turn repeated class groups into components.
+- [ ] Sort classes with Prettier.
+- [ ] Test dark mode and 200% zoom.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain mobile-first responsive prefixes to a designer: what `grid-cols-1 md:grid-cols-2 xl:grid-cols-4` means at 375px, 800px and 1440px.
+Explain mobile-first prefixes to a designer: what does `grid-cols-1 md:grid-cols-2 xl:grid-cols-4` show on a 375px phone, an 800px tablet and a 1440px laptop?
 
 ## 📐 Design it
 
-Write the Tailwind markup (classes only) for CareerPilot's **application card** used on the board: company logo, role title (truncate on one line), company + location (muted), status badge, "updated 2 days ago", a menu icon button (accessible), hover elevation, focus ring when the whole card is a link, and a compact layout inside narrow columns using container queries.
+Write the Tailwind classes for CareerPilot's **application card** on the board: company logo, job title (one line, cut with "…"), company + location (gray), status badge, "updated 2 days ago", an accessible menu icon button, a shadow on hover, a focus ring when the card link is focused, and a compact layout in narrow columns using container queries.
 
 :::quiz
 Show possible markup
@@ -215,28 +209,32 @@ Show possible markup
 </li>
 ```
 
-Notes: `min-w-0` makes `truncate` work in flex; the link's `after:absolute after:inset-0` makes the whole card clickable while keeping one focusable link; the menu button sits above it with `relative z-10`; `alt=""` because the company name is already in text; `sr-only` names the icon button specifically.
+- `min-w-0` lets `truncate` work inside flex.
+- `after:absolute after:inset-0` on the link stretches its click area over the whole card, while keeping only one link to focus.
+- The menu button sits above that area with `relative z-10`.
+- `alt=""` because the company name is already written as text.
+- `sr-only` gives the icon button a specific name.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Truncation works (`min-w-0`)
-- [ ] One clear link target, accessible icon button
-- [ ] Focus visible, dark mode considered
-- [ ] Narrow-column layout handled
+- [ ] Long text is cut correctly (`min-w-0`)
+- [ ] One clear link, and an accessible icon button
+- [ ] Visible focus, dark mode handled
+- [ ] Works in a narrow column
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w2/05-tailwind-components" ai="no-ai" title="Responsive job cards with utilities only"}
-Style a job list page using only Tailwind utilities: container, responsive heading and grid, cards with dark mode, clamped descriptions, badges and a button with hover, focus-visible and disabled states. Tests check the classes, forbid arbitrary values and inline styles, and compile Tailwind to catch typos.
+Style a job list page using only Tailwind classes: a container, a responsive heading and grid, cards with dark mode, descriptions limited to a few lines, badges and a button with hover, focus-visible and disabled states. The tests check your classes, forbid arbitrary values and inline styles, and build Tailwind to catch typos.
 :::
 
 :::hints
-- `flex flex-col` on the card + `mt-auto` on the button pushes it to the bottom.
+- `flex flex-col` on the card + `mt-auto` on the button pushes the button to the bottom.
 - `w-fit` stops the badge from stretching in a flex column.
-- If a class "doesn't exist", check the Tailwind docs spelling (e.g. `grid-cols-2`, not `grid-col-2`).
+- If a class "doesn't exist", check the spelling in the Tailwind docs (e.g. `grid-cols-2`, not `grid-col-2`).
 :::
 
 ## ✅ Quick check
@@ -244,24 +242,14 @@ Style a job list page using only Tailwind utilities: container, responsive headi
 :::quiz
 What does `md:hidden` do?
 
-Hides the element from the `md` breakpoint (48rem) and up; it stays visible on smaller screens.
+It hides the element from the `md` width (48rem) and bigger. On smaller screens it stays visible.
 :::
 
 :::quiz
 Why style with `aria-pressed:` instead of a separate "active" class?
 
-The visual state follows the accessibility state automatically, so they can't get out of sync.
+The look follows the accessibility state automatically, so they can never disagree.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Responsive prefix | Awalan responsif (sm:, md:, lg:) |
-| State variant | Varian status (hover:, focus-visible:) |
-| Container query | Kueri wadah |
-| Screen-reader only | Hanya untuk pembaca layar (`sr-only`) |
-| Line clamp | Membatasi jumlah baris teks |
 
 ## 📚 Keep learning
 
