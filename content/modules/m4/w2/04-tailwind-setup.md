@@ -1,6 +1,6 @@
 ---
 title: "Tailwind CSS Setup (v4)"
-summary: What utility-first CSS is and why teams adopted it, installing Tailwind v4 with Vite or Next.js, CSS-first configuration with @theme, custom variants and utilities, and editor tooling.
+summary: What "utility-first" CSS means and why teams use it, installing Tailwind v4 with Vite or Next.js, adding your own colors and settings with @theme, and editor tools.
 type: lesson
 source: core
 sourceRef: "M3 · W2 · L3"
@@ -14,42 +14,56 @@ tags: [tailwind, css, design-tokens, tooling]
 
 ## 🎯 What you'll learn
 
-- Utility-first CSS: the idea, the benefits and the criticism
-- How Tailwind generates only the CSS you use
-- Installing Tailwind v4 in Vite and Next.js projects
-- CSS-first config: `@import`, `@source`, `@theme`, `@custom-variant`, `@utility`, `@layer base`
-- Editor setup: IntelliSense and Prettier class sorting
+- What utility classes are, and their pros and cons
+- How Tailwind creates only the CSS you actually use
+- Installing Tailwind v4 in Vite and Next.js
+- Adding your own colors, fonts and breakpoints in CSS (`@theme`)
+- Editor tools that make Tailwind easier
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Utility class** | A tiny class that does one thing: `p-4` = padding 1rem | Kelas kecil satu fungsi |
+| **Utility-first** | Styling mostly with utility classes in the HTML | Mengutamakan kelas kecil |
+| **Design token** | A named design value: a brand color, a spacing size | Token desain |
+| **`@theme`** | The place in your CSS where you add your own tokens | Tempat token |
+| **Preflight** | Tailwind's reset that removes browser default styles | Reset bawaan |
+| **Variant** | A prefix that applies a class only in a situation: `hover:`, `md:`, `dark:` | Varian kondisi |
 
 ## 🧠 The big idea
 
-Traditional CSS is **sewing custom clothes** for each component: you design a `.job-card` class, name it, and maintain it. Tailwind is a **box of standard LEGO pieces** — `p-4`, `rounded-xl`, `shadow-sm` — that you snap together directly in the markup. Every piece comes from one design system (your tokens), so the result stays consistent.
+Normal CSS is like **tailoring a custom shirt** for every component: you design a `.job-card` class, give it a name and look after it forever. Tailwind is like **LEGO**: a box of small standard pieces — `p-4`, `rounded-xl`, `shadow-sm` — that you snap together right in the HTML. Because all pieces come from the same set (your design tokens), everything matches.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Large CSS codebases suffer from naming fatigue, dead styles nobody dares delete, and inconsistent one-off values (`padding: 13px`). Utility classes:
-- are scoped to the element (no cascade surprises),
-- are generated from a **design scale** (spacing, colors, font sizes),
-- disappear from the bundle when unused (only classes found in your files are generated),
-- make components self-contained — ideal for React.
+Big CSS projects often end up with:
+- tiring naming decisions,
+- old styles nobody dares delete,
+- random values like `padding: 13px` everywhere.
 
-## 💥 What happens if we DON'T (or misuse it)?
+Tailwind helps because:
+- each class only affects the element it's on (no "which rule wins" surprises),
+- values come from a fixed **scale** (spacing, colors, font sizes),
+- only the classes you use end up in the final CSS,
+- each React component carries its own styles.
 
-- Without a design system: 40 shades of gray and 25 border radii.
-- Misusing Tailwind: arbitrary values everywhere (`mt-[13px] text-[#4a4a4a]`) recreate the chaos with uglier syntax.
-- Building class names dynamically (`` `bg-${color}-500` ``) — Tailwind can't find them, so the styles silently don't exist.
+Used badly, Tailwind is messy too:
+- `mt-[13px] text-[#4a4a4a]` everywhere brings the random values back.
+- Building class names like `` `bg-${color}-500` `` silently produces **no CSS** (explained below).
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. How Tailwind works
 
 ```mermaid
 flowchart LR
-    F["Your files<br/>*.tsx, *.html"] -->|scan for class names| E[Tailwind engine]
+    F["Your files<br/>*.tsx, *.html"] -->|search for class names| E[Tailwind engine]
     C["app.css<br/>@import 'tailwindcss'<br/>@theme {...}"] --> E
-    E --> O["Generated CSS<br/>only the utilities you used"]
+    E --> O["Generated CSS<br/>only the classes you used"]
 ```
 
-It scans files for **complete class name strings**, then generates the matching CSS. That's why dynamic string building breaks: `"bg-red-500"` must appear literally somewhere.
+Tailwind **reads your files like a search engine**, looking for full class names such as `"bg-red-500"`. Then it writes CSS only for those. That's why a class built from pieces at runtime (`"bg-" + color + "-500"`) is never found: the full word never appears in your files.
 
 ### 2. Install with Vite
 
@@ -70,7 +84,7 @@ export default defineConfig({ plugins: [react(), tailwindcss()] });
 
 ### 3. Install with Next.js
 
-`create-next-app` offers Tailwind during setup. Manually:
+`create-next-app` asks if you want Tailwind. To add it by hand:
 
 ```bash
 npm install tailwindcss @tailwindcss/postcss postcss
@@ -86,7 +100,7 @@ export default { plugins: { "@tailwindcss/postcss": {} } };
 @import "tailwindcss";
 ```
 
-### 4. CSS-first configuration
+### 4. Your own settings, in CSS
 
 ```css
 @import "tailwindcss";
@@ -113,68 +127,51 @@ export default { plugins: { "@tailwindcss/postcss": {} } };
 }
 ```
 
-- Every `@theme` token becomes **utilities** and a **CSS variable** (`var(--color-brand-500)`), usable in plain CSS or inline styles.
-- Automatic source detection scans your project but skips `.gitignore`d files and `node_modules`; `@source` adds paths explicitly.
-- Tailwind v3 projects used `tailwind.config.js`; v4 moved configuration into CSS (a JS config can still be loaded with `@config` during migration).
+- `@theme` — add tokens. Each one becomes **classes** (`bg-brand-500`) and a **CSS variable** (`var(--color-brand-500)`). Like adding a new color to the paint shop: it's instantly available for every wall.
+- `@source` — also search this folder for class names.
+- `@custom-variant dark` — dark mode switches on when `<html>` has the class `dark`.
+- `@utility` — make your own utility class that also works with `md:`, `hover:` and friends.
+- `@layer base` — a few global base styles.
 
-### 5. Preflight
+Older tutorials (Tailwind v3) use a `tailwind.config.js` file. In v4, settings live in CSS.
 
-`@import "tailwindcss"` includes **Preflight**, a reset: margins removed, headings unstyled, images `display: block`, `border-box` everywhere. That's why an `<h1>` looks like normal text until you add `text-3xl font-bold` — intentional.
+### 5. Preflight (the reset)
 
-### 6. Tooling
+`@import "tailwindcss"` includes **Preflight**, which removes the browser's default styles: no margins, headings look like normal text, lists have no bullets. So an `<h1>` looks plain until you add `text-3xl font-bold`. That's on purpose — you start from a clean page.
 
-- **Tailwind CSS IntelliSense** (VS Code): autocomplete, hover previews, lint for conflicting classes.
-- **prettier-plugin-tailwindcss**: sorts classes in a consistent order automatically.
-- Browser DevTools show the generated rules like any CSS.
+### 6. Editor tools
 
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Tailwind utilities | fast iteration, consistent tokens, tiny CSS, no naming | long class lists; HTML looks busy |
-| Hand-written CSS/BEM | clean markup, full control | naming, dead CSS, inconsistency |
-| CSS Modules | scoped, plain CSS | still invent values and names |
-| CSS-in-JS (runtime) | dynamic styles | runtime cost; poor fit for React Server Components |
-| Arbitrary values `[…]` | escape hatch | bypasses the design system if overused |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Component-based apps (React/Next.js) with a design system.
-- ✅ Teams that want consistency without writing lots of CSS.
-- 🚫 Long-form content styling → use the Typography plugin (`prose`) or plain CSS.
-- 🚫 Dynamic class strings built from variables → map complete class names instead.
-
-## 🏆 Best practices
-
-- [ ] Put brand colors, fonts, radii and breakpoints in `@theme`; avoid arbitrary values.
-- [ ] Always write **complete** class names in source (lookup tables, not string concatenation).
-- [ ] Use `@utility` for project-specific reusable utilities; keep `@layer base` minimal.
-- [ ] Install IntelliSense and the Prettier class-sorting plugin.
-- [ ] Extract repeated class combinations into **components**, not `@apply` everywhere.
-- [ ] Decide dark mode strategy early (media vs class).
-
-## 🏭 How it's used in industry
-
-- Tailwind is the default styling choice for new Next.js projects and powers shadcn/ui (Week 5).
-- Design-system teams publish tokens that map directly to `@theme` variables.
-- AI UI generators (v0 and similar) output Tailwind markup, so reading Tailwind fluently is a daily skill.
+- **Tailwind CSS IntelliSense** (VS Code): autocomplete class names, preview the CSS on hover, warn about conflicting classes.
+- **prettier-plugin-tailwindcss**: sorts classes in the same order everywhere.
+- Browser DevTools show the generated CSS like any other CSS.
 
 ## ⚠️ Common mistakes
 
-- `` className={`text-${color}-600`} `` — generates nothing.
-- Forgetting that Preflight removed default heading/list styles.
-- Copying v3 `tailwind.config.js` tutorials into a v4 project without `@config` or migrating tokens to `@theme`.
-- Using `@apply` to recreate BEM classes for everything (you lose Tailwind's benefits).
+- `` className={`text-${color}-600`} `` — creates no CSS. Use a table of complete class names.
+- Forgetting that Preflight removed default heading and list styles.
+- Copying a v3 `tailwind.config.js` tutorial into a v4 project.
+- Arbitrary values like `mt-[13px]` everywhere, instead of the scale.
+- Using `@apply` to rebuild old-style classes for everything — you lose Tailwind's benefits.
+- Using Tailwind classes for long articles — use the Typography plugin (`prose`) instead.
+
+## 🏆 Best practices
+
+- [ ] Put brand colors, fonts, radius and breakpoints in `@theme`; avoid arbitrary values.
+- [ ] Always write **complete** class names in your code (use lookup tables).
+- [ ] Use `@utility` for project-specific helpers; keep `@layer base` small.
+- [ ] Install IntelliSense and the Prettier class-sorting plugin.
+- [ ] Repeated class groups → make a **component**, not many `@apply` rules.
+- [ ] Decide early how dark mode works (system setting or a `.dark` class).
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-A teammate says "Tailwind is just inline styles". Explain two important differences.
+A teammate says: "Tailwind is just inline styles." Explain two important differences (hint: the fixed scale of values, and variants like `hover:` and `md:` that inline styles can't do).
 
 ## 📐 Design it
 
-Translate CareerPilot's design tokens from the CSS fundamentals lesson (brand colors, status colors, spacing, radii, fonts, dark mode) into a Tailwind v4 `app.css`. Which tokens become `@theme` variables, which stay Tailwind defaults, and how would a status badge get its colors without dynamic class names?
+Turn CareerPilot's design tokens from the CSS lesson (brand colors, status colors, spacing, radius, fonts, dark mode) into a Tailwind v4 `app.css`. Which values go into `@theme`, which Tailwind defaults do you keep, and how does a status badge get its colors without building class names from strings?
 
 :::quiz
 Show a possible setup
@@ -201,8 +198,8 @@ Show a possible setup
 @custom-variant dark (&:where(.dark, .dark *));
 ```
 
-- **Keep defaults** for spacing (`p-4` = `1rem` on a 0.25rem scale) and grays — no need to redefine them.
-- **Badges** use a complete lookup table (never `` `bg-status-${status}` ``):
+- **Keep the defaults** for spacing (`p-4` = `1rem`) and grays — no need to redefine them.
+- **Badges** use a table of complete class names (never `` `bg-status-${status}` ``):
 
 ```ts
 const STATUS_BADGE = {
@@ -214,27 +211,27 @@ const STATUS_BADGE = {
 } satisfies Record<Status, string>;
 ```
 
-- Dark mode: toggle a `.dark` class on `<html>` and use `dark:` variants, or redefine CSS variables under `.dark` for semantic surface colors.
+- **Dark mode**: add a `.dark` class to `<html>` and use `dark:` classes.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Only project-specific tokens added to `@theme`
-- [ ] Semantic names for statuses
-- [ ] No dynamic class name construction
+- [ ] Only project-specific tokens are added to `@theme`
+- [ ] Status colors have names that describe their purpose
+- [ ] No class names built from strings
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w2/04-tailwind-setup" ai="ai-allowed" title="Configure Tailwind v4 with your tokens"}
-Write a Tailwind v4 entry stylesheet: import Tailwind, register sources, add brand colors, a display font and a custom breakpoint in `@theme`, class-based dark mode, a custom utility and base styles. The test compiles it with Tailwind and inspects the generated CSS.
+Write a Tailwind v4 CSS entry file: import Tailwind, add a source folder, add brand colors, a display font and a custom breakpoint in `@theme`, class-based dark mode, a custom utility and base styles. The test builds it with Tailwind and checks the generated CSS.
 :::
 
 :::hints
-- The order doesn't matter much, but `@import "tailwindcss";` goes first.
+- Put `@import "tailwindcss";` first.
 - A breakpoint token is named `--breakpoint-3xl`.
-- `@utility name { … }` — no leading dot.
+- `@utility name { … }` — no dot before the name.
 :::
 
 ## ✅ Quick check
@@ -242,24 +239,14 @@ Write a Tailwind v4 entry stylesheet: import Tailwind, register sources, add bra
 :::quiz
 Why doesn't `` `bg-${color}-500` `` work in Tailwind?
 
-Tailwind generates CSS only for complete class names it finds in source files; a class built at runtime never appears literally, so no CSS is generated for it.
+Tailwind only creates CSS for complete class names it finds in your files. A class built while the app runs never appears as a full word, so no CSS is created.
 :::
 
 :::quiz
-What does a `--color-brand-500` token in `@theme` create?
+What does the token `--color-brand-500` in `@theme` create?
 
-Color utilities like `bg-brand-500`, `text-brand-500`, `border-brand-500` and a CSS variable `--color-brand-500`.
+Color classes like `bg-brand-500`, `text-brand-500`, `border-brand-500`, and a CSS variable `--color-brand-500`.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Utility-first | Mengutamakan kelas utilitas kecil |
-| Design token | Token desain (nilai warna, jarak, font) |
-| Preflight | Reset CSS bawaan Tailwind |
-| Variant | Varian (hover:, md:, dark:) |
-| Source detection | Deteksi file sumber untuk mencari nama kelas |
 
 ## 📚 Keep learning
 
