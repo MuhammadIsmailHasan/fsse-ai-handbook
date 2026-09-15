@@ -1,6 +1,6 @@
 ---
 title: "Props & TypeScript Interfaces"
-summary: Design component APIs — typed props, defaults, optional and children props, extending native HTML props, forwarding attributes, callbacks, and patterns that keep components flexible without becoming confusing.
+summary: Design how components are used — typed props, default values, children and slots, accepting normal HTML attributes, callback props, and simple rules that keep components easy to use.
 type: lesson
 source: core
 sourceRef: "M3 · W3 · L2"
@@ -13,23 +13,32 @@ tags: [react, props, typescript, component-api]
 
 ## 🎯 What you'll learn
 
-- Typing props with interfaces/types; required vs optional; defaults with destructuring
-- `children` and `ReactNode`, render slots (`actions`, `icon`)
-- Extending native element props with `ComponentPropsWithoutRef<"button">` and forwarding the rest
-- Callback props (`onToggle`, `onSelect`) and naming conventions
-- `useId` for accessible id relationships
-- Designing component APIs: variants vs booleans, avoiding prop explosion
-- Refs as props in React 19
+- Typing props, optional props and default values
+- `children` and "slots" for flexible content
+- Letting your `Button` accept every normal `<button>` attribute
+- Callback props like `onToggle`
+- `useId` for connecting labels and inputs
+- Rules for props that are easy to use and hard to misuse
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Props** | The inputs a component receives from its parent | Input komponen |
+| **Default value** | The value used when the parent doesn't pass a prop | Nilai bawaan |
+| **`ReactNode`** | The type for "anything React can show": text, elements, lists, `null` | Apa pun yang bisa ditampilkan |
+| **Slot** | A prop that accepts content, like `actions={<Button />}` | Tempat konten |
+| **Rest / spread (`...rest`)** | Collect the remaining props and pass them on | Sisa props diteruskan |
+| **Callback prop** | A function prop the child calls: `onToggle` | Props berupa fungsi |
+| **`useId`** | A React hook that makes a unique id for labels and inputs | Pembuat id unik |
 
 ## 🧠 The big idea
 
-Props are a component's **contract** — like the function signature of an API endpoint you designed in Module 2. A good contract is small, typed, hard to misuse, and consistent. TypeScript turns that contract into something the editor enforces at every usage.
+Props are a component's **contract**, like the menu and order form at a coffee shop: it lists what you can order (size, sugar level) and rejects nonsense ("extra large small"). TypeScript makes the editor check this contract every time someone uses the component.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Components are reused by many people in many places. Without typed props, a teammate passes `variant="dagner"`, forgets a required `title`, or passes a string where a callback belongs — and finds out in the browser. With typed props, autocomplete shows what's possible and mistakes are red lines.
-
-## 💥 What happens if we DON'T?
+Components are used by many people in many places. Without typed props, mistakes only show up in the browser:
 
 ```tsx
 function Button(props: any) {
@@ -40,9 +49,15 @@ function Button(props: any) {
 <Button text="Submit" type="submit" />        // type isn't forwarded → the form never submits
 ```
 
-## 📖 How it works, step by step
+- `onClick` is silently ignored (the prop is called `click`).
+- `big small danger` together makes no sense, but it's allowed.
+- `type="submit"` is thrown away, so the form never submits.
 
-### 1. Typed props with defaults
+With typed props, autocomplete shows the options and these mistakes become red lines.
+
+## 📖 Step by step
+
+### 1. Typed props and defaults
 
 ```tsx
 interface StatusBadgeProps {
@@ -55,7 +70,8 @@ export function StatusBadge({ status, size = "md" }: StatusBadgeProps) {
 }
 ```
 
-Destructuring defaults are the modern way (the old `defaultProps` is deprecated for function components).
+- `status` is required; `size?` is optional.
+- `size = "md"` gives a default value right where you unpack the props.
 
 ### 2. `children` and slots
 
@@ -82,11 +98,12 @@ export function Card({ title, actions, children }: CardProps) {
 <Card title="Notes" actions={<Button>Add note</Button>}>…</Card>
 ```
 
-`ReactNode` accepts elements, strings, numbers, arrays, `null` — anything React can render.
+- A **slot** is a named place for content, like the photo space on a certificate template.
+- `useId()` creates an id that is unique even if the card appears 10 times on a page. Here it connects the section to its heading for screen readers.
 
-### 3. Extending native props
+### 3. Accepting normal HTML attributes
 
-A `Button` should behave like a `<button>` plus your additions:
+Your `Button` should work like a real `<button>`, plus your extras — like a **phone case**: the phone still has all its buttons, the case just adds protection and style.
 
 ```tsx
 import type { ComponentPropsWithoutRef } from "react";
@@ -111,7 +128,10 @@ export function Button({ variant = "primary", loading = false, type = "button", 
 }
 ```
 
-Order matters: spread `...rest` **first**, then the props you control, so callers can't accidentally break them (or spread last if overriding should be allowed — decide deliberately).
+- `ComponentPropsWithoutRef<"button">` = "all the props a normal button accepts".
+- `...rest` collects everything you didn't unpack (onClick, aria-label…) and passes it to the real button.
+- `{...rest}` goes **first**, then your controlled props, so callers can't accidentally break them.
+- `type = "button"` by default, because a button inside a form submits the form unless told otherwise.
 
 ### 4. Callback props
 
@@ -123,21 +143,21 @@ interface SaveButtonProps {
 }
 ```
 
-The parent passes a function; the child calls it. Naming: props `onSomething`, handlers in the parent `handleSomething`. Pass data up with arguments: `onSelect: (id: number) => void`.
+The parent gives a function; the child calls it when something happens — like giving a waiter your phone number: "call me when the table is ready". Naming habit: props are `onSomething`, the parent's functions are `handleSomething`. To send data back, use arguments: `onSelect: (id: number) => void`.
 
-### 5. API design guidelines
+### 5. Rules for good props
 
 | Instead of | Prefer | Why |
 |---|---|---|
-| `primary secondary danger` booleans | `variant: "primary" \| "secondary" \| "danger"` | impossible combinations can't exist |
-| `titleText`, `titleColor`, `titleSize` | a `title: ReactNode` slot or composition | fewer props, more flexibility |
-| 15 optional props | smaller components composed together | readable call sites |
-| `data={job}` for a component that uses two fields | `title`, `company` | clearer dependencies, easier reuse |
-| `isOpen` + `setIsOpen` mixed naming | `open` + `onOpenChange` | consistent with popular libraries |
+| `primary secondary danger` booleans | `variant: "primary" \| "secondary" \| "danger"` | nonsense combinations are impossible |
+| `titleText`, `titleColor`, `titleSize` | one `title: ReactNode` slot | fewer props, more flexible |
+| 15 optional props | smaller components used together | easier to read |
+| `data={job}` when only two fields are used | `title`, `company` | clearer, easier to reuse |
+| mixed names like `isOpen` + `setIsOpen` | `open` + `onOpenChange` | same style as popular libraries |
 
-### 6. Refs are props now
+### 6. `ref` is a normal prop
 
-React 19 passes `ref` like a normal prop to function components (no `forwardRef` needed):
+A **ref** gives direct access to the real DOM element (for example, to focus an input). In React 19 you pass it like any other prop:
 
 ```tsx
 function TextField({ label, ref, ...props }: { label: string; ref?: React.Ref<HTMLInputElement> } & ComponentPropsWithoutRef<"input">) {
@@ -151,58 +171,37 @@ function TextField({ label, ref, ...props }: { label: string; ref?: React.Ref<HT
 }
 ```
 
-### 7. Server → Client props must be serializable
+### 7. Server → Client props must be simple data
 
-When a Server Component renders a Client Component, props cross the network: strings, numbers, booleans, plain objects/arrays, `Date`… are fine; **functions are not** (except Server Actions — Week 5). So `onToggle` callbacks are created inside client code.
+When a Server Component uses a Client Component, the props travel over the network — like sending a package by courier. Strings, numbers, booleans, plain objects and arrays can be packed. **Functions can't** be sent (except Server Actions — Week 5). So callbacks like `onToggle` are created inside client code.
 
-## ⚖️ Trade-offs
+## ⚠️ Common mistakes
 
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Extending native props | behaves like HTML, fewer surprises | larger prop surface to document |
-| Strict, minimal props | consistent design | escape hatches needed eventually |
-| Slots (`ReactNode`) | flexible layouts | less control over what's rendered |
-| Passing whole objects | fewer props | tight coupling to data shape |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Extend native props for every wrapper around an HTML element (Button, Input, Link).
-- ✅ Variants as unions; slots for flexible regions.
-- 🚫 Don't forward props blindly to components that aren't DOM elements.
-- 🚫 Don't add a prop for every design request — compose instead.
+- `props: any` or props without types.
+- Not passing `className` and `aria-*` through, so others can't style or label the component.
+- A button inside a form without `type="button"` that submits by accident.
+- Hardcoded ids in a reusable component, so two copies on one page have the same id.
+- Adding a new prop for every design request instead of composing smaller components.
 
 ## 🏆 Best practices
 
 - [ ] Type every component's props; export the props type for reusable components.
-- [ ] Defaults in destructuring; `type="button"` default for buttons.
-- [ ] Extend `ComponentPropsWithoutRef<"element">` and forward `...rest` for DOM wrappers.
-- [ ] Use unions for variants, not multiple booleans.
-- [ ] Name callbacks `onX`; pass the minimum data needed.
-- [ ] Use `useId` for label/description relationships; never hardcode ids in reusable components.
-- [ ] Keep props serializable across the Server → Client boundary.
-
-## 🏭 How it's used in industry
-
-- Design-system components (shadcn/ui, Radix, MUI) extend native props and forward refs so they work with forms, tooltips and tests.
-- Storybook documents components straight from their TypeScript props.
-- API consistency (`open`/`onOpenChange`, `value`/`onChange`, `disabled`) is a common code review topic.
-
-## ⚠️ Common mistakes
-
-- `props: any` or untyped props.
-- Forgetting to forward `className`/`aria-*`, so consumers can't style or label the component.
-- Default button `type` submitting forms accidentally.
-- Duplicate ids when a component is rendered twice.
+- [ ] Put defaults where you unpack props; buttons default to `type="button"`.
+- [ ] For wrappers around HTML elements, extend `ComponentPropsWithoutRef<"element">` and pass `...rest` on.
+- [ ] Use unions for variants, not many booleans.
+- [ ] Name callbacks `onX`; send only the data needed.
+- [ ] Use `useId` for label and description ids.
+- [ ] Keep props simple data when crossing from Server to Client Components.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain to a teammate why `<Button primary danger small large />` is a worse API than `<Button variant="danger" size="sm" />`.
+Using the coffee-shop order form idea, explain why `<Button primary danger small large />` is a worse design than `<Button variant="danger" size="sm" />`.
 
 ## 📐 Design it
 
-Design the props for CareerPilot's **`TextField`** used across all forms: label, hint text, error message, required indicator, optional prefix (e.g. "Rp"), and it must still accept every native input prop (type, name, autoComplete, onChange…). Write the interface and describe the rendered markup's accessibility attributes.
+Design the props for CareerPilot's **`TextField`**, used in every form: a label, hint text, an error message, a required marker, an optional prefix (like "Rp"), and it must still accept every normal input attribute (type, name, autoComplete, onChange…). Write the interface and explain the accessibility attributes.
 
 :::quiz
 Show a possible design
@@ -243,29 +242,29 @@ export function TextField({ label, hint, error, prefix, required, ref, className
 }
 ```
 
-- Native props flow through (`name`, `type`, `autoComplete`, `onChange`, controlled `value`).
-- `id` is generated (omitted from props) so labels always connect, even with many fields.
-- The visual prefix is `aria-hidden`; mention the currency in the label ("Maximum salary (Rp)") so screen readers get it.
-- `required` sets both the native attribute and the visual asterisk.
+- Normal input props pass straight through (`name`, `type`, `autoComplete`, `onChange`, `value`).
+- The `id` is created with `useId` (and removed from the props), so the label always connects, even with many fields.
+- `aria-describedby` connects the hint and the error to the input; `aria-invalid` marks the error state.
+- The visual "Rp" is `aria-hidden`, so write the currency in the label too ("Maximum salary (Rp)").
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Native input props preserved
-- [ ] Label, hint and error connected with ids
-- [ ] Invalid state exposed to assistive tech
+- [ ] Normal input props still work
+- [ ] Label, hint and error are connected with ids
+- [ ] The error state is available to screen readers
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w3/02-props-typescript" ai="no-ai" title="A small typed UI kit"}
-Build `Button` (extends native button props, safe `type` default, loading state), `Avatar` (image or initials), `StatusBadge` and a labelled `Card` with optional actions using `useId`. Tests check behavior and forwarding; type tests make unknown variants, statuses and missing children fail to compile.
+Build `Button` (accepts normal button props, safe `type` default, loading state), `Avatar` (image or initials), `StatusBadge` and a labelled `Card` with optional actions using `useId`. The tests check behavior and prop forwarding; type tests make unknown variants, statuses and missing children fail to compile.
 :::
 
 :::hints
-- Destructure what you control and collect the rest: `({ variant = "primary", loading = false, type = "button", disabled, children, ...rest })`.
-- `aria-busy={loading || undefined}` omits the attribute when not loading.
+- Unpack what you control and collect the rest: `({ variant = "primary", loading = false, type = "button", disabled, children, ...rest })`.
+- `aria-busy={loading || undefined}` leaves the attribute out when not loading.
 - Initials: `name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("")`.
 :::
 
@@ -274,24 +273,14 @@ Build `Button` (extends native button props, safe `type` default, loading state)
 :::quiz
 Why extend `ComponentPropsWithoutRef<"button">` for a Button component?
 
-So it accepts every native button prop (onClick, aria-*, form, name…) with correct types, and you can forward them to the real `<button>`.
+So it accepts every normal button prop (onClick, aria-*, form, name…) with correct types, and you can pass them to the real `<button>`.
 :::
 
 :::quiz
-Why can't a Server Component pass an `onClick` function prop to a Client Component?
+Why can't a Server Component pass an `onClick` function to a Client Component?
 
-Props crossing the server/client boundary must be serializable; regular functions can't be sent over the network.
+Props sent from server to browser must be simple data. A normal function can't be sent over the network.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Prop forwarding | Meneruskan props ke elemen di dalamnya |
-| Slot | Tempat konten fleksibel dalam komponen |
-| Callback prop | Props berupa fungsi yang dipanggil anak |
-| Default value | Nilai bawaan |
-| Serializable | Bisa diubah menjadi data (JSON-like) untuk dikirim |
 
 ## 📚 Keep learning
 
