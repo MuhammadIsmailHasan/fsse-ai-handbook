@@ -1,6 +1,6 @@
 ---
 title: "TypeScript Setup & Basics"
-summary: Why TypeScript exists, how it compiles, strict mode, annotating variables and functions, inference, literal and union types, null safety, and what types can't do at runtime.
+summary: What TypeScript adds to JavaScript, how to set it up in strict mode, typing variables and functions, letting TypeScript guess types, unions, null safety — and what types can't check while the app runs.
 type: lesson
 source: core
 sourceRef: "M3 · W2 · L1"
@@ -14,25 +14,37 @@ tags: [typescript, types, strict-mode, tooling]
 ## 🎯 What you'll learn
 
 - What TypeScript adds to JavaScript — and what it doesn't
-- `tsconfig.json`, **strict mode**, and running `tsc`
-- Primitive types, arrays, tuples, `readonly`, function signatures
-- Type **inference**: when to write types and when not to
-- Literal types, unions, `null`/`undefined` safety and narrowing
-- `any` vs `unknown`, type assertions, and why types disappear at runtime
+- Setting up `tsconfig.json` with strict mode
+- Writing types for variables and functions
+- When to write types and when TypeScript can guess them
+- Union types and handling `null` safely
+- Why types disappear when the app runs
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Type** | A description of what a value can be: a number, a string, a `Job` object… | Tipe |
+| **Type annotation** | Writing the type yourself: `count: number` | Menulis tipe |
+| **Inference** | TypeScript guesses the type for you from the value | Tebakan tipe otomatis |
+| **Compile / type-check** | TypeScript reads your code and reports type mistakes before it runs | Pengecekan tipe |
+| **Strict mode** | TypeScript's careful setting that catches the most bugs | Mode ketat |
+| **Union type** | "One of these": `"IDR" \| "USD"` or `number \| null` | Salah satu dari |
+| **Narrowing** | After a check like `if (x !== null)`, TypeScript knows the more exact type | Mempersempit tipe |
 
 ## 🧠 The big idea
 
-JavaScript is a **conversation without a dictionary**: you find out a word was misunderstood only when things go wrong (in production). TypeScript adds a **spell-checker for meaning** that runs while you type: "this function expects a number, you passed a string", "this might be `null`".
+TypeScript is like **spell check in Google Docs**, but for meaning. While you type, it underlines mistakes: "this function needs a number, you gave a string", "this might be `null`". Plain JavaScript only tells you when the app crashes — often in front of users.
 
-You already met the idea in Module 2: Python type hints + `mypy --strict`. TypeScript is the same deal, but the ecosystem takes it much more seriously — almost every React/Next.js codebase uses it.
+You've seen the idea before: Python type hints + `mypy --strict` in Module 2. TypeScript is the same, and almost every React/Next.js project uses it.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-- Large JavaScript codebases break in refactors: rename a field and 40 files silently read `undefined`.
-- Editors can offer autocomplete, go-to-definition and safe renames only when they know the types.
-- API contracts (your Phase 2 endpoints) become visible in code: `Application` has `status: Status`, not "some string".
+- In big JavaScript projects, renaming a field can silently break 40 files. TypeScript shows every broken place.
+- Your editor can autocomplete and rename safely only when it knows the types.
+- Your API contract becomes visible in code: an `Application` has `status: Status`, not "some string".
 
-## 💥 What happens if we DON'T?
+Without types, these bugs reach users:
 
 ```js
 function formatSalary(job) {
@@ -41,20 +53,21 @@ function formatSalary(job) {
 formatSalary({ salaryMax: 14000000 });                     // typo in field name: no warning
 ```
 
-These bugs reach users. With TypeScript they're red squiggles before you save.
+With TypeScript, both are red underlines before you even save.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
-### 1. Compile-time only
+### 1. Types exist only while you write code
 
 ```mermaid
 flowchart LR
-    TS["job.ts<br/>(types + JS)"] --> TSC["tsc / esbuild / SWC<br/>type-check + strip types"] --> JS["job.js<br/>(plain JavaScript)"] --> B[Browser / Node]
+    TS["job.ts<br/>(types + JS)"] --> TSC["tsc / esbuild / SWC<br/>type-check + remove types"] --> JS["job.js<br/>(plain JavaScript)"] --> B[Browser / Node]
 ```
 
-- **Type checking** (`tsc`) finds errors; **transpiling** (Vite/Next.js use fast tools like esbuild/SWC) just removes types.
-- TypeScript 7 introduced a much faster native compiler (a Go port announced in 2025), making `tsc` on large projects many times quicker.
-- Node.js can run many `.ts` files directly by stripping types — but it doesn't type-check them.
+Think of types as **scaffolding** on a building site: it helps while you build, and it's removed before people move in. The browser only receives plain JavaScript.
+
+- `tsc` **checks** types and reports errors.
+- Tools like Vite and Next.js just **remove** types quickly (they don't check). So run `tsc` separately, for example in CI.
 
 ### 2. Setup
 
@@ -64,7 +77,7 @@ npx tsc --init          # creates tsconfig.json
 npx tsc --noEmit        # type-check without writing files
 ```
 
-Key `tsconfig.json` options:
+The most important settings in `tsconfig.json`:
 
 ```json
 {
@@ -80,9 +93,10 @@ Key `tsconfig.json` options:
 }
 ```
 
-Always start new projects in **strict** mode — adding strictness later is painful.
+- `strict: true` — turn on all careful checks. Start every project with it; adding it later is painful.
+- `noUncheckedIndexedAccess` — `items[0]` might not exist, so its type includes `undefined`.
 
-### 3. Annotations and inference
+### 3. Writing types vs letting TypeScript guess
 
 ```ts
 let count = 0;                              // inferred: number — don't annotate the obvious
@@ -96,7 +110,10 @@ const skills: string[] = [];                // annotate empty collections
 const range: readonly [min: number, max: number] = [9_000_000, 14_000_000];   // labeled, readonly tuple
 ```
 
-Rule of thumb: **annotate inputs and exports; let TypeScript infer the rest.**
+Simple rule: **write types at the "doors" of your code** — function inputs, exported functions and empty lists. Inside, let TypeScript guess.
+
+- A **tuple** is an array with a fixed length and a type for each position: `[min, max]`.
+- `readonly` means it can't be changed.
 
 | Python | TypeScript |
 |---|---|
@@ -108,7 +125,9 @@ Rule of thumb: **annotate inputs and exports; let TypeScript infer the rest.**
 | `Any` | `any` (avoid) / `unknown` |
 | `mypy --strict` | `tsc --noEmit` with `"strict": true` |
 
-### 4. Literal types and unions
+### 4. Union types: "one of these"
+
+Like a form with a dropdown menu: you can only pick one of the listed options.
 
 ```ts
 type Currency = "IDR" | "USD";
@@ -117,9 +136,9 @@ function formatAmount(amount: number, currency: Currency = "IDR"): string { ... 
 formatAmount(10, "EUR");   // ❌ Argument of type '"EUR"' is not assignable to parameter of type 'Currency'
 ```
 
-Unions of string literals replace magic strings and most enums. (TypeScript `enum` exists, but union types are simpler and don't generate runtime code.)
+A list of allowed strings replaces "magic strings" that are easy to mistype. (TypeScript also has `enum`, but a union like this is simpler.)
 
-### 5. Null safety and narrowing
+### 5. Handling `null` safely
 
 ```ts
 function parseSalary(input: string): number | null { ... }
@@ -130,9 +149,9 @@ if (salary !== null) salary.toFixed();   // ✅ narrowed to number
 const shown = salary ?? 0;
 ```
 
-TypeScript follows your control flow: `typeof x === "string"`, `x !== null`, `Array.isArray(x)`, `"field" in obj`, and `switch` statements all **narrow** types.
+TypeScript follows your `if` checks, like a security guard who remembers you already showed your ID. After `if (salary !== null)`, it knows `salary` is a number. This is called **narrowing**. `typeof x === "string"`, `Array.isArray(x)` and `"field" in obj` work the same way.
 
-### 6. `any`, `unknown` and assertions
+### 6. `any`, `unknown` and `as`
 
 ```ts
 const data: any = await res.json();
@@ -144,125 +163,95 @@ data.jobs;                          // ❌ must narrow or validate first
 const el = document.querySelector("#search") as HTMLInputElement;   // assertion: "trust me"
 ```
 
-Assertions (`as`) don't convert or check anything. Use them rarely, where you truly know more than the compiler (DOM lookups you control). For external data, **validate** (Zod, Week 5).
+- `any` = switch off the spell checker. Mistakes pass silently.
+- `unknown` = "a sealed package": you must check what's inside before using it.
+- `as` = "trust me, I know the type". It checks nothing. Use it rarely, only when you really know more than TypeScript (like an element you created yourself).
 
-### 7. Types vanish at runtime
+### 7. Types vanish when the app runs
 
 ```ts
 type Job = { id: number; title: string };
 const jobs = (await res.json()) as Job[];   // no check happens here!
 ```
 
-If your Flask API changes `title` to `name`, TypeScript won't notice. Solutions: shared/generated types from the OpenAPI spec, runtime validation at boundaries, and end-to-end tests.
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| TypeScript | early errors, refactoring safety, editor help | build/type-check step, learning curve |
-| Plain JS + JSDoc types | no compile step | more verbose, weaker tooling |
-| `strict: true` | catches null and implicit-any bugs | more annotations at first |
-| `any` | fast escape hatch | silently spreads, hides bugs |
-| Unions vs `enum` | zero runtime cost, simple | enums give a runtime object (rarely needed) |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Any app beyond a small script, any shared component library, anything with an API contract.
-- ✅ Strict mode from day one.
-- 🚫 Don't fight the compiler with `any`/`@ts-ignore` — fix the type or narrow properly.
-- 🚫 Don't over-annotate what inference already knows.
-
-## 🏆 Best practices
-
-- [ ] `strict: true` (+ `noUncheckedIndexedAccess`); run `tsc --noEmit` in CI.
-- [ ] Annotate function parameters, return types of exported functions and public APIs.
-- [ ] Use literal unions for fixed sets of values.
-- [ ] Prefer `unknown` over `any`; ban `any` with ESLint (`@typescript-eslint/no-explicit-any`).
-- [ ] Handle `null`/`undefined` explicitly with narrowing, `??` and `?.`.
-- [ ] Keep `as` assertions rare and justified; never `as any`.
-- [ ] Validate external data at runtime; types are not validation.
-
-## 🏭 How it's used in industry
-
-- TypeScript is the default for new React/Next.js projects and one of the most-used languages in developer surveys.
-- Backend teams generate TypeScript client types from OpenAPI (openapi-typescript) so the frontend breaks at compile time when the API changes.
-- Job listings for frontend and full-stack roles in Indonesia increasingly list TypeScript as required, not "nice to have".
+Remember the scaffolding: once the app runs, the types are gone. If your Flask API renames `title` to `name`, TypeScript won't notice. Protect yourself with: types generated from the API's OpenAPI spec, runtime validation (Zod, Week 5), and end-to-end tests.
 
 ## ⚠️ Common mistakes
 
-- Thinking `as Job[]` validated the API response.
-- Turning strict mode off to "go faster".
-- `Number("")` is `0` — a type-correct but logically wrong parse (the exercise has this bug).
-- `object`/`Function`/`{}` as types — too loose; describe the real shape.
+- Believing `as Job[]` checked the API response.
+- Turning off strict mode "to go faster".
+- `Number("")` is `0` — the type is right, but the logic is wrong (the exercise has this bug).
+- Using `any` or `@ts-ignore` to silence errors instead of fixing the type.
+- Very loose types like `object`, `Function` or `{}` — describe the real shape instead.
+- Writing types for everything, even when TypeScript already knows them.
+
+## 🏆 Best practices
+
+- [ ] `strict: true` (plus `noUncheckedIndexedAccess`); run `tsc --noEmit` in CI.
+- [ ] Write types for function inputs and exported functions; let TypeScript guess the rest.
+- [ ] Use unions like `"IDR" | "USD"` for fixed sets of values.
+- [ ] Prefer `unknown` over `any`; block `any` with ESLint (`@typescript-eslint/no-explicit-any`).
+- [ ] Handle `null`/`undefined` with `if` checks, `??` and `?.`.
+- [ ] Use `as` rarely, and never `as any`.
+- [ ] Check data from outside (APIs, forms) while the app runs — types are not validation.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain to a teammate why TypeScript can say a value "is possibly null" while typing, but still can't guarantee the API response matches `Job[]` at runtime.
+Using the scaffolding analogy, explain to a teammate why TypeScript can warn "possibly null" while you type, but still can't guarantee the API response is really `Job[]` when the app runs.
 
 ## 📐 Design it
 
-You're adding TypeScript to CareerPilot's existing JavaScript frontend (50 files). Plan the migration: tsconfig steps, order of files, how to handle API data, and what to enforce in CI.
+You're adding TypeScript to CareerPilot's existing JavaScript frontend (50 files). Plan the move: settings, the order of files, how to handle API data, and what CI should check.
 
 :::quiz
 Show a possible plan
 
-1. **Add tooling**: `typescript`, `tsconfig.json` with `allowJs: true`, `checkJs: false`, `strict: true`, `noEmit: true`; CI runs `tsc --noEmit` (passes immediately because JS isn't checked yet).
-2. **Types for the contract first**: create `api/types.ts` (ideally generated from the Flask OpenAPI spec) — `Application`, `Status`, `Company`, error shape.
-3. **Convert leaves first**: utilities (`format.ts`, `dates.ts`) and the API client — they have no dependencies, and everything imports them.
-4. **Then components/pages**, one PR at a time, feature by feature. No `any` — use `unknown` + TODO comments where needed, tracked with an ESLint rule.
-5. **Runtime validation** at the API client for critical responses (Zod schemas that also produce the types).
-6. **Ratchet**: after all files are `.ts/.tsx`, set `allowJs: false`, enable `noUncheckedIndexedAccess`, and add ESLint `no-explicit-any` as an error.
-7. **CI**: type-check + lint + tests required on every PR.
+1. **Add the tools**: install `typescript`; `tsconfig.json` with `allowJs: true`, `checkJs: false`, `strict: true`, `noEmit: true`. CI runs `tsc --noEmit` (it passes at first, because JS files aren't checked yet).
+2. **Types for the API first**: create `api/types.ts` (ideally generated from the Flask OpenAPI spec) — `Application`, `Status`, `Company`, the error shape.
+3. **Convert the "leaf" files first**: helpers (`format.ts`, `dates.ts`) and the API client. They don't import other files, and everything else imports them.
+4. **Then components and pages**, one small pull request at a time. No `any` — use `unknown` with a TODO if needed.
+5. **Check real data** at the API client for important responses (Zod schemas that also create the types).
+6. **Tighten the rules** when everything is `.ts/.tsx`: `allowJs: false`, `noUncheckedIndexedAccess`, and the ESLint rule `no-explicit-any` as an error.
+7. **CI**: type-check, lint and tests must pass on every pull request.
 
-Rename files incrementally rather than a big-bang rewrite; each step ships.
+Move step by step, not in one huge rewrite — each step can ship.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Strict from the start, JS allowed during migration
-- [ ] API types and validation addressed
-- [ ] Incremental order with CI enforcement
+- [ ] Strict from the start, JavaScript still allowed during the move
+- [ ] API types and runtime checks are planned
+- [ ] Small steps, protected by CI
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w2/01-typescript-basics" ai="no-ai" title="Type a salary parser"}
-Remove `@ts-nocheck` from a JavaScript file, add strict types (literal unions, a labeled readonly tuple, nullable returns) and fix the hidden bugs the types reveal. Tests check behavior and run `tsc`, including checks that must **fail** to compile if your types are too loose.
+Remove `@ts-nocheck` from a JavaScript file, add strict types (unions, a labeled readonly tuple, functions that can return `null`) and fix the hidden bugs the types reveal. The tests check the behavior and run `tsc` — including checks that must **fail** to compile if your types are too loose.
 :::
 
 :::hints
 - `parseSalary`: return `null` when no digits were found — `Number("")` is `0`.
-- A type guard in `filter((amount): amount is number => amount !== null)` narrows the array type.
+- A type guard in `filter((amount): amount is number => amount !== null)` tells TypeScript that the nulls are gone.
 - Group digits with `/\B(?=(\d{3})+(?!\d))/g`.
 :::
 
 ## ✅ Quick check
 
 :::quiz
-What does `strict: true` enable that catches the most bugs?
+Which part of `strict: true` catches the most bugs?
 
-`strictNullChecks` (values can't be null/undefined unless typed that way) and `noImplicitAny` (untyped parameters become errors), among others.
+`strictNullChecks` (a value can't be `null`/`undefined` unless its type says so) and `noImplicitAny` (parameters without a type become errors).
 :::
 
 :::quiz
-When should you write a type annotation instead of relying on inference?
+When should you write a type yourself instead of letting TypeScript guess?
 
-At boundaries: function parameters, exported function return types, empty collections, and public APIs. Let inference handle local variables.
+At the "doors" of your code: function parameters, exported functions, empty lists and public APIs. Inside functions, let TypeScript guess.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Type annotation | Anotasi tipe |
-| Type inference | Inferensi tipe — tipe ditebak otomatis |
-| Strict mode | Mode ketat |
-| Union type | Tipe gabungan |
-| Narrowing | Penyempitan tipe |
-| Type assertion | Penegasan tipe (`as`) |
 
 ## 📚 Keep learning
 
