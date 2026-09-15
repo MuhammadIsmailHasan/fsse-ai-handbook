@@ -1,6 +1,6 @@
 ---
 title: "TypeScript Arrays & Objects"
-summary: Type collections and lookup tables precisely — readonly arrays, tuples, `as const`, `keyof` and indexed access, `Record` and index signatures, `satisfies`, and immutable updates that TypeScript can verify.
+summary: Type lists and lookup tables precisely — readonly arrays, tuples, `as const`, `keyof`, `Record`, `satisfies`, and updating data without changing the original, all checked by TypeScript.
 type: lesson
 source: core
 sourceRef: "M3 · W2 · L3"
@@ -14,22 +14,32 @@ tags: [typescript, arrays, objects, as-const, satisfies, keyof]
 
 ## 🎯 What you'll learn
 
-- `T[]`, `readonly T[]` and tuples
-- `as const` and deriving union types from values
-- `keyof`, `typeof`, indexed access types
-- `Record<K, V>` vs index signatures, and `noUncheckedIndexedAccess`
-- `satisfies`: check a value against a type without losing literal types
-- Typing immutable updates (spread, `map`, `toSorted`)
+- Typing arrays, readonly arrays and tuples
+- `as const`: making types **follow your data**
+- `keyof` and `Type["field"]`
+- `Record` for lookup tables, and why missing keys are dangerous
+- `satisfies`: checking a table is complete
+- Updating arrays and objects without changing the original
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **`readonly` array** | An array your code promises not to change | Array hanya-baca |
+| **Tuple** | An array with a fixed length and a type per position: `[min, max]` | Tupel |
+| **`as const`** | "Treat these values as exact and unchangeable" | Nilai pasti |
+| **`typeof` (in types)** | Get the type of an existing value | Ambil tipe dari nilai |
+| **`keyof`** | The list of field names of a type: `"id" \| "title"` | Daftar nama field |
+| **`Record<K, V>`** | An object type with keys K and values V | Tabel kunci-nilai |
+| **`satisfies`** | "Check this value matches a type, but keep its exact type" | Cek kecocokan |
 
 ## 🧠 The big idea
 
-Often you already **have** the data (a list of statuses, a label map) and you want the types to **follow the data**, not the other way around. Write the list once with `as const`, derive the union from it, and let `satisfies` verify the lookup tables are complete. Change the list → every dependent type and table updates or errors.
+Often you already **have** the data — a list of statuses, a table of labels. Instead of typing the same list twice (once as data, once as a type), let the type **follow the data**. It's like a **master price list** at a shop: change the price in one place, and every receipt uses the new price automatically.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Front-ends are full of configuration objects: status labels, colors per status, route tables, feature flags, select options. Without precise types, a missing key (`STATUS_LABELS.interview` undefined) shows as an empty badge in production.
-
-## 💥 What happens if we DON'T?
+Frontends are full of small config tables: labels per status, colors per status, dropdown options. If a key is missing, the page shows an empty badge — and nobody notices until a user does.
 
 ```ts
 const STATUSES = ["saved", "applied", "interview"];      // string[]
@@ -38,7 +48,11 @@ const LABELS: Record<string, string> = { saved: "Saved", aplied: "Applied" };  /
 LABELS["interview"].toUpperCase();                        // 💥 undefined at runtime
 ```
 
-## 📖 How it works, step by step
+- The list and the type are written twice, so they drift apart.
+- The typo `aplied` compiles.
+- A missing key crashes only when the app runs.
+
+## 📖 Step by step
 
 ### 1. Arrays and tuples
 
@@ -48,9 +62,10 @@ function render(items: readonly string[]) { ... }      // accepts mutable AND re
 const range: [min: number, max: number] = [9, 14];      // fixed length, typed positions
 ```
 
-Function parameters should usually be `readonly` — it documents that you won't mutate them and accepts more inputs.
+- For function inputs, prefer `readonly string[]`: it says "I will only read this", like borrowing a library book — you read it, you don't write in it.
+- A **tuple** has fixed positions, like a date written as `[day, month, year]`.
 
-### 2. `as const`
+### 2. `as const` — the type follows the data
 
 ```ts
 const STATUSES = ["saved", "applied", "interview", "offer", "rejected"] as const;
@@ -60,12 +75,13 @@ type Status = (typeof STATUSES)[number];
 // "saved" | "applied" | "interview" | "offer" | "rejected"
 ```
 
-- `typeof STATUSES` — the type of a value
-- `[number]` — the type of any element (indexed access)
+Read the last line like this:
+- `typeof STATUSES` — "the type of this array",
+- `[number]` — "the type of any item inside it".
 
-Now `STATUSES.map(...)` renders the select options and `Status` types the model — one source of truth.
+Now the same list feeds the dropdown options **and** the `Status` type. Add a status to the list → the type updates too.
 
-### 3. `keyof` and indexed access
+### 3. `keyof` and `Type["field"]`
 
 ```ts
 interface Job { id: number; title: string; salaryMax: number | null }
@@ -75,16 +91,20 @@ type Salary = Job["salaryMax"];             // number | null
 function sortBy(jobs: readonly Job[], key: "id" | "title") { ... }   // or K extends keyof Job (generics lesson)
 ```
 
-### 4. `Record` vs index signatures
+- `keyof Job` = the names of all fields, like the column headers of a spreadsheet.
+- `Job["salaryMax"]` = the type of one field.
+
+### 4. `Record` and missing keys
 
 ```ts
 const counts: Record<Status, number> = { saved: 0, applied: 2, interview: 0, offer: 1, rejected: 0 };   // every key required
 const cache: { [jobId: string]: Job } = {};                                                             // any string key
 ```
 
-With `noUncheckedIndexedAccess`, `cache["42"]` is `Job | undefined` — honest about missing keys. `Record<Status, …>` over a finite union is complete, so reads are safe.
+- `Record<Status, number>` = one entry for **every** status. Forget one → error.
+- `{ [jobId: string]: Job }` = any string can be a key, so a key may not exist. With the `noUncheckedIndexedAccess` setting, `cache["42"]` has the type `Job | undefined`, which reminds you to handle "not found".
 
-### 5. `satisfies`
+### 5. `satisfies` — check a table is complete
 
 ```ts
 const STATUS_LABELS = {
@@ -96,12 +116,11 @@ const STATUS_LABELS = {
 } satisfies Record<Status, string>;
 ```
 
-- Missing or misspelled keys → error (like an annotation).
-- But the value keeps its **precise** type (unlike `: Record<Status, string>`), so e.g. `keyof typeof STATUS_LABELS` stays exact and extra helpful inference remains.
+`satisfies` is like a **teacher checking your homework** without rewriting it: it reports missing or misspelled keys, but your values keep their exact types. (Writing `: Record<Status, string>` instead also checks, but it replaces the exact types with the general ones.)
 
-Great for config tables, route maps, and theme tokens.
+Use it for config tables, route maps and theme settings.
 
-### 6. Immutable updates, typed
+### 6. Updating without changing the original
 
 ```ts
 function moveItem(items: readonly BoardItem[], id: number, status: Status): BoardItem[] {
@@ -109,11 +128,11 @@ function moveItem(items: readonly BoardItem[], id: number, status: Status): Boar
 }
 ```
 
-- `readonly` input prevents accidental `items[0].status = ...` on the array (fields need their own `readonly`).
-- Spreading keeps untouched items identical (`===`) — React uses this to skip re-rendering them.
-- `Readonly<T>` / `readonly` are compile-time only; `Object.freeze` enforces at runtime.
+- `map` builds a new array; the changed item is a new object (`{ ...item, status }`).
+- Items that didn't change stay the **exact same objects**. React uses this to skip redrawing them (Week 3).
+- `readonly` is only checked while you write code. `Object.freeze` blocks changes while the app runs.
 
-### 7. Narrowing unknown strings
+### 7. Checking strings from outside
 
 ```ts
 function isStatus(value: unknown): value is Status {
@@ -123,54 +142,33 @@ const fromUrl = new URLSearchParams(location.search).get("status");
 const status: Status = isStatus(fromUrl) ? fromUrl : "saved";
 ```
 
-(The `as readonly string[]` widens the tuple so `includes` accepts any string.)
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| `as const` + derived unions | one source of truth | readonly tuples need widening for `includes` |
-| Type annotation `: Record<…>` | checks completeness | loses literal value types |
-| `satisfies` | checks + keeps precision | newer syntax some teams don't know |
-| Index signatures | flexible keys | every read may be `undefined` |
-| `readonly` everywhere | safer | noisy in small scripts |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ `as const` for fixed option lists and config; `satisfies` for lookup tables.
-- ✅ `readonly` parameters for arrays you only read.
-- 🚫 Don't use index signatures when the keys are a known finite set — use `Record<Union, …>`.
-
-## 🏆 Best practices
-
-- [ ] Derive unions from `as const` arrays instead of retyping them.
-- [ ] Use `satisfies Record<Union, V>` for complete lookup tables.
-- [ ] Enable `noUncheckedIndexedAccess`; handle `undefined` from dynamic lookups.
-- [ ] Accept `readonly T[]` in functions; return new arrays/objects.
-- [ ] Guard values coming from URLs, storage and APIs before treating them as unions.
-
-## 🏭 How it's used in industry
-
-- Design systems type variant tables with `satisfies` (e.g. button variants → classes — lesson 06).
-- Routing libraries (TanStack Router, typed Next.js routes) derive route param types from route definitions.
-- i18n libraries check translation keys against a typed dictionary.
+A value from the URL, localStorage or an API can be anything. Check it before treating it as a `Status` — like checking a ticket before letting someone in. (`as readonly string[]` is needed so `includes` accepts any string.)
 
 ## ⚠️ Common mistakes
 
-- Losing literal types by annotating config objects too loosely.
-- Mutating props/state arrays in place (`sort`, `push`).
-- `obj[key]` on `Record<string, T>` assuming it exists.
-- Duplicating a union type and the runtime array that lists the same values.
+- Writing the list of values twice (array + type) — they drift apart.
+- Annotating config objects too loosely (`Record<string, string>`), so typos compile.
+- Assuming `obj[key]` exists on a `Record<string, T>`.
+- Changing props or state arrays directly (`sort`, `push`).
+- Using a URL or storage value as a `Status` without checking it.
+
+## 🏆 Best practices
+
+- [ ] Build unions from `as const` arrays instead of typing them again.
+- [ ] Use `satisfies Record<Union, V>` for lookup tables that must be complete.
+- [ ] Turn on `noUncheckedIndexedAccess`; handle "not found".
+- [ ] Accept `readonly T[]` in functions; return new arrays and objects.
+- [ ] Check values from URLs, storage and APIs with a type guard before using them.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain the difference between `const LABELS: Record<Status, string> = …` and `const LABELS = { … } satisfies Record<Status, string>` to a teammate.
+Using the homework-checking analogy, explain the difference between `const LABELS: Record<Status, string> = …` and `const LABELS = { … } satisfies Record<Status, string>`.
 
 ## 📐 Design it
 
-Design the typed configuration for CareerPilot's application **filters bar**: status options with labels and colors, sort options (`newest`, `oldest`, `company A–Z`) mapped to API query parameters, and reading/writing these to the URL query string safely.
+Design the typed settings for CareerPilot's **filters bar**: status options with labels and colors, sort options (`newest`, `oldest`, `company A–Z`) that map to API query parameters, and safely reading and writing them in the URL.
 
 :::quiz
 Show a possible design
@@ -214,33 +212,36 @@ export function writeFilters(filters: Filters): URLSearchParams {
 }
 ```
 
-Untrusted URL values are narrowed with guards; tables are complete by construction; defaults are omitted from the URL to keep links short.
+- The status list and sort table are the single source of truth.
+- `satisfies` guarantees every status has a label and a color.
+- Values from the URL are checked with guards before use.
+- Default values are left out of the URL, so links stay short.
 :::
 
 ### 📝 Self-review checklist
 
 - [ ] One source of truth for statuses and sorts
-- [ ] Tables checked for completeness
-- [ ] URL values validated before use
+- [ ] Tables are checked for missing keys
+- [ ] URL values are checked before use
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w2/03-arrays-objects" ai="no-ai" title="A typed application board"}
-Derive a `Status` union from an `as const` array, build a complete label table with `satisfies`, and write immutable board functions — counts with zeros, moving items, adding tags and sorting — accepting readonly arrays. Type tests check readonly fields, invalid statuses and keys.
+Build a `Status` union from an `as const` array, create a complete label table with `satisfies`, and write board functions that never change their input — counts that include zeros, moving items, adding tags and sorting — accepting readonly arrays. Type tests check readonly fields, wrong statuses and wrong keys.
 :::
 
 :::hints
-- `Object.fromEntries(STATUSES.map((s) => [s, 0])) as Record<Status, number>` starts counts at zero (one justified assertion).
-- `items.map((item) => (item.id === id ? { ...item, status } : item))` keeps untouched items identical.
-- For status order, `STATUSES.indexOf(a.status) - STATUSES.indexOf(b.status)`.
+- `Object.fromEntries(STATUSES.map((s) => [s, 0])) as Record<Status, number>` starts all counts at zero (one assertion you can justify).
+- `items.map((item) => (item.id === id ? { ...item, status } : item))` keeps unchanged items identical.
+- For status order: `STATUSES.indexOf(a.status) - STATUSES.indexOf(b.status)`.
 :::
 
 ## ✅ Quick check
 
 :::quiz
-How do you get a union of the element values of `const X = ["a", "b"] as const`?
+How do you get a union of the values in `const X = ["a", "b"] as const`?
 
 `type T = (typeof X)[number]` → `"a" | "b"`.
 :::
@@ -248,18 +249,8 @@ How do you get a union of the element values of `const X = ["a", "b"] as const`?
 :::quiz
 What does `noUncheckedIndexedAccess` change?
 
-Index access like `arr[0]` or `record[key]` (with an index signature) includes `undefined` in the type, forcing you to handle missing values.
+Reading `arr[0]` or `record[key]` (with dynamic keys) includes `undefined` in the type, so you must handle "not found".
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Tuple | Tupel — larik dengan panjang dan tipe per posisi tetap |
-| `as const` | Menjadikan nilai literal dan readonly |
-| Indexed access type | Tipe akses indeks (`T["key"]`) |
-| Index signature | Tanda indeks (kunci dinamis) |
-| `satisfies` | Operator pengecek kecocokan tipe tanpa mengubah tipe nilai |
 
 ## 📚 Keep learning
 
