@@ -1,6 +1,6 @@
 ---
 title: "Docker in Depth"
-summary: Understand what a container really is — namespaces, cgroups and layers, images and digests, CPU architectures, networking, storage, limits and exit codes, debugging and hardening.
+summary: Understand what a container really is — namespaces, cgroups and layers, images and digests, CPU types, networking, storage, limits and exit codes, debugging and making containers safer.
 type: lesson
 source: original
 roles: { be: recommended, fe: optional, fs: recommended, ai: recommended, ops: core }
@@ -12,33 +12,54 @@ tags: [docker, containers, linux, networking, security, debugging]
 
 ## 🎯 What you'll learn
 
-- What a container is under the hood: **namespaces**, **cgroups**, **overlay filesystems**
+- What a container is under the hood: **namespaces**, **cgroups**, **layered filesystems**
 - Images, **manifests**, **digests**, tags and registries
 - **CPU architectures** (`arm64` Macs vs `amd64` servers) and multi-platform images
 - Container **networking**: bridge networks, DNS, published ports
 - **Storage**: layers vs volumes vs bind mounts vs tmpfs
 - **Resource limits**, the OOM killer and **exit codes** (137, 143, 1)
 - A **debugging toolkit**: `logs`, `exec`, `inspect`, `stats`, `events`, `top`
-- **Hardening**: non-root, read-only root filesystem, dropped capabilities, `no-new-privileges`
+- **Hardening**: non-root, read-only filesystem, fewer root powers, `no-new-privileges`
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Container** | A normal program running with limits on what it can see and use | Proses yang diisolasi |
+| **Image** | The read-only package a container starts from | Paket siap jalan |
+| **Namespace** | A Linux feature that hides everything outside the container from it | Sekat pandangan |
+| **cgroup** | A Linux feature that limits CPU, memory and number of processes | Batas sumber daya |
+| **Layer** | One saved step of an image; images are stacks of layers | Lapisan image |
+| **Digest** | A fingerprint (`sha256:…`) that always points to the exact same image | Sidik jari image |
+| **Volume** | Storage that lives outside the container, so data survives replacement | Penyimpanan tetap |
+| **OOM killer** | The part of Linux that kills a process when memory runs out | Pembunuh saat memori habis |
+| **Signal (SIGTERM / SIGKILL)** | A message to a process: "please stop" / "stop now, no choice" | Sinyal berhenti |
+| **Hardening** | Removing powers the app doesn't need, to limit damage if it's hacked | Pengetatan keamanan |
 
 ## 🧠 The big idea
 
-A container is **not a small virtual machine**. It's a normal Linux process wearing **blinkers** (namespaces: it can only see its own files, processes and network) and a **diet plan** (cgroups: it can only use so much CPU and memory), standing on a **stack of transparent sheets** (image layers) with one writable sheet on top.
+A container is **not a small virtual machine**. It's a normal Linux process wearing:
 
-Once you see it that way, most Docker mysteries — "why did it die?", "why can't it reach the database?", "where did my data go?" — become Linux questions with Linux answers.
+- **blinkers** (namespaces) — it can only see its own files, processes and network,
+- a **diet plan** (cgroups) — it can only use so much CPU and memory,
+- standing on a **stack of transparent sheets** (image layers), with one sheet on top it can write on.
 
-## ❓ Why does this matter?
+A VM is a whole separate house with its own foundation. A container is a **room in a boarding house (kos)**: its own door and key, but the same building, water and electricity (the Linux kernel).
 
-In Module 2 you built a good Flask image. In production you'll also need to answer: why did the container restart at 3 a.m.? Why does the image work on my Mac but not on the server? Why is the database data gone after a redeploy? Why does the app ignore `docker stop` for 10 seconds? Those are **runtime** questions, and cloud platforms (ECS, Kubernetes) are built on exactly these primitives.
+Once you see it this way, most Docker mysteries — "why did it die?", "why can't it reach the database?", "where did my data go?" — become Linux questions with Linux answers.
 
-## 💥 What happens if we DON'T understand it?
+## ❓ Why it matters
+
+In Module 2 you built a good Flask image. In production you'll also need to answer: why did the container restart at 3 a.m.? Why does the image work on my Mac but not on the server? Why is the database gone after a redeploy? Why does the app ignore `docker stop` for 10 seconds? Cloud platforms (ECS, Kubernetes) are built on exactly these pieces.
+
+Without this understanding:
 
 - Your RevoShop container shows **`Exited (137)`** and you "fix" it by restarting, again and again.
-- You store uploaded files inside the container and lose them on the next deploy.
+- You save uploaded files inside the container and lose them on the next deploy.
 - An image built on an M-series Mac crashes on an x86 server with `exec format error`.
 - You debug networking by publishing every port to the host "to be safe" — including PostgreSQL.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. What a container is
 
@@ -60,14 +81,14 @@ flowchart TB
 
 | Mechanism | Gives the container |
 |---|---|
-| **PID namespace** | its own process tree (your app is PID 1) |
-| **Network namespace** | its own interfaces, IP and ports |
-| **Mount namespace** | its own filesystem view |
-| **cgroups** | CPU, memory and process-count limits and accounting |
-| **OverlayFS** | read-only image layers + a thin writable layer |
-| **Capabilities / seccomp** | a reduced set of root powers and allowed system calls |
+| **PID namespace** | its own process list (your app is PID 1) |
+| **Network namespace** | its own network interfaces, IP and ports |
+| **Mount namespace** | its own view of the filesystem |
+| **cgroups** | limits and counters for CPU, memory and number of processes |
+| **OverlayFS** | read-only image layers + a thin writable layer on top |
+| **Capabilities / seccomp** | a smaller set of root powers and allowed system calls |
 
-On macOS and Windows, Docker Desktop runs these containers inside a small **Linux VM** — that's why memory for all containers is limited by the VM's setting (check with `docker info`).
+On macOS and Windows, Docker Desktop runs containers inside a small **Linux VM**. That's why the total memory for all containers is limited by that VM's setting (check with `docker info`).
 
 ### 2. Images, tags and digests
 
@@ -77,10 +98,10 @@ docker image inspect python:3.13-slim --format '{{index .RepoDigests 0}}'
 # python@sha256:9d2e55…   ← content address: this exact image forever
 ```
 
-- An **image** = config + ordered **layers**, described by a **manifest**.
-- A **tag** (`3.13-slim`) is a movable label; a **digest** (`@sha256:…`) is immutable.
-- A **multi-platform image** has a manifest *list* pointing to one manifest per platform (`linux/amd64`, `linux/arm64`).
-- Registries: Docker Hub, **GitHub Container Registry (GHCR)**, **Amazon ECR**, Google Artifact Registry.
+- An **image** = settings + ordered **layers**, described by a **manifest** (a packing list).
+- A **tag** (`3.13-slim`) is a **name tag** you can move to another image. A **digest** (`@sha256:…`) is a **fingerprint** — it can never point to anything else.
+- A **multi-platform image** has a manifest *list*: one packing list per platform (`linux/amd64`, `linux/arm64`).
+- Registries (image warehouses): Docker Hub, **GitHub Container Registry (GHCR)**, **Amazon ECR**, Google Artifact Registry.
 
 ### 3. CPU architecture: the Apple Silicon trap
 
@@ -91,7 +112,9 @@ docker buildx build --platform linux/amd64 -t myapp:amd64 .           # for x86 
 docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/you/myapp:1.0.0 --push .   # both
 ```
 
-AWS offers both x86 and **Graviton (arm64)** instances — arm64 is often cheaper for the same performance, and your Mac builds it natively. Decide the target platform deliberately; CI (Week 2) usually builds on `amd64` runners.
+Programs are compiled for one kind of CPU, like a **plug for one type of socket**. An `arm64` image won't run on an `amd64` (Intel/AMD) server → `exec format error`.
+
+AWS offers both x86 and **Graviton (arm64)** servers — arm64 is often cheaper for the same speed, and your Mac builds it natively. Choose the target on purpose; CI (Week 2) usually builds on `amd64` machines.
 
 ### 4. Networking
 
@@ -105,12 +128,12 @@ docker exec api getent hosts db          # Docker's embedded DNS resolves servic
 | Concept | Meaning |
 |---|---|
 | user-defined bridge network | containers reach each other **by name** (`db:5432`) |
-| `-p 8000:5000` | publishes container port 5000 on **all** host interfaces port 8000 |
+| `-p 8000:5000` | makes container port 5000 reachable on port 8000 of **all** the host's network interfaces |
 | `-p 127.0.0.1:8000:5000` | only reachable from the host itself |
 | `EXPOSE` | documentation only — doesn't publish anything |
 | `localhost` inside a container | the **container itself**, not your laptop and not the database |
 
-Publish only what users must reach (the reverse proxy). Databases stay on internal networks.
+A Docker network is like an **office intercom**: people inside dial each other by name ("db"). Publishing a port is like giving that phone a public number. Only the receptionist (the reverse proxy) needs a public number; the database stays internal.
 
 ### 5. Storage
 
@@ -118,8 +141,10 @@ Publish only what users must reach (the reverse proxy). Databases stay on intern
 |---|---|---|
 | container writable layer | until the container is **removed** | nothing important |
 | **named volume** (`pgdata:/var/lib/postgresql/data`) | managed by Docker, survives container replacement | database data |
-| **bind mount** (`./src:/app`) | a host directory | development hot reload, config files |
-| **tmpfs** (`--tmpfs /tmp`) | memory only | scratch files with a read-only root filesystem |
+| **bind mount** (`./src:/app`) | a folder on the host | development hot reload, config files |
+| **tmpfs** (`--tmpfs /tmp`) | memory only | temporary files when the root filesystem is read-only |
+
+The container's writable layer is like a **hotel room**: when you check out (container removed), the room is cleaned. A volume is a **storage locker** that stays yours between stays.
 
 In the cloud, containers are **disposable**: files go to object storage (S3), data to managed databases (RDS), logs to stdout.
 
@@ -137,9 +162,9 @@ docker inspect revoshop-web --format '{{.State.ExitCode}} OOMKilled={{.State.OOM
 | 1 (or other small numbers) | the app failed (read `docker logs`) |
 | 125 / 126 / 127 | Docker couldn't run it / command not executable / command not found |
 | **137** | killed with SIGKILL — **OOM killer** or `docker stop` timeout |
-| **143** | stopped with SIGTERM (normal graceful stop) |
+| **143** | stopped with SIGTERM (normal, polite stop) |
 
-`docker stop` sends **SIGTERM**, waits 10 s, then SIGKILL. If PID 1 is a shell (`CMD gunicorn …` in shell form) the signal may never reach gunicorn → slow stops ending in 137.
+`docker stop` is like a shop closing: first "we're closing, please finish up" (**SIGTERM**), wait 10 s, then the security guard pushes everyone out (**SIGKILL**). If PID 1 is a shell (`CMD gunicorn …` in shell form), the announcement may never reach gunicorn → slow stops ending in 137.
 
 ### 7. The debugging toolkit
 
@@ -154,6 +179,8 @@ docker run --rm -it --network container:api nicolaka/netshoot   # network debugg
 docker system df                          # disk used by images, volumes, build cache
 ```
 
+Start with `ps -a` (what state?), then `logs` (what did it say?), then `inspect` (how is it configured, why did it stop?). Evidence first, fixes second — like a doctor checking symptoms before prescribing.
+
 ### 8. Hardening
 
 ```bash
@@ -166,41 +193,16 @@ docker run \
   myapp
 ```
 
-Plus: small base images, no secrets in layers, scan images (`docker scout cves`, `trivy image`), keep base images updated, and never mount `/var/run/docker.sock` into an app container (that's root on the host).
+Give the app a **visitor badge**, not a master key: not root, can't change its own files, no special powers, can't gain more powers later, limited memory. If someone breaks in, there's much less they can do.
 
-## ⚖️ Trade-offs
+Also: small base images, no secrets in layers, scan images (`docker scout cves`, `trivy image`), keep base images updated, and never mount `/var/run/docker.sock` into an app container (that equals root on the host).
 
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Containers vs VMs | fast start, dense packing, same image everywhere | share the host kernel (weaker isolation than VMs) |
-| slim vs alpine vs distroless base | slim: compatible (glibc); alpine: tiny; distroless: minimal attack surface | alpine's musl can break Python wheels; distroless has no shell for debugging |
-| `amd64` vs `arm64` targets | amd64: widest compatibility; arm64: cheaper Graviton, native on Macs | building for the other platform is slower (emulation) |
-| Named volumes vs managed DB | volumes: cheap, simple | backups, failover, upgrades are on you |
+### Choosing wisely
 
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Package every service as an image; run the same image in dev, CI and production.
-- ✅ Use limits and health checks everywhere, even on one server.
-- 🚫 Don't treat containers like pets you SSH into and patch — rebuild and redeploy.
-- 🚫 Don't run stateful production databases in containers on a single VM without backups and a restore test.
-
-## 🏆 Best practices
-
-- [ ] Know your target **platform** and build for it (or publish multi-arch).
-- [ ] Deploy by **digest** or immutable tag, never by `latest`.
-- [ ] Publish only the proxy's ports; keep databases on internal networks.
-- [ ] Named volumes or managed services for data; nothing important in the container layer.
-- [ ] Set memory/CPU limits; watch `docker stats`; alert on restarts and OOM kills.
-- [ ] Exec-form CMD so PID 1 receives SIGTERM; handle graceful shutdown.
-- [ ] Non-root user, read-only root filesystem, `--cap-drop ALL`, `no-new-privileges`.
-- [ ] Log to stdout/stderr; let the platform collect logs.
-- [ ] Scan images in CI and rebuild regularly for base-image security fixes.
-
-## 🏭 How it's used in industry
-
-- ECS, Kubernetes, Cloud Run and App Runner all run **OCI images** using these same kernel features; skills transfer directly.
-- Platform teams enforce hardening with policies (e.g. Kubernetes Pod Security Standards: non-root, read-only filesystems, dropped capabilities).
-- Many companies run mixed x86/arm64 fleets and publish multi-arch images from CI.
+- **Base image:** `slim` is the most compatible; `alpine` is tiny but its different C library can break Python packages; `distroless` is the most locked-down but has no shell for debugging.
+- **Target CPU:** `amd64` works almost everywhere; `arm64` is cheaper on Graviton and native on Macs.
+- **Data:** a named volume is cheap and simple, but backups, failover and upgrades are then your job; a managed database handles them for you.
+- 🚫 Don't treat containers like pets you log into and patch by hand — rebuild and redeploy.
 
 ## ⚠️ Common mistakes
 
@@ -208,7 +210,19 @@ Plus: small base images, no secrets in layers, scan images (`docker scout cves`,
 - Deleting a volume with `docker compose down -v` and losing the local database.
 - Ignoring exit code 137 or restart loops (`Restarting (1)`).
 - Mounting the Docker socket into an app "for convenience".
-- Images that only work on the developer's CPU architecture.
+- Images that only work on the developer's CPU type.
+
+## 🏆 Best practices
+
+- [ ] Know your target **platform** and build for it (or publish multi-arch).
+- [ ] Deploy by **digest** or a tag that never changes, never by `latest`.
+- [ ] Publish only the proxy's ports; keep databases on internal networks.
+- [ ] Named volumes or managed services for data; nothing important in the container layer.
+- [ ] Set memory/CPU limits; watch `docker stats`; alert on restarts and OOM kills.
+- [ ] Exec-form CMD so PID 1 receives SIGTERM; shut down gracefully.
+- [ ] Non-root user, read-only root filesystem, `--cap-drop ALL`, `no-new-privileges`.
+- [ ] Log to stdout/stderr; let the platform collect logs.
+- [ ] Scan images in CI and rebuild regularly to pick up base-image security fixes.
 
 :::revoshop
 Your repo: `~/path/to/revoshop`.
@@ -234,15 +248,15 @@ Your RevoShop container on a 2 GB server keeps showing `Exited (137)` after traf
 Show a possible plan
 
 **Investigate**
-1. `docker inspect revoshop-web --format '{{.State.OOMKilled}} {{.State.ExitCode}} {{.RestartCount}}'` → confirms OOM vs stop timeout.
-2. `docker events --since 24h --filter container=revoshop-web` → `oom` and `die` events with timestamps; match with traffic.
+1. `docker inspect revoshop-web --format '{{.State.OOMKilled}} {{.State.ExitCode}} {{.RestartCount}}'` → confirms out-of-memory vs stop timeout.
+2. `docker events --since 24h --filter container=revoshop-web` → `oom` and `die` events with timestamps; compare with traffic.
 3. `docker stats` during a Locust load test → memory per worker × `GUNICORN_WORKERS` (3 workers × ~150 MB + spikes).
 4. `docker logs --since 1h` → slow startup: the entrypoint waits for the DB and runs **migrations on every start** (the 40 s).
-5. `free -m` / `docker info` on the host → other containers (Postgres) competing for 2 GB.
+5. `free -m` / `docker info` on the host → other containers (Postgres) competing for the same 2 GB.
 
 **Fix**
-- Right-size workers (`WEB_CONCURRENCY=2`, `--max-requests 1000 --max-requests-jitter 100` to recycle leaky workers) and set a memory limit with headroom; give Postgres its own limit/`shared_buffers`.
-- Move migrations to a one-off job; exec-form CMD for graceful shutdown.
+- Right-size workers (`WEB_CONCURRENCY=2`, `--max-requests 1000 --max-requests-jitter 100` to replace workers that slowly leak memory) and set a memory limit with some headroom; give Postgres its own limit/`shared_buffers`.
+- Move migrations to a one-off job; exec-form CMD for a graceful shutdown.
 
 ```yaml
 api:
@@ -266,8 +280,8 @@ api:
 ### 📝 Self-review checklist
 
 - [ ] Evidence before fixes
-- [ ] Limits sized from measurements
-- [ ] Graceful shutdown addressed
+- [ ] Limits based on measurements
+- [ ] Graceful shutdown handled
 
 ::ai-review{task="design"}
 
@@ -279,16 +293,16 @@ Write a small Dockerfile linter: a parser that handles continuations and comment
 
 :::hints
 - Split instructions into stages at every `FROM`; remember stage names so `FROM builder` isn't "unpinned".
-- For ENV, distinguish `ENV A=b C=d` from the legacy `ENV A b`.
-- The registry host may contain a port (`registry:5000/app`) — look for a tag only in the last path segment.
+- For ENV, tell `ENV A=b C=d` apart from the old `ENV A b` form.
+- The registry host may contain a port (`registry:5000/app`) — look for a tag only in the last part of the path.
 :::
 
 ## ✅ Quick check
 
 :::quiz
-Why does a named volume survive `docker compose up --build` but a file written inside the container doesn't survive `docker compose up --force-recreate`?
+Why does a named volume survive `docker compose up --build`, but a file written inside the container doesn't survive `docker compose up --force-recreate`?
 
-Recreating replaces the container and its writable layer; the named volume is a separate Docker object that's re-attached to the new container.
+Recreating replaces the container and its writable layer; the named volume is a separate Docker object that's attached again to the new container.
 :::
 
 :::quiz
@@ -296,17 +310,6 @@ What does `-p 127.0.0.1:5432:5432` change compared with `-p 5432:5432`?
 
 The port is only published on the host's loopback interface, so other machines on the network (or the internet) can't reach the database.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Namespace | Ruang nama (isolasi pandangan proses) |
-| cgroup | Grup kontrol (batas sumber daya) |
-| Digest | Sidik isi image (hash tetap) |
-| Volume | Penyimpanan data persisten Docker |
-| OOM killer | Mekanisme kernel yang mematikan proses saat memori habis |
-| Hardening | Pengerasan keamanan |
 
 ## 📚 Keep learning
 
