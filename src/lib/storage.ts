@@ -20,6 +20,9 @@ export const STORAGE_KEYS = {
   reviewQueue: 'fsse:review-queue',
   placement: 'fsse:placement',
   preferences: 'fsse:preferences',
+  studyLog: 'fsse:study-log',
+  studyTimer: 'fsse:study-timer',
+  todayPlan: 'fsse:today-plan',
 } as const
 
 export function readJSON<T>(key: string, fallback: T): T {

@@ -10,11 +10,12 @@ import { useLocale } from '../hooks/useLocale'
 import { useStudy } from '../hooks/useStudy'
 import { targetRoleLabel } from '../lib/roles'
 import { dueItems } from '../lib/spaced-repetition'
+import { dateKey } from '../lib/study-time'
 
 export function DashboardPage() {
-  const { completed, targetRole, reviewQueue } = useStudy()
+  const { completed, targetRole, reviewQueue, studyLog, studyGoal } = useStudy()
   const { allLessons, course, getLesson } = useContent()
-  const { t } = useLocale()
+  const { t, formatDuration } = useLocale()
   const next = pickForBudget(
     orderedStream(course.studyPath.module, allLessons),
     completed,
@@ -44,7 +45,11 @@ export function DashboardPage() {
         </Link>
 
         <div className="grid gap-4">
-          <Stat to="/schedule" label={t('dashboard.weekPlan')} value={t('dashboard.open')} />
+          <Stat
+            to="/schedule"
+            label={t('dashboard.today')}
+            value={`⏱️ ${formatDuration(studyLog[dateKey(new Date())] ?? 0)} / ${formatDuration(studyGoal.targetMinutes)}`}
+          />
           <Stat to="/tracks/dsa/review" label={t('dashboard.reviewsDue')} value={`🔁 ${due}`} />
           <Stat to="/roadmap" label={t('dashboard.lessonsDone')} value={`✅ ${doneCount}`} />
         </div>

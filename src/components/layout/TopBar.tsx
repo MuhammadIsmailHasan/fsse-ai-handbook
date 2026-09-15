@@ -8,6 +8,9 @@
  */
 import { Link } from 'react-router'
 import { useLocale } from '../../hooks/useLocale'
+import { useNow } from '../../hooks/useNow'
+import { useStudy } from '../../hooks/useStudy'
+import { elapsedMinutes } from '../../lib/study-time'
 import { LanguageToggle } from './LanguageToggle'
 import { ThemeToggle } from './ThemeToggle'
 import { Icon } from '../ui/Icon'
@@ -54,10 +57,30 @@ export function TopBar({ onMenuClick, onSearchClick }: TopBarProps) {
               {isMac ? '⌘' : 'Ctrl'} K
             </kbd>
           </button>
+          <TimerPill />
           <LanguageToggle />
           <ThemeToggle />
         </div>
       </div>
     </header>
+  )
+}
+
+/** Visible while the study timer runs, on every page. */
+function TimerPill() {
+  const { timerStartedAt } = useStudy()
+  const { t, formatDuration } = useLocale()
+  const now = useNow(30_000, timerStartedAt !== null)
+  if (!timerStartedAt) return null
+  const time = formatDuration(elapsedMinutes(timerStartedAt, now))
+
+  return (
+    <Link
+      to="/schedule"
+      className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 tabular-nums hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-300"
+      aria-label={t('topbar.timer', { time })}
+    >
+      <span aria-hidden="true">⏱ {time}</span>
+    </Link>
   )
 }

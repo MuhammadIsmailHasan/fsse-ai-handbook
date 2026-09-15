@@ -17,6 +17,10 @@ export type LocaleContextValue = {
   t: (key: MessageKey, values?: MessageValues) => string
   /** Format a number the local way: 1.5 (en) vs 1,5 (id). */
   formatNumber: (value: number) => string
+  /** 135 → "2h 15m" / "2 jam 15 mnt" */
+  formatDuration: (minutes: number) => string
+  /** BCP 47 tag for Intl APIs: "en-US" or "id-ID". */
+  intlLocale: string
 }
 
 export const LocaleContext = createContext<LocaleContextValue | null>(null)

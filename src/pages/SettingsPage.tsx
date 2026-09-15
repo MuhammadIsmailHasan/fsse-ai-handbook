@@ -23,8 +23,9 @@ const optionClass =
 
 export function SettingsPage() {
   const { preference, setPreference } = useTheme()
-  const { targetRole, setTargetRole, hideNotNeeded, setHideNotNeeded } = useStudy()
-  const { locale, setLocale, t } = useLocale()
+  const { targetRole, setTargetRole, hideNotNeeded, setHideNotNeeded, studyGoal, setStudyGoal } =
+    useStudy()
+  const { locale, setLocale, t, formatDuration } = useLocale()
   const { allLessons, translatedCount } = useContent()
 
   return (
@@ -55,6 +56,54 @@ export function SettingsPage() {
             })}
           </p>
         )}
+      </Card>
+
+      <Card title={t('settings.goal')} description={t('settings.goalDescription')}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="text-sm">
+            <span className="block font-medium">{t('settings.target')}</span>
+            <select
+              value={studyGoal.targetMinutes}
+              onChange={(event) => setStudyGoal({ targetMinutes: Number(event.target.value) })}
+              className={selectClass}
+            >
+              {range(30, 600, 30).map((minutes) => (
+                <option key={minutes} value={minutes}>
+                  {formatDuration(minutes)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm">
+            <span className="block font-medium">{t('settings.minimum')}</span>
+            <select
+              value={studyGoal.minimumMinutes}
+              onChange={(event) => setStudyGoal({ minimumMinutes: Number(event.target.value) })}
+              className={selectClass}
+            >
+              {range(15, studyGoal.targetMinutes, 15).map((minutes) => (
+                <option key={minutes} value={minutes}>
+                  {formatDuration(minutes)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <fieldset className="mt-4 flex flex-wrap gap-2">
+          <legend className="mb-2 text-sm font-medium">{t('settings.studyDays')}</legend>
+          {([5, 6, 7] as const).map((days) => (
+            <label key={days} className={optionClass}>
+              <input
+                type="radio"
+                name="study-days"
+                checked={studyGoal.studyDays === days}
+                onChange={() => setStudyGoal({ studyDays: days })}
+                className="mt-0.5 accent-indigo-600"
+              />
+              {t(`settings.days${days}`)}
+            </label>
+          ))}
+        </fieldset>
       </Card>
 
       <Card title={t('targetRole.heading')} description={t('settings.targetRoleDescription')}>
@@ -170,6 +219,12 @@ function BackupCard() {
     </Card>
   )
 }
+
+const selectClass =
+  'mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900'
+
+const range = (from: number, to: number, step: number) =>
+  Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step)
 
 const buttonClass =
   'rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800'

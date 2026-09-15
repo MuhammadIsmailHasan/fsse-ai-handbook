@@ -4,6 +4,7 @@
 import { createContext, useContext } from 'react'
 import type { TargetRole } from '../lib/roles'
 import type { ReviewOutcome, ReviewItem, ReviewQueue } from '../lib/spaced-repetition'
+import type { StudyGoal, StudyLog } from '../lib/study-time'
 
 export type PlacementResult = { result: 'pass' | 'study'; date: string }
 
@@ -24,6 +25,17 @@ export type StudyContextValue = {
   /** placementId (e.g. "modules/m1/w0") → result */
   placements: Record<string, PlacementResult>
   setPlacement: (placementId: string, result: PlacementResult['result'] | null) => void
+  /** Daily target, minimum and study days per week. */
+  studyGoal: StudyGoal
+  setStudyGoal: (goal: Partial<StudyGoal>) => void
+  /** Minutes actually studied per local date ("YYYY-MM-DD"). */
+  studyLog: StudyLog
+  addStudyMinutes: (dateKey: string, delta: number) => void
+  /** ISO time the study timer was started, or null when it isn't running. */
+  timerStartedAt: string | null
+  startTimer: () => void
+  /** Stops the timer and adds the elapsed minutes to the day it started. */
+  stopTimer: () => number
 }
 
 export const StudyContext = createContext<StudyContextValue | null>(null)

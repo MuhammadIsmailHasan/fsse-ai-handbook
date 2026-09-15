@@ -112,6 +112,7 @@ This document is the roadmap for the whole project: **what** we build (a local h
 | D31 | Ship RevoShop | Each Module 5 week ends with a **🚀 Ship RevoShop** lab applied to the learner's real RevoShop repo (production image, Compose, Redis, CI/CD, AWS deploy, IaC); the handbook guides, the learner changes their own repo; every M5 lesson also has a 🔍 RevoShop box (learner request) | Deploying a project you already know teaches DevOps on real constraints (Midtrans webhooks, migrations, secrets) |
 | D32 | AWS exercises | AWS exercises run **locally**: pure Python models (IAM evaluation, costs, networks) and boto3 code tested against **moto**; real AWS happens only in the 🚀 labs, whose scripts are first exercised locally (local registry, fake RDS, fake AWS CLI) | Verifiable without an account or bill; learners create resources only when they understand them |
 | D33 | Bilingual handbook | English is the source; Indonesian lives in `<lesson>.id.md` (title, summary, `sourceHash` only), `content/course.id.json` and `src/i18n/messages.ts`. A toggle switches the whole app; missing translations fall back to English with a badge. `content:check` rejects stale translations and any change to directives, code or internal links. Translate Module 4 first, then new lessons ship in both languages | Learner asked for Indonesian with a toggle; gradual translation keeps the app usable while ~340k words are translated, and automated parity checks stop the two versions drifting apart |
+| D34 | Flexible study goal | Target + minimum + actual time log instead of one fixed 18 h/week plan; today's plan is built from the time available today; pure logic in `src/lib/study-time.ts` | Learner aims for 5 h/day but often has less; a rigid plan either overwhelms or is ignored, while a minimum keeps busy days counting |
 
 ---
 
@@ -505,7 +506,7 @@ Note: Milestone 1 skips ahead to Module 4 core before Module 3 so a full-stack p
 | Sat | 1.5 h Architecture + 1.5 h CareerPilot |
 | Sun | Light: DSA spaced review + weekly LinkedIn post, or rest |
 
-The schedule page shows "this week's plan" and adjusts to the target role and completed placement checks.
+The **Study Plan** page (`/schedule`) makes this flexible (D34): Settings hold a **daily target** (default 5 h), a **minimum that still counts** (default 1 h) and **study days** (5/6/7). Each day the learner picks how much time they really have; the page splits it by the routine above (weekdays 65% module / 35% DSA, Saturday Architecture + CareerPilot, Sunday module + DSA review), shows the next lessons that fit, logs real study time (timer or +15/30/60 min buttons), and charts the week with an honest recent average.
 
 ---
 

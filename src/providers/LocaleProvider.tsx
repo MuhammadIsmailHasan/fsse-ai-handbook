@@ -39,12 +39,21 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(() => {
-    const numberFormat = new Intl.NumberFormat(locale === 'id' ? 'id-ID' : 'en-US')
+    const intlLocale = locale === 'id' ? 'id-ID' : 'en-US'
+    const numberFormat = new Intl.NumberFormat(intlLocale)
     return {
       locale,
       setLocale,
+      intlLocale,
       t: (key: MessageKey, values?: MessageValues) => translate(locale, key, values),
       formatNumber: (n: number) => numberFormat.format(n),
+      formatDuration: (minutes: number) => {
+        const h = Math.floor(Math.max(0, minutes) / 60)
+        const m = Math.round(Math.max(0, minutes) % 60)
+        if (h === 0) return translate(locale, 'time.minutes', { m })
+        if (m === 0) return translate(locale, 'time.hours', { h })
+        return translate(locale, 'time.hoursMinutes', { h, m })
+      },
     }
   }, [locale, setLocale])
 

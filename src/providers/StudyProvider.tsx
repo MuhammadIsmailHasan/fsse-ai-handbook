@@ -19,8 +19,20 @@ import {
   type ReviewQueue,
 } from '../lib/spaced-repetition'
 import { STORAGE_KEYS } from '../lib/storage'
+import {
+  addMinutes,
+  dateKey,
+  elapsedMinutes,
+  normalizeGoal,
+  type StudyGoal,
+  type StudyLog,
+} from '../lib/study-time'
 
-type Preferences = { targetRole: TargetRole; hideNotNeeded: boolean }
+type Preferences = {
+  targetRole: TargetRole
+  hideNotNeeded: boolean
+  studyGoal?: Partial<StudyGoal>
+}
 
 const DEFAULT_PREFERENCES: Preferences = { targetRole: 'ai-fs', hideNotNeeded: false }
 
@@ -43,11 +55,40 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     {},
   )
 
+  const [studyLog, setStudyLog] = usePersistentState<StudyLog>(STORAGE_KEYS.studyLog, {})
+  const [timerStartedAt, setTimerStartedAt] = usePersistentState<string | null>(
+    STORAGE_KEYS.studyTimer,
+    null,
+  )
+
   // Stored data could be old or edited by hand — never trust it blindly.
   const targetRole = isTargetRole(storedPreferences.targetRole)
     ? storedPreferences.targetRole
     : DEFAULT_PREFERENCES.targetRole
   const hideNotNeeded = storedPreferences.hideNotNeeded === true
+  const studyGoal = useMemo(
+    () => normalizeGoal(storedPreferences.studyGoal),
+    [storedPreferences.studyGoal],
+  )
+
+  const addStudyMinutes = useCallback(
+    (key: string, delta: number) => setStudyLog((prev) => addMinutes(prev, key, delta)),
+    [setStudyLog],
+  )
+
+  const startTimer = useCallback(
+    () => setTimerStartedAt((prev) => prev ?? new Date().toISOString()),
+    [setTimerStartedAt],
+  )
+
+  const stopTimer = useCallback(() => {
+    if (!timerStartedAt) return 0
+    const minutes = elapsedMinutes(timerStartedAt, new Date())
+    // Minutes belong to the day the session started (a late-night session stays "today").
+    if (minutes > 0) addStudyMinutes(dateKey(new Date(timerStartedAt)), minutes)
+    setTimerStartedAt(null)
+    return minutes
+  }, [timerStartedAt, addStudyMinutes, setTimerStartedAt])
 
   const toggleDone = useCallback(
     (lessonId: string) => {
@@ -103,6 +144,17 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       reviewProblem,
       placements,
       setPlacement,
+      studyGoal,
+      setStudyGoal: (goal: Partial<StudyGoal>) =>
+        setPreferences((prev) => ({
+          ...prev,
+          studyGoal: normalizeGoal({ ...studyGoal, ...goal }),
+        })),
+      studyLog,
+      addStudyMinutes,
+      timerStartedAt,
+      startTimer,
+      stopTimer,
     }),
     [
       completed,
@@ -115,6 +167,12 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       reviewProblem,
       placements,
       setPlacement,
+      studyGoal,
+      studyLog,
+      addStudyMinutes,
+      timerStartedAt,
+      startTimer,
+      stopTimer,
     ],
   )
 
