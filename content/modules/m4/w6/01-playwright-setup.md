@@ -1,6 +1,6 @@
 ---
 title: "Playwright Setup"
-summary: Start end-to-end testing properly — what E2E tests are for, installing Playwright, a production-ready config (webServer, projects, retries, traces, reporters), locators and web-first assertions, and the debugging tools.
+summary: Start end-to-end testing properly — what these tests are for, installing Playwright, a real config (webServer, projects, retries, traces, reporters), locators, assertions that wait, and the debugging tools.
 type: lesson
 source: core
 sourceRef: "M3 · W6 · L1"
@@ -14,27 +14,44 @@ tags: [playwright, e2e, testing, configuration, ci]
 ## 🎯 What you'll learn
 
 - Where **end-to-end (E2E)** tests fit next to unit and component tests
-- Installing Playwright and what `npm init playwright@latest` generates
+- Installing Playwright and what `npm init playwright@latest` creates
 - A real `playwright.config.ts`: `webServer`, `baseURL`, `projects`, `retries`, `workers`, `forbidOnly`, traces, reporters
 - **Locators** (`getByRole`, `getByLabel`) and **web-first assertions** (`await expect(locator).toBeVisible()`)
-- Auto-waiting, and why `waitForTimeout` is a smell
+- Auto-waiting, and why `waitForTimeout` is a bad sign
 - Debugging: UI mode, `--debug`, trace viewer, codegen
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **End-to-end (E2E) test** | A test that uses the whole app in a real browser, like a real user | Tes ujung ke ujung |
+| **Playwright** | A tool that controls real browsers from test code | Alat pengendali browser untuk tes |
+| **Locator** | A way to find an element on the page ("the Save button") | Penunjuk elemen |
+| **Assertion** | A check: "this text should be visible" | Pengecekan hasil |
+| **Auto-waiting** | Playwright waits until the element is ready before acting | Menunggu otomatis |
+| **Flaky test** | A test that sometimes passes and sometimes fails with no code change | Tes yang tidak stabil |
+| **Browser context** | A fresh, separate browser session, like a new incognito window | Sesi browser terpisah |
+| **Trace** | A step-by-step recording of a test, for debugging | Rekaman langkah tes |
 
 ## 🧠 The big idea
 
-Unit tests check the **bricks**; component tests check a **room**; E2E tests walk through the **finished house** like a visitor: open the door (load a page), turn on the lights (click), check the water runs (see the result). They catch problems nobody sees in isolation — a broken redirect, a missing cookie, a form that posts to the wrong URL — but they're slower, so you write **fewer**, for the journeys that matter most.
+Unit tests check the **bricks**; component tests check a **room**; E2E tests walk through the **finished house** like a visitor: open the door (load a page), turn on the lights (click), check the water runs (see the result).
 
-## ❓ Why does this exist?
+They catch problems nobody sees in small tests — a broken redirect, a missing cookie, a form that posts to the wrong URL. But they're slow, so you write **only a few**, for the journeys that matter most.
 
-Your Next.js app is a chain: browser → proxy → Server Component → Server Action → Flask → Postgres → redirect → re-render. Each piece can be unit-tested and the whole thing can still be broken. Playwright drives **real browsers** (Chromium, Firefox, WebKit) and gives you auto-waiting, isolation (a fresh browser context per test), parallelism and excellent debugging tools.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T?
+Your Next.js app is a chain: browser → proxy → Server Component → Server Action → Flask → Postgres → redirect → re-render. Every piece can pass its own tests while the whole chain is still broken — like every train car being fine but not connected.
 
-- "Works on my machine" releases: login redirects loop in production because of a cookie flag.
-- Manual click-through testing before every deploy — skipped when you're in a hurry.
-- Or E2E tests written badly: `sleep(3000)`, CSS selectors like `.btn-primary > span`, shared data between tests → flaky suites that everyone ignores.
+Playwright drives **real browsers** (Chromium, Firefox, WebKit) and gives you auto-waiting, a fresh browser per test, parallel runs and great debugging tools.
 
-## 📖 How it works, step by step
+Without it:
+
+- Releases that "work on my machine": login redirects loop in production because of one cookie setting.
+- Clicking through the app by hand before every deploy — and skipping it when you're in a hurry.
+- Or badly written E2E tests: `sleep(3000)`, CSS selectors like `.btn-primary > span`, tests sharing data → flaky tests that everyone ignores.
+
+## 📖 Step by step
 
 ### 1. The testing pyramid (or trophy)
 
@@ -43,9 +60,9 @@ Your Next.js app is a chain: browser → proxy → Server Component → Server A
 | Static | TypeScript, ESLint | instant | typos, wrong types |
 | Unit | Vitest | ms | logic in pure functions |
 | Component / integration | Vitest + Testing Library | ms–s | UI behavior, state, accessibility |
-| **E2E** | **Playwright** | seconds | routing, auth, forms, real browser + server integration |
+| **E2E** | **Playwright** | seconds | routing, auth, forms, real browser + server working together |
 
-Many teams follow a "testing trophy": lots of integration/component tests, a thin layer of E2E for **critical journeys** (sign up, log in, the core create flow, checkout).
+Many teams follow a "testing trophy": lots of component/integration tests, and a thin layer of E2E tests for **critical journeys** (sign up, log in, the main create flow, checkout).
 
 ### 2. Install
 
@@ -56,9 +73,9 @@ npm install -D @playwright/test
 npx playwright install --with-deps chromium    # browsers (and OS dependencies on Linux/CI)
 ```
 
-Browsers are downloaded separately from the npm package (to a cache folder). You can also use an installed Google Chrome with `channel: "chrome"`.
+Browsers are downloaded separately from the npm package (into a cache folder). You can also use your installed Google Chrome with `channel: "chrome"`.
 
-### 3. A production-ready config
+### 3. A real config
 
 ```ts
 // playwright.config.ts
@@ -93,10 +110,11 @@ export default defineConfig({
 });
 ```
 
-- **`webServer`** starts the app before tests and stops it after.
-- **`projects`** run the same tests in several browsers/devices.
-- Test against a **production build** in CI (`next build && next start`) — dev mode behaves differently (slower, extra checks).
-- Use a non-default port (e.g. 3091) so tests don't collide with other local apps.
+- **`webServer`** starts your app before the tests and stops it after.
+- **`projects`** run the same tests in several browsers or devices.
+- **`forbidOnly`**: a leftover `test.only` would silently skip all other tests — on CI, fail instead.
+- In CI, test a **production build** (`next build && next start`). Dev mode is slower and behaves differently — like testing a car in the workshop instead of on the road.
+- Use a non-default port (like 3091) so tests don't clash with other local apps.
 
 ### 4. The first test
 
@@ -111,7 +129,7 @@ test("logged-out visitors see the login page", async ({ page }) => {
 });
 ```
 
-Each test gets its own `page` in a fresh **browser context** (like an incognito window): no cookies or storage leak between tests.
+Each test gets its own `page` in a fresh **browser context** (like a new incognito window): no cookies or storage leak from one test to the next.
 
 ### 5. Locators — find elements like a user
 
@@ -121,14 +139,14 @@ Each test gets its own `page` in a fresh **browser context** (like an incognito 
 | `getByLabel` | `page.getByLabel("Email")` |
 | `getByText` | `page.getByText("Application created")` |
 | `getByPlaceholder`, `getByAltText`, `getByTitle` | when there's no better option |
-| `getByTestId` | stable escape hatch (`data-testid`) for things without accessible names |
+| `getByTestId` | a stable backup (`data-testid`) for things without an accessible name |
 | ❌ CSS/XPath | `page.locator(".card > div:nth-child(2) button")` — breaks on refactors |
 
-Role locators double as **accessibility checks**: if you can't find the button by role and name, screen reader users can't either.
+A user doesn't say "click the third div's span"; they say "click **Save**". Find elements the same way. Bonus: role locators are also an **accessibility check** — if you can't find the button by role and name, screen reader users can't either.
 
-Locators are **lazy** and can be chained/filtered: `page.getByRole("row").filter({ hasText: "Data Engineer" }).getByRole("button", { name: "Delete" })`.
+Locators only search when used, and can be narrowed step by step: `page.getByRole("row").filter({ hasText: "Data Engineer" }).getByRole("button", { name: "Delete" })`.
 
-### 6. Auto-waiting and web-first assertions
+### 6. Auto-waiting and assertions that retry
 
 ```ts
 await page.getByRole("button", { name: "Save" }).click();          // waits until visible, enabled, stable
@@ -142,7 +160,9 @@ expect(await page.getByRole("status").textContent()).toBe("Saved");
 await page.waitForTimeout(3000);
 ```
 
-### 7. Debugging toolkit
+A fixed wait is like boiling instant noodles for exactly 3 minutes with your eyes closed — sometimes undercooked, sometimes soggy. `await expect(...)` is tasting the noodles every few seconds and stopping when they're ready.
+
+### 7. Debugging tools
 
 ```bash
 npx playwright test --ui                 # UI mode: watch, time-travel through each step
@@ -153,46 +173,35 @@ npx playwright show-trace trace.zip      # trace from CI artifacts
 npx playwright codegen localhost:3091    # record actions → generated locators (then clean them up)
 ```
 
-## ⚖️ Trade-offs
+A **trace** is like CCTV footage of the test: every step, the page at that moment, network requests and console logs. When a test fails on CI, you watch the footage instead of guessing.
 
-| | ✅ | ❌ |
-|---|---|---|
-| Playwright | multi-browser, auto-wait, parallel, traces, free | browsers to install; E2E is slower than unit tests |
-| Cypress | great interactive runner, big community | runs inside the browser (some multi-tab/origin limits), parallelism via paid cloud |
-| Selenium/WebDriver | many languages, legacy grids | more boilerplate, manual waits |
-| Manual QA | finds UX issues | not repeatable, slow, skipped under pressure |
+### When to use E2E tests
 
-## ✅ When to use it / 🚫 When NOT to use it
+- ✅ Critical user journeys, login and redirects, flows across several pages, quick "smoke" checks after deploy.
+- ✅ Tests for bugs that only happened with the real browser + server.
+- 🚫 Every validation message or edge case of a formatting function — use unit/component tests.
+- 🚫 Third-party sites you don't control — fake them with `page.route`.
 
-- ✅ Critical user journeys, auth and redirects, cross-page flows, smoke tests after deploy.
-- ✅ Regression tests for bugs that only happened with the real browser + server.
-- 🚫 Every validation message or edge case of a formatting function — that's unit/component territory.
-- 🚫 Testing third-party sites you don't control (mock them with `page.route`).
+You may also see **Cypress** (a popular alternative) and **Selenium** (older, more manual waiting) at work.
+
+## ⚠️ Common mistakes
+
+- Forgetting `await` before `expect(locator)...` → the test finishes before checking.
+- Hard-coding `http://localhost:3000` instead of using `baseURL`.
+- Running E2E against `next dev` in CI → slow, flaky first page loads.
+- Committing `playwright/.auth/*.json`, `test-results/` or `playwright-report/`.
+- Using codegen output as-is (fragile selectors, no assertions).
 
 ## 🏆 Best practices
 
-- [ ] Test user-visible behavior with **role/label locators**; add `data-testid` only when needed.
+- [ ] Test what users see, with **role/label locators**; add `data-testid` only when needed.
 - [ ] Use **web-first assertions**; never `waitForTimeout`.
 - [ ] Keep tests **independent** (own data, own context); run `fullyParallel`.
 - [ ] `forbidOnly` on CI; retries only on CI, and fix flaky tests instead of hiding them.
 - [ ] Traces `on-first-retry`, screenshots on failure, HTML report uploaded as a CI artifact.
 - [ ] Run E2E against a **production build** in CI.
-- [ ] Configure the port and base URL through environment variables.
-- [ ] Keep E2E suites small and fast; tag slow suites and run them nightly if needed.
-
-## 🏭 How it's used in industry
-
-- Playwright (by Microsoft) is widely adopted for web E2E testing and is the default choice in many new Next.js projects; VS Code, Bing and many open-source projects use it.
-- Teams run smoke E2E tests on every pull request and a fuller suite before or after production deploys, often against **preview deployments**.
-- Playwright traces attached to CI failures replace "can you reproduce it?" conversations.
-
-## ⚠️ Common mistakes
-
-- Forgetting `await` before `expect(locator)...` → the test passes before checking.
-- Hard-coding `http://localhost:3000` instead of `baseURL`.
-- Running E2E against `next dev` in CI → slow, flaky first compiles.
-- Committing `playwright/.auth/*.json`, `test-results/` or `playwright-report/`.
-- Using codegen output as-is (brittle selectors, no assertions).
+- [ ] Set the port and base URL with environment variables.
+- [ ] Keep the E2E suite small and fast; run slow suites nightly if needed.
 
 ::part[Explain & Design]{n="2"}
 
@@ -202,16 +211,16 @@ Explain the "bricks, room, finished house" analogy to a teammate who wants to re
 
 ## 📐 Design it
 
-Plan the **E2E strategy** for CareerPilot's Next.js app: which 5–8 journeys deserve E2E tests, which browsers/devices, how the Flask API and database are provided in CI, and what runs on every pull request vs nightly.
+Plan the **E2E strategy** for CareerPilot's Next.js app: which 5–8 journeys deserve E2E tests, which browsers/devices, how the Flask API and database are started in CI, and what runs on every pull request vs nightly.
 
 :::quiz
 Show a possible plan
 
-**Journeys (PR suite, ~3 min):** log in / log out; protected route redirect with `next`; create application (happy path + one server validation error); move status on the board; delete with confirmation; search + pagination in the URL; mobile navigation menu.
+**Journeys (pull request suite, ~3 min):** log in / log out; protected route redirect with `next`; create application (happy path + one server validation error); move status on the board; delete with confirmation; search + pagination in the URL; mobile navigation menu.
 
-**Projects:** Chromium desktop on every PR; `Pixel 7` for the 2 navigation tests; Firefox + WebKit nightly.
+**Projects:** Chromium desktop on every pull request; `Pixel 7` for the 2 navigation tests; Firefox + WebKit nightly.
 
-**Backend in CI:** `docker compose` starts Postgres (port 5491) + the Flask API (5091) with a **seeded test database**; `webServer` runs `next build && next start` on 3091; each test creates its own user/data through an API helper (or a seeded user per worker) so tests stay independent; external services (AI, email) mocked with `page.route` or test doubles in the API.
+**Backend in CI:** `docker compose` starts Postgres (port 5491) + the Flask API (5091) with a **seeded test database**; `webServer` runs `next build && next start` on 3091; each test creates its own user/data through an API helper (or one seeded user per worker) so tests stay independent; outside services (AI, email) are faked with `page.route` or test doubles in the API.
 
 **Nightly:** full cross-browser run, visual snapshots of key pages, Lighthouse CI / Web Vitals budget, E2E against the staging deployment.
 
@@ -233,9 +242,9 @@ Write a CI-aware `playwright.config.ts` (webServer, projects for desktop and mob
 :::
 
 :::hints
-- `devices["Pixel 7"]` gives a mobile viewport, touch and user agent.
+- `devices["Pixel 7"]` gives a mobile screen size, touch and user agent.
 - The mini app runs with `node ../_app/server.mjs`; its health URL is `/health`.
-- If Playwright says the browser is missing, either run `npx playwright install chromium` or rely on the `channel: "chrome"` fallback from the README.
+- If Playwright says the browser is missing, either run `npx playwright install chromium` or use the `channel: "chrome"` fallback from the README.
 :::
 
 ## ✅ Quick check
@@ -243,25 +252,14 @@ Write a CI-aware `playwright.config.ts` (webServer, projects for desktop and mob
 :::quiz
 Why is `retries: 2` on CI dangerous if nobody looks at retried tests?
 
-Retries hide flakiness: real race conditions (in the test or in the app) pass on the second try and stay unfixed. Use the HTML report's "flaky" list and traces to fix them.
+Retries hide flaky tests: real timing bugs (in the test or in the app) pass on the second try and never get fixed. Use the HTML report's "flaky" list and the traces to fix them.
 :::
 
 :::quiz
 What's the difference between `page.getByRole("button", { name: "Save" })` and `page.locator("button.save")`?
 
-The role locator matches what users and assistive technology perceive and survives styling refactors; the CSS locator depends on implementation details and doesn't check accessibility.
+The role locator matches what users and screen readers see, and survives styling changes. The CSS locator depends on how the HTML happens to be written and doesn't check accessibility.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| End-to-end test | Pengujian ujung ke ujung (seluruh alur aplikasi) |
-| Locator | Penunjuk elemen di halaman |
-| Assertion | Pernyataan pengecekan hasil |
-| Flaky test | Tes yang kadang lulus kadang gagal |
-| Trace | Rekaman langkah tes untuk debugging |
-| Browser context | Sesi browser terisolasi |
 
 ## 📚 Keep learning
 
