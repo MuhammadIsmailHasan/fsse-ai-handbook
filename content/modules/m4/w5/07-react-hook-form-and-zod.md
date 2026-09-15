@@ -1,6 +1,6 @@
 ---
 title: "🔥 React Hook Form + Zod"
-summary: Build complex client forms the industry way — useForm with zodResolver, one schema for client and server, touched-based validation, dynamic rows with useFieldArray, server errors via setError, and accessible, fast forms.
+summary: Build complex browser forms the industry way — useForm with zodResolver, one schema for browser and server, friendly validation timing, repeating rows with useFieldArray, server errors with setError, and fast, accessible forms.
 type: lesson
 source: original
 roles: { be: none, fe: core, fs: recommended, ai: optional, ops: none }
@@ -12,31 +12,44 @@ tags: [react-hook-form, zod, forms, validation, typescript]
 
 ## 🎯 What you'll learn
 
-- Why complex forms outgrow `useState` and plain Server Action forms
-- `useForm`, `register`, `handleSubmit`, `formState` (`errors`, `isSubmitting`, `isDirty`)
-- **One Zod schema** for client validation, types (`z.infer`) and server re-validation
-- Validation modes (`onSubmit`, `onBlur`, `onTouched`, `onChange`)
-- Dynamic lists with **`useFieldArray`**
-- Mapping server errors with **`setError`** and `root` errors
-- Controlled third-party inputs with `Controller`, and calling Server Actions from RHF
+- Why big forms become painful with `useState` or simple Server Action forms
+- `useForm`, `register`, `handleSubmit`, `formState`
+- **One Zod schema** for browser checks, TypeScript types and server checks
+- When to show errors (validation modes)
+- Repeating rows with **`useFieldArray`**
+- Showing server errors with **`setError`**
+- Custom inputs with `Controller`
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **React Hook Form (RHF)** | A library that manages form values, errors and submitting | Library form |
+| **`register`** | Connects an input to the form: `{...register("name")}` | Mendaftarkan input |
+| **Resolver** | The bridge that lets RHF use a Zod schema | Penghubung validasi |
+| **Uncontrolled input** | The browser keeps the typed value; React isn't redrawn on every key | Input yang dipegang browser |
+| **Touched** | The user entered a field and then left it | Sudah disentuh |
+| **Dirty** | The value is different from the starting value | Sudah diubah |
+| **Field array** | A list of repeating field groups (links, skills) | Daftar field berulang |
+| **`setError`** | Put an error on a field from your own code (like a server error) | Pasang error |
 
 ## 🧠 The big idea
 
-React Hook Form treats inputs like a **clipboard with a checklist** rather than a live broadcast. Instead of React re-rendering the whole form on every keystroke (`useState` per field), RHF lets the browser's inputs hold their values (**uncontrolled**) and only tells React when something **important** changes: an error appears, the form becomes dirty, submission starts.
+React Hook Form treats a form like a **clipboard with a checklist**, not a live TV broadcast. With `useState` for every field, React redraws the whole form on every key press. RHF lets the browser's inputs hold their own values and only tells React when something **important** changes: an error appears, the form was changed, submitting starts.
 
-Zod is the **checklist**: one list of rules that the browser uses for instant feedback and the server uses as the final gate.
+Zod is the **checklist**: one list of rules the browser uses for instant feedback, and the server uses as the final gate.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-CareerPilot's **profile form** has name, email, headline, a dynamic list of portfolio links (add/remove, up to 5), and errors from the server ("email already in use"). With `useState`:
+CareerPilot's **profile form** has a name, email, headline, a repeating list of portfolio links (add/remove, up to 5), and errors from the server ("email already in use"). With `useState` you'd need:
 
-- 10+ state variables, `onChange` handlers everywhere
-- re-render of the whole form per keystroke
-- manual "touched" tracking so errors don't show before the user types
-- manual array state for links with index-key bugs
-- duplicated validation rules on client and server
+- 10+ state variables and `onChange` handlers everywhere,
+- a full redraw on every key press,
+- your own "touched" tracking so errors don't appear while typing,
+- array state for links, with index-key bugs,
+- the same rules written twice (browser and server).
 
-## 💥 What happens if we DON'T?
+A typical bug:
 
 ```tsx
 const [links, setLinks] = useState([{ label: "", url: "" }]);
@@ -45,9 +58,9 @@ const [links, setLinks] = useState([{ label: "", url: "" }]);
 ))}
 ```
 
-Index keys + mutation → removing link 1 shows the wrong values in the remaining rows; validation rules drift from the server's; typing lags on slower phones.
+Index keys plus changing the array directly → removing link 1 shows the wrong values in the rows that remain, and typing lags on slow phones.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Install
 
@@ -55,7 +68,7 @@ Index keys + mutation → removing link 1 shows the wrong values in the remainin
 npm install react-hook-form zod @hookform/resolvers
 ```
 
-`@hookform/resolvers` v5 supports Zod 4 via `zodResolver`.
+`@hookform/resolvers` (v5) connects Zod 4 through `zodResolver`.
 
 ### 2. One schema
 
@@ -76,7 +89,9 @@ export const profileSchema = z.object({
 export type ProfileValues = z.infer<typeof profileSchema>;
 ```
 
-Zod 4 has top-level format schemas like `z.email()` and `z.url()` (the older `z.string().email()` still works but is deprecated).
+- The file has no `"use client"` or `"use server"`, so both sides can import it.
+- `z.infer` creates the TypeScript type from the schema — rules and types never drift apart.
+- Zod 4 has `z.email()` and `z.url()` directly (the older `z.string().email()` still works).
 
 ### 3. `useForm` + `register`
 
@@ -91,16 +106,19 @@ const { register, handleSubmit, setError, reset, control, formState: { errors, i
 {errors.name && <p id="name-error">{errors.name.message}</p>}
 ```
 
-`register("name")` returns `{ name, ref, onChange, onBlur }` — spread it onto the input.
+- `register("name")` returns `{ name, ref, onChange, onBlur }` — spread it onto the input.
+- `errors.name.message` is the message from your Zod schema.
 
-| `mode` | Validates | Good for |
+| `mode` | Checks | Good for |
 |---|---|---|
 | `onSubmit` (default) | on submit, then on change | short forms |
-| `onTouched` | after a field is blurred once, then on change | most forms — no errors while first typing |
-| `onBlur` | on blur | long forms |
-| `onChange` | every change | password strength meters (costly) |
+| `onTouched` | after the user leaves a field once, then on change | most forms — no errors while first typing |
+| `onBlur` | when leaving a field | long forms |
+| `onChange` | every change | password strength meters (costs more) |
 
-### 4. Dynamic rows with `useFieldArray`
+`onTouched` is like a teacher who waits until you finish writing an answer before marking it, instead of correcting every letter.
+
+### 4. Repeating rows with `useFieldArray`
 
 ```tsx
 const { fields, append, remove } = useFieldArray({ control, name: "links" });
@@ -116,7 +134,9 @@ const { fields, append, remove } = useFieldArray({ control, name: "links" });
 <button type="button" disabled={fields.length >= 5} onClick={() => append({ label: "", url: "" })}>Add link</button>
 ```
 
-`type="button"` matters: buttons inside a form default to `submit`.
+- `append` adds a row; `remove(index)` removes one.
+- Use **`field.id`** as the key (RHF's stable id), not the index — like name tags that stay with each person when someone leaves the queue.
+- `type="button"` matters: a button inside a form submits by default.
 
 ### 5. Submitting and server errors
 
@@ -152,7 +172,11 @@ export async function saveProfile(input: unknown) {
 }
 ```
 
-A Server Action called with a plain object works fine (arguments are serialized). You lose "works without JavaScript", which RHF forms need anyway.
+- `handleSubmit` only calls your function when the Zod checks pass.
+- The Server Action checks **again** with the same schema — never trust the browser.
+- Server field errors → `setError(field, …)`; a general error → `setError("root.server", …)`.
+- After success, `reset(values)` makes the saved values the new starting point, so the form is no longer "changed".
+- Calling a Server Action with a plain object works. You lose "works without JavaScript", but RHF needs JavaScript anyway.
 
 ```mermaid
 flowchart LR
@@ -165,66 +189,47 @@ flowchart LR
     API -->|409/422| SA -->|fieldErrors| SE[setError] --> UI
 ```
 
-### 6. Controlled components
+### 6. Custom inputs: `Controller`
 
-Custom inputs that don't expose a native `ref` (date pickers, selects from UI libraries, rich text editors) use `Controller`:
+Some inputs from UI libraries (date pickers, custom selects, rich text editors) don't work with `register`. Use `Controller`:
 
 ```tsx
 <Controller control={control} name="status" render={({ field }) => <StatusSelect value={field.value} onValueChange={field.onChange} />} />
 ```
 
-shadcn/ui's Form components (lesson 08) wrap exactly this pattern.
-
-## ⚖️ Trade-offs
-
-| | ✅ | ❌ |
-|---|---|---|
-| `useActionState` form | no library, works without JS | clunky instant validation, dynamic arrays, fields reset |
-| RHF + Zod | performance, dynamic fields, typed errors, huge ecosystem | JS required; another API to learn |
-| TanStack Form | strong typing, framework-agnostic | smaller ecosystem than RHF (so far) |
-| Formik | familiar in older codebases | re-renders more, less active |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Multi-field forms, wizards, dynamic rows, instant validation, forms inside dialogs.
-- ✅ When you want the same Zod schema on client and server (TypeScript full-stack or a Next.js BFF).
-- 🚫 A login or "add note" form — a Server Action form is simpler and works without JS.
-- 🚫 Don't use RHF **instead of** server validation.
-
-## 🏆 Best practices
-
-- [ ] One schema file shared by client and server; derive types with `z.infer`.
-- [ ] Always provide `defaultValues` (avoids uncontrolled → controlled warnings, enables `reset`/`isDirty`).
-- [ ] `mode: "onTouched"` for friendly validation timing.
-- [ ] Use `field.id` as the key in field arrays.
-- [ ] Map server `fieldErrors` with `setError`; general errors via `root.server` in `role="alert"`.
-- [ ] Disable submit with `isSubmitting`; `reset(values)` after success.
-- [ ] Accessible fields: labels, `aria-invalid`, `aria-describedby`, focus the first error (`shouldFocusError` is on by default).
-- [ ] `type="button"` on non-submit buttons inside forms.
-- [ ] Re-validate and authorize on the server.
-
-## 🏭 How it's used in industry
-
-- React Hook Form is one of the most downloaded React form libraries, and **RHF + Zod** is the default pairing in many Next.js starters and in shadcn/ui's form docs.
-- Backends in other languages (Flask, FastAPI) remain the source of truth; teams often generate Zod schemas or TypeScript types from OpenAPI to keep contracts aligned.
+Like an adapter plug for a foreign socket. shadcn/ui's form components (lesson 08) use exactly this.
 
 ## ⚠️ Common mistakes
 
-- Forgetting `{...register("x")}` → the value is missing from submit data.
-- Using array `index` as `key` in field arrays.
-- Showing `errors.links.0.url` with dot access — errors are nested objects: `errors.links?.[0]?.url`.
-- Calling `setError` for a field and never clearing it — RHF clears errors when the field re-validates or on the next submit.
-- Coercing numbers: `<input type="number">` values are strings unless you use `valueAsNumber: true` or `z.coerce`.
+- Forgetting `{...register("x")}` → the value is missing when submitting.
+- Using the array `index` as `key` in field arrays.
+- Reading nested errors with dots: use `errors.links?.[0]?.url`, not `errors.links.0.url`.
+- `<input type="number">` values are text — use `valueAsNumber: true` or `z.coerce`.
+- No `defaultValues` → warnings and `reset` / `isDirty` don't work well.
+- Using RHF **instead of** server validation.
+- RHF for a tiny login or "add note" form — a Server Action form is simpler and works without JS.
+
+## 🏆 Best practices
+
+- [ ] One schema file shared by browser and server; types from `z.infer`.
+- [ ] Always give `defaultValues`.
+- [ ] `mode: "onTouched"` for friendly error timing.
+- [ ] Use `field.id` as the key in field arrays.
+- [ ] Server field errors with `setError`; general errors with `root.server` in a `role="alert"` box.
+- [ ] Disable submit with `isSubmitting`; `reset(values)` after success.
+- [ ] Labels, `aria-invalid`, `aria-describedby`; RHF focuses the first error by default.
+- [ ] `type="button"` on buttons that don't submit.
+- [ ] Check and authorize again on the server.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain the clipboard vs live broadcast analogy: why uncontrolled inputs make large forms feel faster, and what React Hook Form still has to re-render.
+Explain the clipboard vs live broadcast idea: why letting the browser hold input values makes big forms feel faster, and what React Hook Form still needs to redraw.
 
 ## 📐 Design it
 
-Design a 3-step **"Add application" wizard** for CareerPilot: (1) company — pick existing or create new (name, website); (2) role — title, level, salary range, job post URL; (3) skills — dynamic list of `{ skill, level 1–5 }`, at least one. Describe the schemas per step, how you validate only the current step, where data is kept between steps, and what the server does on final submit.
+Design a 3-step **"Add application" wizard**: (1) company — pick an existing one or create a new one (name, website); (2) role — title, level, salary range, job post URL; (3) skills — a repeating list of `{ skill, level 1–5 }`, at least one. Describe the schemas for each step, how to check only the current step, where data is kept between steps, and what the server does on the final submit.
 
 :::quiz
 Show a possible design
@@ -244,57 +249,46 @@ const skillsStep = z.object({ skills: z.array(z.object({ skill: z.string().trim(
 export const wizardSchema = z.object({ company: companyStep, role: roleStep, skills: skillsStep.shape.skills });
 ```
 
-- **One `useForm`** for the whole wizard with `resolver: zodResolver(wizardSchema)` and `shouldUnregister: false` (values survive unmounting steps).
-- "Next" calls `await trigger(["role.title", "role.level", …])` — validates only the current step's fields.
+- **One `useForm`** for the whole wizard, with `resolver: zodResolver(wizardSchema)` and `shouldUnregister: false` (values stay when a step is hidden).
+- The "Next" button calls `await trigger(["role.title", "role.level", …])` — this checks only the current step's fields.
 - Skills use `useFieldArray` with `field.id` keys.
-- Progress is kept in the form state; optionally save a draft to `localStorage` (debounced) for refreshes.
-- Final submit → Server Action re-parses with `wizardSchema`, verifies the session, creates the company if `mode === "new"` and the application in one Flask call (or a transaction endpoint), maps `409`/`422` back with `setError` and jumps to the step containing the first error.
+- Progress lives in the form state; you can also save a draft to `localStorage` (debounced) in case of a refresh.
+- **Final submit** → the Server Action checks everything again with `wizardSchema`, checks the session, creates the company if `mode === "new"` and the application in one Flask call, sends `409` / `422` errors back with `setError`, and jumps to the step with the first error.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Step validation without losing other steps' values
-- [ ] Server re-validates the full payload
-- [ ] Server errors lead the user to the right step
+- [ ] Each step can be checked without losing the other steps' values
+- [ ] The server checks the full data again
+- [ ] Server errors take the user to the right step
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w5/07-react-hook-form-zod" ai="ai-allowed" title="Profile form with dynamic links"}
-Write the shared Zod schema and a React Hook Form profile form with touched-based validation, accessible errors, `useFieldArray` links (max 5), pending state, server field/root errors via `setError`, and reset after success.
+Write the shared Zod schema and a React Hook Form profile form with friendly validation timing, accessible errors, repeating links with `useFieldArray` (max 5), a saving state, server field and general errors with `setError`, and a reset after success.
 :::
 
 :::hints
 - `getFieldState(name)` gives the error for any path, including `links.0.url`.
 - Removing a row must keep the other rows' typed values — that's what `field.id` keys are for.
-- If you use AI, ask it to explain each RHF API it uses and verify against the docs.
+- If you use AI, ask it to explain each React Hook Form function it uses, and check the docs.
 :::
 
 ## ✅ Quick check
 
 :::quiz
-Why must the Server Action parse the data with the schema again if RHF already validated it?
+Why must the Server Action check the data with the schema again if React Hook Form already did?
 
-The client can be bypassed — anyone can call the action with any payload. Client validation is for UX; server validation is for correctness and security.
+The browser can be skipped — anyone can call the action with any data. Browser checks are for a nice experience; server checks are for correctness and security.
 :::
 
 :::quiz
 After a successful save, "Unsaved changes" still shows. What did you forget?
 
-`reset(values)` — it sets the submitted values as the new defaults so `isDirty` becomes `false`.
+`reset(values)` — it makes the submitted values the new starting values, so `isDirty` becomes `false`.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Uncontrolled input | Input yang nilainya disimpan oleh DOM |
-| Resolver | Penghubung RHF ke library validasi |
-| Schema | Skema aturan data |
-| Field array | Daftar kolom dinamis |
-| Dirty | Sudah diubah dari nilai awal |
-| Touched | Sudah pernah difokus lalu ditinggalkan |
 
 ## 📚 Keep learning
 
