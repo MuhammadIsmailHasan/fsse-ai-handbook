@@ -1,6 +1,6 @@
 ---
 title: "Next.js Setup & React Components"
-summary: Create a Next.js 16 app on a non-default port, understand its folders, and learn React's core idea — components that turn data into UI with JSX — plus how Server and Client Components fit in.
+summary: Create a Next.js 16 app on a non-default port, understand its folders, and learn React's core idea — components that turn data into screens with JSX — plus the first idea of Server and Client Components.
 type: lesson
 source: core
 sourceRef: "M3 · W3 · L1"
@@ -13,31 +13,41 @@ tags: [react, nextjs, components, jsx, app-router]
 
 ## 🎯 What you'll learn
 
-- What React is and why component-based UI won
-- Creating a Next.js 16 project with `create-next-app` (TypeScript, Tailwind, ESLint, App Router, Turbopack)
-- Running it on a **non-default port** and the project structure (`app/`, `layout.tsx`, `page.tsx`, `public/`)
-- JSX rules, components as functions, composition with `children`
-- Rendering lists with `key`
-- Server Components (default) vs Client Components (`"use client"`) — the first mental model
-- The React DevTools and the Next.js dev overlay
+- What React and Next.js are
+- Creating a Next.js 16 project and running it on port 3091
+- The main folders and files
+- JSX: writing HTML-like code inside JavaScript
+- Components, `children`, and lists with `key`
+- Server Components vs Client Components (`"use client"`) — the basic idea
+- Tools: React DevTools and the Next.js error overlay
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **React** | A library for building screens from components | Library UI |
+| **Next.js** | A framework on top of React that adds pages, routing and server rendering | Framework React |
+| **Component** | A function that returns a piece of screen, like `JobCard` | Komponen |
+| **JSX** | HTML-like syntax inside JavaScript: `<h1>{title}</h1>` | Sintaks mirip HTML |
+| **Props** | The inputs you give a component: `<JobCard job={job} />` | Input komponen |
+| **Render** | React turning your components into what's on screen | Menampilkan |
+| **Server Component** | Runs on the server; sends only HTML, no JavaScript | Komponen server |
+| **Client Component** | Runs in the browser; can use clicks and state (`"use client"`) | Komponen browser |
 
 ## 🧠 The big idea
 
-In Week 1 you updated the DOM step by step: "find the list, clear it, create an `li`, append it…". React flips this: you **describe what the UI should look like for the current data**, and React figures out the DOM changes.
+In Week 1 you changed the page step by step: "find the list, clear it, create an `li`, add it…". React turns this around: you **describe what the screen should look like for the current data**, and React works out the changes.
 
-A component is a **recipe**: `JobCard(job) → UI`. Give it different data, get a different card. Build small recipes, combine them into bigger ones — a page is just a component made of components.
+A component is like a **recipe**: `JobCard(job) → card on screen`. Different ingredients (data) → a different dish (card). Small recipes combine into bigger ones — a page is just a component made of components, like a nasi campur plate made of small dishes.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Manual DOM code becomes unmanageable as apps grow: every state change must remember every place to update. React (2013, Meta) popularized **declarative, component-based UI**; today it's the most-used frontend library, and **Next.js** is the most popular React framework, adding routing, server rendering, data fetching, and production optimizations.
+- Changing the DOM by hand gets out of control as an app grows: every change must remember every place to update.
+- React is the most-used frontend library. **Next.js** is the most popular React framework: it adds pages, server rendering and many optimizations.
+- Without components, fixing one card means fixing it in 12 copies.
+- React + Next.js is the most common stack in frontend and full-stack job ads, including remote roles.
 
-## 💥 What happens if we DON'T?
-
-- Hand-written DOM updates drift out of sync with data (Week 1 lesson 05's pain, multiplied by 50 screens).
-- Plain React without a framework means choosing and wiring a router, a bundler, SSR, image optimization, and deployment yourself.
-- Copy-pasted markup instead of components: fixing a card means fixing it in 12 places.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Create the app
 
@@ -47,7 +57,7 @@ cd careerpilot-web
 npm run dev -- --port 3091                          # the handbook's frontend port (3000 is often taken)
 ```
 
-Make the port permanent in `package.json` so teammates get the same one:
+Save the port in `package.json`, so everyone on the team uses the same one:
 
 ```json
 {
@@ -60,9 +70,10 @@ Make the port permanent in `package.json` so teammates get the same one:
 }
 ```
 
-(`next dev` also reads `PORT` from the environment.) Next.js 16 needs Node.js 20.9+, uses **Turbopack** by default, and the default setup includes an `AGENTS.md` that tells AI coding agents to read the version-matched docs in `node_modules/next/dist/docs` — useful because Next.js changes fast.
+- Next.js 16 needs Node.js 20.9 or newer.
+- The new project includes an `AGENTS.md` file that tells AI coding tools to read the Next.js docs that match your version (inside `node_modules/next/dist/docs`). Next.js changes fast, so this is useful.
 
-### 2. Project structure
+### 2. The folders
 
 ```text
 careerpilot-web/
@@ -78,6 +89,8 @@ careerpilot-web/
 ├── eslint.config.mjs
 └── package.json
 ```
+
+The `app/` folder works like a **building directory**: each folder is a floor (a URL), and `page.tsx` is the room people visit.
 
 ```tsx
 // app/layout.tsx
@@ -99,9 +112,12 @@ export default function Page() {
 }
 ```
 
+- `layout.tsx` = the frame shared by all pages.
+- `page.tsx` = the content of one page. `{children}` in the layout is where the page appears.
+
 ### 3. JSX
 
-JSX looks like HTML but is JavaScript:
+JSX looks like HTML, but it's JavaScript:
 
 ```tsx
 const job = { title: "Backend Engineer", company: "Kopi Data", remote: false };
@@ -115,7 +131,11 @@ const job = { title: "Backend Engineer", company: "Kopi Data", remote: false };
 </article>
 ```
 
-Rules: one root element per return (or a fragment `<>…</>`), `camelCase` attributes (`onClick`, `tabIndex`), `style={{ width: 40 }}` takes an object, and text is **escaped automatically** — `{job.title}` can't inject HTML (goodbye, XSS from Week 1).
+- `{ }` puts a JavaScript value inside the markup.
+- `class` becomes `className`, `for` becomes `htmlFor`, event names use camelCase (`onClick`).
+- Every tag must be closed (`<img />`).
+- Return one outer element, or wrap siblings in `<>…</>` (a fragment).
+- Text is **escaped automatically**: `{job.title}` can never inject HTML. The XSS problem from Week 1 is solved by default.
 
 ### 4. Components
 
@@ -132,10 +152,11 @@ export function JobCard({ job }: { job: Job }) {
 }
 ```
 
-- A component is a function that returns JSX; its name starts with a **capital letter** (`<JobCard />` vs a DOM tag `<article>`).
-- It should be **pure**: same props → same output, no side effects while rendering.
+- A component is a function that returns JSX.
+- Its name starts with a **capital letter**: `<JobCard />` is a component, `<article>` is an HTML tag.
+- It should be **pure**: same props → same result, and no side effects (like API calls) while drawing. Like a calculator: 2 + 2 always shows 4.
 
-### 5. Composition and `children`
+### 5. `children`: putting things inside a component
 
 ```tsx
 export function Card({ title, children }: { title: string; children: React.ReactNode }) {
@@ -152,7 +173,7 @@ export function Card({ title, children }: { title: string; children: React.React
 </Card>
 ```
 
-`children` is whatever you put between the tags — the key to layouts, modals and wrappers.
+`children` is whatever you put between the opening and closing tags — like a **gift box**: the box is always the same, the gift inside changes. Layouts, popups and wrappers all use this.
 
 ### 6. Lists and keys
 
@@ -166,13 +187,13 @@ export function Card({ title, children }: { title: string; children: React.React
 </ul>
 ```
 
-`key` tells React which item is which between renders. Use a **stable id** from your data, never `Math.random()`, and avoid the index when items can be added, removed or reordered (lesson 06 shows the bug).
+`key` is like a **name tag** for each item, so React knows which item is which after the list changes. Use a stable id from your data. Never use `Math.random()`, and avoid the array index when items can be added, removed or reordered (lesson 06 shows the bug).
 
-### 7. Server and Client Components
+### 7. Server Components and Client Components
 
-In the App Router, **every component is a Server Component by default**: it renders on the server, can `await` data directly, keeps secrets on the server, and sends **no JavaScript** for itself to the browser.
+In Next.js, **every component is a Server Component by default**. It runs on the server, can load data directly, keeps secrets there, and sends **no JavaScript** for itself to the browser — like a restaurant kitchen that sends you the finished dish, not the stove.
 
-When a component needs **state, event handlers, effects or browser APIs**, put `"use client"` at the top of its file:
+When a component needs **state, click handlers, effects or browser features**, write `"use client"` at the top of its file:
 
 ```tsx
 // app/jobs/save-button.tsx
@@ -200,61 +221,41 @@ export default function JobsPage() {
 }
 ```
 
-`"use client"` marks a **boundary**: that file and everything it imports go to the browser bundle. Keep the boundary as low (small) as possible. Week 4 goes deep on this; for Week 3, remember: **interactive → client**.
+`"use client"` draws a **line**: that file and everything it imports are sent to the browser. Keep that part as small as possible. Week 4 explains this in depth. For now remember: **interactive → client**.
 
 ### 8. Tools
 
-- **React Developer Tools** (browser extension): inspect the component tree, props, state and hooks.
-- **Next.js dev overlay**: build and runtime errors in the browser with source locations.
-- `console.log` in a Server Component prints in the **terminal**; in a Client Component, in the **browser** console.
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Next.js | routing, server rendering, optimizations, deployment story | framework conventions, more concepts (server vs client) |
-| Vite + React (like this handbook app) | simple SPA, full control | you choose routing/data/SSR yourself |
-| Server Components by default | less JS, secrets stay on server, fast first load | need to learn the boundary |
-| Many small components | reusable, testable | too much prop passing if split carelessly |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Next.js for product apps with many pages, SEO needs, or server data (CareerPilot Phase 4).
-- ✅ Vite + React for internal tools or apps behind login where SSR doesn't matter.
-- 🚫 A heavy framework for a static brochure page — plain HTML (or a static site generator) is fine.
-
-## 🏆 Best practices
-
-- [ ] Create projects with TypeScript, ESLint and strict mode; set a non-default dev port in `package.json`.
-- [ ] One component per responsibility; named exports for shared components, default exports where Next.js requires them (`page.tsx`, `layout.tsx`).
-- [ ] Keep components **pure**; no side effects while rendering.
-- [ ] Stable, unique `key`s from data ids.
-- [ ] Default to Server Components; add `"use client"` only to the interactive leaves.
-- [ ] Use the `@/` alias instead of long relative imports.
-- [ ] Install React DevTools on day one.
-
-## 🏭 How it's used in industry
-
-- React + Next.js is the most common stack in frontend and full-stack job listings; many Indonesian startups run their web apps on it.
-- Vercel, Netlify and container platforms deploy Next.js apps; teams also self-host with `next start` in Docker (Week 6).
-- AI app builders generate Next.js + Tailwind code — understanding the structure lets you review and fix what they produce.
+- **React Developer Tools** (browser extension): see the component tree, props and state.
+- **Next.js error overlay**: errors appear in the browser with the file and line.
+- `console.log` in a Server Component prints in your **terminal**; in a Client Component, in the **browser** console.
 
 ## ⚠️ Common mistakes
 
 - `class` instead of `className`; forgetting to close tags.
-- Lower-case component names (`<jobCard />` is treated as an unknown HTML tag).
-- Using hooks or `onClick` in a file without `"use client"`.
-- Putting `"use client"` in `layout.tsx` "to make errors go away" — the whole app becomes client-side.
+- A lower-case component name (`<jobCard />` is treated as an unknown HTML tag).
+- Using `useState` or `onClick` in a file without `"use client"`.
+- Adding `"use client"` to `layout.tsx` "to make the error go away" — then the whole app runs in the browser.
+- Copy-pasting markup instead of making a component.
+
+## 🏆 Best practices
+
+- [ ] Create projects with TypeScript and ESLint; set a non-default dev port in `package.json`.
+- [ ] One job per component; typed props.
+- [ ] Keep components pure — no side effects while rendering.
+- [ ] Stable, unique `key`s from data ids.
+- [ ] Server Components by default; `"use client"` only for the small interactive parts.
+- [ ] Use the `@/` import alias instead of long `../../..` paths.
+- [ ] Install React DevTools on day one.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain the difference between Week 1's DOM code ("find the list, append an item") and React ("describe the UI for this data") to a teammate. Use the recipe analogy.
+Explain the difference between Week 1's DOM code ("find the list, add an item") and React ("describe the screen for this data") to a teammate. Use the recipe analogy.
 
 ## 📐 Design it
 
-Break CareerPilot's **dashboard page** into a component tree: header with user menu, stats cards, a "recent applications" list with status badges, a "saved jobs" panel with save/unsave buttons, and an empty state. For each component write its props, and mark which ones must be Client Components.
+Split CareerPilot's **dashboard page** into components: a header with a user menu, stats cards, a "recent applications" list with status badges, a "saved jobs" panel with save/unsave buttons, and an empty state. Write each component's props, and mark which ones must be Client Components.
 
 :::quiz
 Show a possible tree
@@ -274,29 +275,29 @@ app/dashboard/page.tsx            (Server) — loads data, composes the page
         └── <SaveButton saved onToggle jobTitle>
 ```
 
-- Props are plain serializable data (`stats`, `applications`) so the Server → Client boundary works.
-- Only `UserMenu` and the saved-jobs panel ship JavaScript; everything else is HTML from the server.
-- `StatusBadge` and `EmptyState` are reusable presentational components shared by many pages.
+- Props are simple data (`stats`, `applications`) that can be sent from server to browser.
+- Only `UserMenu` and the saved-jobs panel send JavaScript to the browser; the rest is plain HTML from the server.
+- `StatusBadge` and `EmptyState` are small reusable pieces for many pages.
 :::
 
 ### 📝 Self-review checklist
 
 - [ ] Each component has one clear job and typed props
-- [ ] Client Components are only the interactive parts
-- [ ] Reusable pieces identified
+- [ ] Only the interactive parts are Client Components
+- [ ] Reusable pieces are identified
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w3/01-components" ai="no-ai" title="Your first presentational components"}
-Build `PageHeader`, `JobCard`, `EmptyState`, `JobList` and `JobsPage` as typed function components: conditional subtitle and salary, lists with stable keys, composition with `children`. Tests render them with Testing Library, fail on React key warnings and type-check the file.
+Build `PageHeader`, `JobCard`, `EmptyState`, `JobList` and `JobsPage` as typed function components: an optional subtitle and salary, lists with stable keys, and `children`. The tests render them with Testing Library, fail on React key warnings and type-check the file.
 :::
 
 :::hints
-- `{subtitle && <p>{subtitle}</p>}` renders only when there's a subtitle (strings are safe here; numbers need `> 0` checks).
+- `{subtitle && <p>{subtitle}</p>}` shows the paragraph only when there's a subtitle (fine for strings; for numbers use `> 0`).
 - `JobList` can return `<EmptyState … />` early when the array is empty.
-- Wrap siblings in a fragment `<>…</>` when you need two top-level elements.
+- Wrap two top-level elements in a fragment `<>…</>`.
 :::
 
 :::sandpack{template="react-ts" title="Try JSX in the browser"}
@@ -339,21 +340,10 @@ JSX treats lower-case tags as HTML elements (`<article>`) and capitalized ones a
 :::
 
 :::quiz
-When does a component need `"use client"` in the App Router?
+When does a component need `"use client"`?
 
-When it uses state, effects, event handlers, custom hooks or browser-only APIs.
+When it uses state, effects, click handlers, custom hooks or browser-only features.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Component | Komponen — potongan UI yang bisa dipakai ulang |
-| JSX | Sintaks mirip HTML di dalam JavaScript |
-| Props | Properti — input untuk komponen |
-| Composition | Komposisi — menyusun komponen dari komponen lain |
-| Server / Client Component | Komponen yang dirender di server / di browser |
-| Hydration | Hidrasi — menambahkan interaktivitas ke HTML dari server |
 
 ## 📚 Keep learning
 
