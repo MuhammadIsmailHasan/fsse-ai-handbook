@@ -1,6 +1,6 @@
 ---
 title: "🔥 TypeScript Generics"
-summary: Write functions, types and components that work with any data while keeping exact types — type parameters, constraints, keyof, generic API responses and stores, and when generics make code worse.
+summary: Write functions and types that work with any data while keeping the exact type — type parameters, constraints, keyof, generic API responses and stores, and when generics make code worse.
 type: lesson
 source: original
 roles: { be: optional, fe: recommended, fs: recommended, ai: optional, ops: none }
@@ -12,22 +12,32 @@ tags: [typescript, generics, type-parameters, keyof]
 
 ## 🎯 What you'll learn
 
-- What a type parameter is, and how TypeScript infers it
-- Constraints with `extends`, and `keyof` for type-safe property access
-- Generic types: `Result<T, E>`, `Paginated<T>`, `ApiResponse<T>`
-- Generic stores and callbacks
-- Defaults for type parameters
-- A first look at conditional and mapped types — and when not to go there
+- What a type parameter (`T`) is, and how TypeScript fills it in
+- Limiting `T` with `extends`, and safe field access with `keyof`
+- Generic types like `Result<T>` and `Paginated<T>`
+- A generic store (the idea behind React state)
+- When generics are too much
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Generic** | A function or type that works with many types but keeps the exact one | Generik |
+| **Type parameter (`T`)** | A placeholder for a type, filled in when the function is used | Parameter tipe |
+| **Inference** | TypeScript figures out what `T` is from your arguments | Tebakan tipe |
+| **Constraint (`extends`)** | A rule for what `T` is allowed to be: `T extends { length: number }` | Batasan |
+| **`keyof T`** | The field names of `T` | Nama-nama field |
+| **Wrapper type** | A type that wraps other data: `ApiResponse<Job>` | Tipe pembungkus |
 
 ## 🧠 The big idea
 
-A generic is a **labeled container**: a lunchbox that says "contains: T". When you put rice in, TypeScript knows you get rice out — without writing a separate `RiceBox`, `NoodleBox` and `SushiBox`. Without generics you'd either duplicate code or use `any` and lose the label entirely.
+A generic is like a **labeled container at a warung**: the jar says "contains: T". Put kerupuk in, and you know kerupuk comes out — without making a separate "kerupuk jar", "peanut jar" and "candy jar". Without generics you either copy the same code for each type, or use `any` and lose the label completely.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Utilities (`groupBy`, `paginate`), data wrappers (API responses, pagination, results), stores and React hooks all work with **any** data type. Generics keep the connection between input and output types, so `paginate(jobs)` returns `Paginated<Job>` — and autocomplete works on `result.data[0].title`.
+Helpers like `groupBy` or `paginate`, API response wrappers, stores and React hooks all work with **any** data. Generics keep the link between what goes in and what comes out: `paginate(jobs)` returns `Paginated<Job>`, so autocomplete works on `result.data[0].title`.
 
-## 💥 What happens if we DON'T?
+Without generics:
 
 ```ts
 function first(items: any[]): any { return items[0]; }
@@ -38,7 +48,7 @@ function firstJob(items: Job[]): Job | undefined { ... }
 function firstCompany(items: Company[]): Company | undefined { ... }   // duplication forever
 ```
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Type parameters
 
@@ -51,9 +61,11 @@ const job = firstOrNull(jobs);       // T inferred as Job → Job | null
 const n = firstOrNull([1, 2, 3]);    // number | null
 ```
 
-`T` is a placeholder filled in at each call. Usually it's **inferred** from arguments; you rarely write `firstOrNull<Job>(…)`.
+- `<T>` declares the placeholder.
+- When you call `firstOrNull(jobs)`, TypeScript sees an array of `Job` and fills in `T = Job`.
+- You almost never write `firstOrNull<Job>(…)` yourself.
 
-### 2. Constraints
+### 2. Constraints: rules for `T`
 
 ```ts
 function longest<T extends { length: number }>(a: T, b: T): T {
@@ -65,9 +77,10 @@ pick(job, ["title", "salaryMax"]);   // Pick<Job, "title" | "salaryMax">
 pick(job, ["company"]);              // ❌ "company" is not a key of Job
 ```
 
-`K extends keyof T` means "K must be one of T's property names" — safe dynamic property access.
+- `T extends { length: number }` = "T can be anything **that has a length**" (a string, an array). Like a parking spot that fits any vehicle — as long as it's shorter than 5 meters.
+- `K extends keyof T` = "K must be one of T's field names". You can't ask for a field that doesn't exist.
 
-### 3. Grouping and callbacks
+### 3. Callbacks keep the types flowing
 
 ```ts
 function groupBy<T, K extends PropertyKey>(items: readonly T[], keyOf: (item: T) => K): Partial<Record<K, T[]>> { ... }
@@ -75,7 +88,7 @@ function groupBy<T, K extends PropertyKey>(items: readonly T[], keyOf: (item: T)
 groupBy(applications, (app) => app.status);   // Partial<Record<Status, Application[]>>
 ```
 
-The callback's parameter type flows from the array; the return type flows from the callback.
+TypeScript knows `app` is an `Application` (from the array) and that the key is a `Status` (from what your callback returns). No types written by hand.
 
 ### 4. Generic types
 
@@ -94,11 +107,14 @@ async function getJson<T>(url: string): Promise<T> { ... }
 const page = await getJson<ApiList<Application>>("/api/v1/applications");
 ```
 
+- `Result<T, E = Error>` — a success with a value, or a failure with an error. `E = Error` is a **default**.
+- `Paginated<T>` — one "page" shape for any list: jobs, companies, notes.
+
 :::warning[Generics don't validate]
-`getJson<ApiList<Application>>()` is an assertion in disguise — nothing checks the response. Pair generic fetchers with a runtime schema (`schema.parse(json)`) in Week 5 so the type is earned.
+`getJson<ApiList<Application>>()` is just a label on the jar — nobody checked what's inside. The response is not checked. In Week 5, combine this with a runtime schema (`schema.parse(json)`) so the type is really true.
 :::
 
-### 5. Generic stores (and a preview of React hooks)
+### 5. A generic store (preview of React state)
 
 ```ts
 function createStore<T>(initial: T) {
@@ -115,63 +131,43 @@ const filters = createStore({ status: null as Status | null, q: "" });
 filters.set((prev) => ({ ...prev, q: "python" }));
 ```
 
-`useState<T>`, `useQuery<TData>` and Zustand's `create<T>()` are exactly this pattern.
+A store holds one value and tells listeners when it changes — like a WhatsApp group that notifies all members when someone posts. `useState<T>` in React and Zustand's `create<T>()` use exactly this pattern.
 
-### 6. Beyond: mapped and conditional types (just a taste)
+### 6. Going further (just a taste)
 
 ```ts
 type Nullable<T> = { [K in keyof T]: T[K] | null };        // mapped type
 type ElementType<T> = T extends readonly (infer U)[] ? U : never;   // conditional type with infer
 ```
 
-Libraries use these heavily; application code rarely needs more than the built-in utility types.
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Generic function | reusable, exact types | harder to read with many parameters |
-| Overloads / specific functions | simple signatures | duplication |
-| `any` | quick | loses all type information |
-| Advanced type-level code | powerful library APIs | cryptic errors; slows compilation |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Utilities over collections, response wrappers, stores, hooks, reusable components (`<Select<T>>`).
-- ✅ When the output type depends on the input type.
-- 🚫 A type parameter used only once (`function f<T>(x: T): void`) — just use `unknown`.
-- 🚫 "Type gymnastics" in app code when a simple union or overload is clearer.
-
-## 🏆 Best practices
-
-- [ ] Let TypeScript infer type arguments; write them explicitly only when inference can't.
-- [ ] Name parameters meaningfully when there are several (`TData`, `TError`, `K`).
-- [ ] Constrain type parameters (`extends`) to what the function actually needs.
-- [ ] Use `keyof` constraints for property-based utilities.
-- [ ] Give defaults where useful (`Result<T, E = Error>`).
-- [ ] Don't use generics to fake validation of external data.
-
-## 🏭 How it's used in industry
-
-- React (`useState<T>`), TanStack Query (`useQuery<TData, TError>`), Zod (`z.infer<typeof schema>`) and Prisma/Drizzle ORMs are generics-heavy.
-- Teams wrap their API clients in generic request functions typed from OpenAPI schemas.
-- Senior frontend interviews often include "write a typed `groupBy`/`debounce`/`pick`".
+Libraries use these advanced types a lot. In app code you rarely need more than `Partial`, `Pick`, `Omit` and friends.
 
 ## ⚠️ Common mistakes
 
-- `function f<T>(x: any): T` — returning an unchecked `T` is lying.
-- Over-constraining (`T extends Job`) when any object would do, or under-constraining so property access fails.
-- Deeply nested conditional types that nobody on the team can maintain.
+- `function f<T>(x: any): T` — returning a `T` nobody checked is lying.
+- A type parameter used only once (`function f<T>(x: T): void`) — just use `unknown`.
+- Limiting too much (`T extends Job` when any object works) or too little (then you can't access fields).
+- Complicated type puzzles in app code that nobody on the team can read.
+- Using generics to "pretend" external data was validated.
+
+## 🏆 Best practices
+
+- [ ] Let TypeScript fill in type parameters; write them only when it can't.
+- [ ] Use clear names when there are several (`TData`, `TError`, `K`).
+- [ ] Limit `T` with `extends` to exactly what the function needs.
+- [ ] Use `keyof` for helpers that work with field names.
+- [ ] Give useful defaults (`Result<T, E = Error>`).
+- [ ] Use generics when the output type depends on the input type — otherwise keep it simple.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain generics with the labeled lunchbox analogy, then show how `paginate(jobs, 1, 20)` "knows" `result.data` contains jobs.
+Explain generics with the labeled jar analogy, then show how `paginate(jobs, 1, 20)` "knows" that `result.data` contains jobs.
 
 ## 📐 Design it
 
-Design a generic **`useResource`-style** data loader (plain TypeScript, no React yet) for CareerPilot: it loads a resource with a `fetcher`, exposes `idle/loading/success/error` state as a discriminated union, supports `reload()`, and lets the caller transform data with a `select` function. Write the types.
+Design a generic data loader in plain TypeScript (no React yet) for CareerPilot. It loads data with a `fetcher`, has an `idle / loading / success / error` state as a discriminated union, supports `reload()`, and lets the caller change the data with a `select` function. Write the types.
 
 :::quiz
 Show a possible design
@@ -206,29 +202,30 @@ const applications = createResource({
 // Resource<Application[]>
 ```
 
-- Two type parameters: what the network returns vs what the UI wants.
-- `previous` data keeps the UI stable while reloading or after an error.
+- Two type parameters: `TRaw` (what the network returns) and `TData` (what the page wants).
+- `TData` is filled in automatically from what `select` returns.
+- `previous` keeps the old data on screen while reloading or after an error, so the page doesn't flash empty.
 - This is a small version of TanStack Query's `useQuery` (Week 4).
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Output type inferred from `select`
-- [ ] State is a discriminated union
-- [ ] Cancellation and subscriptions typed
+- [ ] The output type comes from `select` automatically
+- [ ] The state is a discriminated union
+- [ ] Cancelling and subscribing are typed
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w2/07-generics" ai="no-ai" title="Generic utilities: groupBy, pick, Result, paginate and a store"}
-Replace `unknown`-typed helpers with generics so types flow from inputs to outputs: `groupBy`, `pick` with `keyof` constraints, a `Result` type with `tryCatch`, `paginate`, a subscribable store and `firstOrNull`. Type tests check the exact inferred types.
+Replace helpers typed with `unknown` by generics, so types flow from inputs to outputs: `groupBy`, `pick` with `keyof`, a `Result` type with `tryCatch`, `paginate`, a store you can subscribe to, and `firstOrNull`. Type tests check the exact types TypeScript figures out.
 :::
 
 :::hints
-- `(groups[key] ??= []).push(item)` builds groups in one line.
-- In `pick`, start with `const result = {} as Pick<T, K>` and assign each key.
-- `typeof next === "function"` distinguishes an updater function from a value (cast it once).
+- `(groups[key] ??= []).push(item)` builds the groups in one line.
+- In `pick`, start with `const result = {} as Pick<T, K>` and copy each key.
+- `typeof next === "function"` tells an updater function apart from a plain value (cast it once).
 :::
 
 ## ✅ Quick check
@@ -236,24 +233,14 @@ Replace `unknown`-typed helpers with generics so types flow from inputs to outpu
 :::quiz
 What does `K extends keyof T` guarantee?
 
-That `K` is a union of property names of `T`, so `obj[key]` is valid and typed as `T[K]`.
+That `K` is one of `T`'s field names, so `obj[key]` is valid and has the type `T[K]`.
 :::
 
 :::quiz
-When is a generic parameter unnecessary?
+When is a type parameter unnecessary?
 
-When it appears only once in the signature and doesn't relate inputs to outputs — use `unknown` or a concrete type instead.
+When it appears only once and doesn't connect an input to an output. Use `unknown` or a concrete type instead.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Generic | Generik — tipe dengan parameter |
-| Type parameter | Parameter tipe (`T`) |
-| Constraint | Batasan (`extends`) |
-| Type argument | Argumen tipe (`<Job>`) |
-| Mapped type | Tipe terpetakan |
 
 ## 📚 Keep learning
 
