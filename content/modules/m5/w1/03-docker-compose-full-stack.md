@@ -1,6 +1,6 @@
 ---
 title: "Docker Compose: The Full Stack Locally"
-summary: Run a whole system with one command — proxy, API, worker, migrations, PostgreSQL and Redis — with health-ordered startup, override files, profiles, env interpolation, networks, volumes, watch mode, and when Compose is enough in production.
+summary: Run a whole system with one command — proxy, API, worker, migrations, PostgreSQL and Redis — with health-ordered startup, override files, profiles, networks, volumes, and when Compose is enough in production.
 type: lesson
 source: original
 roles: { be: recommended, fe: recommended, fs: core, ai: recommended, ops: core }
@@ -13,29 +13,51 @@ tags: [docker-compose, containers, local-development, postgresql, redis]
 ## 🎯 What you'll learn
 
 - Designing a multi-service stack: **proxy → api → worker**, **db**, **redis**, one-off **migrate**
-- Startup ordering with **health checks** and `service_completed_successfully`
-- **Environment interpolation**: defaults `${VAR:-x}` and required `${VAR:?message}`
-- **Override files** (`compose.override.yaml`), multiple `-f` files and **profiles**
+- Startup order with **health checks** and `service_completed_successfully`
+- **Environment variables** in Compose: defaults `${VAR:-x}` and required `${VAR:?message}`
+- **Override files** (`compose.override.yaml`), several `-f` files and **profiles**
 - Networks, named volumes, restart policies and resource limits
-- Developer experience: bind mounts, **`docker compose watch`**, running one-off commands
-- Operating it: logs, exec, scaling, backups — and when Compose on one server is enough
+- Developer workflow: bind mounts, **`docker compose watch`**, running one-off commands
+- Running it: logs, exec, scaling, backups — and when Compose on one server is enough
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Service** | One kind of container in Compose (api, db, redis…) | Layanan |
+| **Reverse proxy** | The front door that receives all web traffic and passes it to the right service | Pintu masuk lalu lintas |
+| **Worker** | A process that does background jobs (sending emails) instead of answering web requests | Pekerja latar belakang |
+| **Migration** | A script that changes the database structure (add a table or column) | Migrasi database |
+| **One-off service** | A container that runs a task once and exits | Layanan sekali jalan |
+| **Health check** | A command Docker runs to see if a service is really ready | Cek kesehatan |
+| **Interpolation** | Filling `${VAR}` in the Compose file with a real value | Penyisipan nilai variabel |
+| **Override file** | A second Compose file that changes or adds settings | Berkas penimpa |
+| **Profile** | A group of optional services that only start when you ask | Kelompok layanan opsional |
 
 ## 🧠 The big idea
 
-`compose.yaml` is the **floor plan of a small building**: which rooms exist (services), which doors connect them (networks), which rooms have safes (volumes), which door faces the street (published ports) and the order the lights come on in the morning (dependencies). Anyone with the plan can build the same building on any plot — your laptop, a CI runner or a server.
+`compose.yaml` is the **floor plan of a small building**:
 
-## ❓ Why does this matter?
+- which rooms exist (services),
+- which doors connect them (networks),
+- which rooms have safes (volumes),
+- which door faces the street (published ports),
+- the order the lights come on in the morning (dependencies).
 
-A real product is several processes: RevoShop needs the API, PostgreSQL, a way to run migrations, and — as it grows — Redis, a background worker and a reverse proxy with HTTPS. Without Compose, new developers spend a day installing things, and "works on my machine" differences hide bugs. With it: `git clone && docker compose up`.
+Anyone with the plan can build the same building anywhere — your laptop, a CI machine or a server.
 
-## 💥 What happens if we DON'T design it well?
+## ❓ Why it matters
 
-- `depends_on: [db]` without a health condition → the API starts before PostgreSQL accepts connections → crash loop.
-- Migrations run inside every API container at start → two replicas run them at the same time.
+A real product is several programs: RevoShop needs the API, PostgreSQL, a way to run migrations, and — as it grows — Redis, a background worker and a reverse proxy with HTTPS. Without Compose, new developers spend a day installing things, and "works on my machine" differences hide bugs. With it: `git clone && docker compose up`.
+
+When it's designed badly:
+
+- `depends_on: [db]` without a health condition → the API starts before PostgreSQL accepts connections → it crashes again and again.
+- Migrations run inside every API container at start → two copies run them at the same time.
 - Every service publishes ports "for debugging" → Redis open to the internet on a server.
-- One giant `compose.yaml` with `FLASK_DEBUG=1` used on the production server.
+- One big `compose.yaml` with `FLASK_DEBUG=1` used on the production server.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The architecture
 
@@ -54,9 +76,9 @@ flowchart LR
     end
 ```
 
-One image (`shop-api:local`) runs as **api**, **worker** and **migrate** with different commands — build once, run three ways.
+One image (`shop-api:local`) runs as **api**, **worker** and **migrate** with different commands — build once, run three ways. Like one employee trained for the cashier, the warehouse and the stock count: same person, different job for the shift.
 
-### 2. Health-ordered startup
+### 2. Startup ordered by health
 
 ```yaml
 services:
@@ -92,7 +114,9 @@ services:
       retries: 10
 ```
 
-`depends_on` only orders **startup** on one machine. Your app must still retry connections — databases restart, networks blip.
+A shop opening in the morning: the cashier (api) doesn't start until the lights are on (db **healthy**) and the shelves are stocked (migrate **completed**).
+
+`depends_on` only orders **startup** on one machine. Your app must still retry connections — databases restart and networks have hiccups.
 
 ### 3. Configuration and secrets
 
@@ -107,9 +131,10 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}                           # default
 ```
 
+- `${VAR:-x}` = "use x if it's missing". `${VAR:?message}` = "stop and show this message if it's missing" — better for secrets than a weak default.
 - Values come from your shell or a `.env` file next to the Compose file (never commit it; commit `.env.example`).
-- `docker compose config` prints the fully resolved model — use it to debug interpolation.
-- Compose also supports `secrets:` (mounted files under `/run/secrets/`), which avoids secrets in `docker inspect` environment output.
+- `docker compose config` prints the final result after all values are filled in — use it to debug.
+- Compose also supports `secrets:` (files mounted under `/run/secrets/`), which keeps secrets out of `docker inspect` output.
 
 ### 4. Overrides and profiles
 
@@ -138,7 +163,9 @@ docker compose -f compose.yaml -f compose.prod.yaml up -d
 docker compose --profile tools up -d                     # + services with profiles: [tools] (mailpit, adminer)
 ```
 
-Lists like `ports` and `volumes` are **merged**; scalar values are replaced. Check the result with `config`.
+The base file is the **standard house plan**; the override is a **sticky note** with changes for your home ("add a desk here"). Lists like `ports` and `volumes` are **combined**; single values are replaced. Check the result with `config`.
+
+Profiles are like **folding chairs in the storage room**: they exist, but only come out when you ask (`--profile tools`).
 
 ### 5. Networks, volumes, restart, limits
 
@@ -160,8 +187,8 @@ volumes:
   redisdata:
 ```
 
-- Only the **proxy** publishes ports; the database and Redis are reachable only on `backend`.
-- Avoid `container_name` — it prevents `docker compose up --scale worker=3`.
+- Only the **proxy** publishes ports; the database and Redis are reachable only on `backend` — staff-only corridors.
+- Avoid `container_name` — it blocks `docker compose up --scale worker=3` (two containers can't share one name).
 - `docker compose down` keeps volumes; `down -v` **deletes your data**.
 
 ### 6. Developer loop
@@ -183,6 +210,8 @@ docker compose exec -T db pg_dump -U shop -Fc shop > backup-$(date +%F).dump
 docker compose exec -T db pg_restore -U shop -d shop --clean < backup-2026-09-15.dump
 ```
 
+A backup you've never restored is like a spare key you've never tried in the lock. Test the restore.
+
 ### 8. Is Compose enough for production?
 
 | Situation | Compose on one VM | Orchestrator (ECS, Kubernetes) |
@@ -192,23 +221,21 @@ docker compose exec -T db pg_restore -U shop -d shop --clean < backup-2026-09-15
 | Auto-scaling on load, self-healing across hosts | ❌ | ✅ |
 | Managed database with backups/failover | combine: Compose app + RDS | ✅ |
 
-Many real products start with Compose on a VM + a managed database — you'll do exactly that with RevoShop, then learn ECS in Week 4.
+Many real products start with Compose on one VM + a managed database — you'll do exactly that with RevoShop, then learn ECS in Week 4.
 
-## ⚖️ Trade-offs
+### Choices to make
 
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Migrations as a one-off service | runs once, clear logs, blocks bad deploys | one more service to understand |
-| Migrations in the entrypoint | "just works" for one container | races with replicas, slow restarts |
-| Override file for dev | prod-like defaults are safe | merge rules can surprise |
-| Profiles for tools | tools off by default | easy to forget they exist |
+- **Migrations as a one-off service:** runs once, clear logs, stops a bad deploy — one more service to understand. **In the entrypoint:** "just works" for one container, but copies race each other and restarts get slow.
+- ✅ Compose for local development, CI integration tests, demos, single-server deployments, and reproducing a production bug with the same images.
+- 🚫 Not for high availability across several servers or autoscaling — use an orchestrator.
+- 🚫 Don't keep production secrets in a `.env` file that's committed or shared in chat.
 
-## ✅ When to use it / 🚫 When NOT to use it
+## ⚠️ Common mistakes
 
-- ✅ Local development, CI integration tests, demos, single-server deployments.
-- ✅ Reproducing a production bug with the same images and versions.
-- 🚫 Multi-host high availability and autoscaling — use an orchestrator.
-- 🚫 Don't keep production secrets in a `.env` file committed or copied around by chat.
+- `depends_on` without health conditions.
+- `DATABASE_URL=...@localhost:5432` inside a container.
+- `docker compose down -v` in the wrong terminal.
+- Mixing old `docker-compose` (v1, retired) commands with `docker compose` (v2) docs.
 
 ## 🏆 Best practices
 
@@ -217,28 +244,15 @@ Many real products start with Compose on a VM + a managed database — you'll do
 - [ ] Required secrets with `${VAR:?message}`; `.env.example` committed, `.env` ignored.
 - [ ] Production-like `compose.yaml`; developer conveniences in `compose.override.yaml`.
 - [ ] Publish only the proxy; internal services on a backend network.
-- [ ] Named volumes for data, backups tested with a restore.
+- [ ] Named volumes for data; backups tested with a restore.
 - [ ] Limits, restart policies, read-only filesystems; no `container_name` if you may scale.
 - [ ] Pin image tags (`postgres:17-alpine`, `redis:8-alpine`, `caddy:2-alpine`).
-- [ ] Validate with `docker compose config` in CI.
-
-## 🏭 How it's used in industry
-
-- Compose is the standard way to give developers a one-command local environment and to run integration tests in CI.
-- Small companies and indie products run production on a single VM with Compose and a reverse proxy (Caddy, Traefik, Nginx).
-- The Compose Specification is also accepted by some cloud tools (e.g. converting to other formats), so the model you learn is portable.
-
-## ⚠️ Common mistakes
-
-- `depends_on` without health conditions.
-- `DATABASE_URL=...@localhost:5432` inside a container.
-- `docker compose down -v` in the wrong terminal.
-- Mixing `docker-compose` (v1, retired) commands and `docker compose` (v2) docs.
+- [ ] Check the file with `docker compose config` in CI.
 
 :::revoshop
 Compare your two Compose files side by side.
 
-1. Run `docker compose -f docker-compose.prod.yml config` **without** a `.env` file. It fails with `set POSTGRES_USER` — good, you already use `${VAR:?}` for required secrets. Which required variables does the **dev** file silently default instead (`JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-key-change-me}`)? Is that acceptable for development?
+1. Run `docker compose -f docker-compose.prod.yml config` **without** a `.env` file. It fails with `set POSTGRES_USER` — good, you already use `${VAR:?}` for required secrets. Which required variables does the **dev** file silently give a default instead (`JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-key-change-me}`)? Is that acceptable for development?
 2. **Migrations.** Both files set `RUN_MIGRATIONS: "true"` and `docker/entrypoint.sh` runs `flask db upgrade` on every container start. Rewrite that as a one-off `migrate` service with `service_completed_successfully`, like the exercise.
 3. **Exposure.** `docker-compose.prod.yml` publishes gunicorn directly on `${WEB_PORT:-8000}`. Where would Caddy go, which network would PostgreSQL move to, and which `ports:` disappear?
 4. **Scaling blockers.** Both files use fixed `container_name`s. Try `docker compose -f docker-compose.prod.yml up -d --scale web=2` and read the error.
@@ -268,17 +282,17 @@ Show a possible design
 | db | `postgres:17-alpine` | backend | dev only `5493:5432` (override) | — | `pgdata` volume |
 | redis | `redis:8-alpine --appendonly yes` | backend | dev only `6392:6379` | — | `redisdata` volume |
 | minio | `minio/minio` (pinned) — S3-compatible storage for **dev** | backend | dev `9001` console | — | profile `dev-storage`; production uses real S3 |
-| mailpit | `axllent/mailpit` (pinned) | backend | `8025` | — | profile `tools`; SMTP sink for emails in dev |
+| mailpit | `axllent/mailpit` (pinned) | backend | `8025` | — | profile `tools`; catches emails in dev |
 | adminer | `adminer` (pinned) | backend | `8081` | db | profile `tools` only |
 
-Production: `docker compose -f compose.yaml -f compose.prod.yaml up -d` with S3 credentials via IAM role or secrets, no tools profile, real domain in the Caddyfile.
+Production: `docker compose -f compose.yaml -f compose.prod.yaml up -d` with S3 credentials from an IAM role or secrets, no tools profile, the real domain in the Caddyfile.
 :::
 
 ### 📝 Self-review checklist
 
 - [ ] Ports published only where needed
 - [ ] Dev-only services behind profiles
-- [ ] Startup ordering by health, migrations once
+- [ ] Startup ordered by health; migrations run once
 
 ::ai-review{task="design"}
 
@@ -290,7 +304,7 @@ Write a production-like `compose.yaml` (proxy, api, migrate, worker, db, redis, 
 
 :::hints
 - Run `docker compose -f stack/compose.yaml config` often — it shows exactly what Compose understood.
-- `${VAR:?set VAR}` makes Compose fail with that message when the variable is missing.
+- `${VAR:?set VAR}` makes Compose stop with that message when the variable is missing.
 - YAML anchors (`&name` / `*name`) avoid repeating the database URL.
 :::
 
@@ -299,25 +313,14 @@ Write a production-like `compose.yaml` (proxy, api, migrate, worker, db, redis, 
 :::quiz
 What's the difference between `docker compose run --rm migrate` and `docker compose up migrate`?
 
-`run` starts a new one-off container for that service (and removes it with `--rm`), useful for repeating a task; `up` creates/starts the service as part of the project and attaches to its lifecycle.
+`run` starts a new one-off container for that service (and removes it with `--rm`) — useful for repeating a task. `up` creates/starts the service as part of the project and follows its lifecycle.
 :::
 
 :::quiz
 You added `ports: ["6379:6379"]` to redis in `compose.yaml` for debugging. Why is that dangerous on a server, and where should it go instead?
 
-It exposes Redis (often without a password) on the server's public interface. Put it in `compose.override.yaml` for local development only, or bind to `127.0.0.1`.
+It opens Redis (often without a password) on the server's public network interface. Put it in `compose.override.yaml` for local development only, or bind it to `127.0.0.1`.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Service | Layanan (satu jenis kontainer di Compose) |
-| Override file | Berkas penimpa konfigurasi |
-| Profile | Profil (kelompok layanan opsional) |
-| Health check | Pemeriksaan kesehatan |
-| Interpolation | Penyisipan nilai variabel |
-| Reverse proxy | Proksi balik (pintu masuk lalu lintas) |
 
 ## 📚 Keep learning
 
