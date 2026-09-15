@@ -1,6 +1,6 @@
 ---
 title: "Environment Variables & Metadata"
-summary: Configure Next.js safely — server-only vs NEXT_PUBLIC_ variables, .env files and build-time inlining, validating config — and make pages shareable and discoverable with the Metadata API, title templates and Open Graph.
+summary: Configure Next.js safely — server-only vs NEXT_PUBLIC_ variables, .env files, checking settings at startup — and make pages look good when shared or searched, with page titles and link previews.
 type: lesson
 source: core
 sourceRef: "M3 · W4 · L3"
@@ -13,26 +13,42 @@ tags: [nextjs, environment-variables, security, metadata, seo, open-graph]
 
 ## 🎯 What you'll learn
 
-- `.env`, `.env.local`, `.env.development`, `.env.production` — load order and what to commit
-- **Server-only** variables vs **`NEXT_PUBLIC_`** variables inlined at **build time**
-- Keeping secrets on the server: `server-only`, Server Components, Route Handlers
-- Validating configuration at startup (connect to Module 2 Week 6)
-- The **Metadata API**: static `metadata`, `generateMetadata`, title templates, `metadataBase`, Open Graph, canonical URLs, robots
-- Metadata files: `favicon.ico`, `opengraph-image`, `sitemap.ts`, `robots.ts`
+- `.env` files: which ones exist and which to commit
+- Server-only variables vs `NEXT_PUBLIC_` variables
+- Keeping secrets away from the browser
+- Checking settings when the app starts
+- Page titles and descriptions with the Metadata API
+- Link previews (Open Graph), sitemap and robots
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Environment variable** | A setting outside your code, like `API_URL`, that differs per computer or server | Variabel lingkungan |
+| **`.env` file** | A text file that holds environment variables | File pengaturan |
+| **Secret** | A value that must stay private: tokens, passwords, keys | Rahasia |
+| **`NEXT_PUBLIC_`** | A prefix that copies a variable into browser code — public! | Awalan untuk publik |
+| **Build time** | When `next build` creates the app files | Saat build |
+| **Metadata** | Information about a page: title, description, preview image | Informasi halaman |
+| **Open Graph** | Tags that control link previews on WhatsApp, LinkedIn… | Pratinjau tautan |
+| **BFF (Backend for Frontend)** | Your Next.js server calls the API for the browser and adds the secrets | Server perantara |
 
 ## 🧠 The big idea
 
-Environment variables come in two kinds: **house keys** (API tokens, database URLs — stay inside the house, i.e. the server) and **the house number** (the public API URL, analytics id — printed on the door for everyone). The `NEXT_PUBLIC_` prefix is literally painting a value on the door: once built, every visitor can read it.
+Environment variables come in two kinds:
+- **House keys** — API tokens, database URLs. They stay inside the house (the server).
+- **The house number** — the public site URL, an analytics id. It's painted on the gate for everyone.
 
-Metadata is the **shop sign and business card**: the title in the tab, the preview card on WhatsApp and LinkedIn, and what search engines show.
+The `NEXT_PUBLIC_` prefix is like **painting a value on the gate**: once the app is built, every visitor can read it.
 
-## ❓ Why does this exist?
+Metadata is your **shop sign and business card**: the title in the browser tab, the preview card on WhatsApp and LinkedIn, and what Google shows.
 
-- The same app runs locally (Flask on `localhost:5091`), in staging and in production with different URLs and keys.
-- Bundlers can only give browser code values that exist at build time.
-- A shared job link on LinkedIn without Open Graph tags shows a blank card — nobody clicks it.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T?
+- The same app runs on your laptop (Flask on `localhost:5091`), on a staging server and in production — with different URLs and keys.
+- A shared job link without Open Graph tags shows a blank card on LinkedIn, so nobody clicks it.
+
+A dangerous mistake:
 
 ```ts
 // app/applications/client-list.tsx ("use client")
@@ -41,20 +57,21 @@ fetch(`${process.env.NEXT_PUBLIC_API_URL}/applications`, {
 });
 ```
 
-Anyone can open DevTools → Sources and read the token. And a missing `API_URL` in production silently becomes `"undefined/api/v1/..."` requests.
+Anyone can open DevTools → Sources and read the token. And if `API_URL` is missing in production, requests silently go to `"undefined/api/v1/..."`.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
-### 1. Files and precedence
+### 1. The `.env` files
 
-| File | Committed? | Loaded when |
+| File | Commit it? | Used when |
 |---|---|---|
-| `.env` | usually no (can hold non-secret defaults) | always |
-| `.env.local` | **never** | always (overrides `.env`); not loaded in `test` |
+| `.env` | usually no (only non-secret defaults) | always |
+| `.env.local` | **never** | always (overrides `.env`); not in tests |
 | `.env.development` / `.env.production` | only non-secret defaults | `next dev` / `next build` + `next start` |
-| `.env.example` | **yes** — documentation with placeholders | never loaded |
+| `.env.example` | **yes** — a list of variables with fake values | never loaded |
 
-Real platform environment variables (Vercel settings, Docker `-e`, CI secrets) override files. `create-next-app` adds `.env*` to `.gitignore` — add `!.env.example` so the example is committed.
+- Real variables set on the server (Vercel settings, Docker `-e`, CI secrets) win over files.
+- `create-next-app` ignores `.env*` in git. Add `!.env.example` to `.gitignore` so the example file is committed — it's the **instruction sheet** for teammates.
 
 ### 2. Server vs public
 
@@ -65,11 +82,12 @@ API_TOKEN=change-me                     # server only — secret
 NEXT_PUBLIC_API_URL=http://localhost:5091   # inlined into browser JS at build time
 ```
 
-- Unprefixed variables exist only in Node.js (Server Components, Route Handlers, Server Actions, `proxy.ts`).
-- `NEXT_PUBLIC_` variables are **replaced by their value during `next build`**. Changing them later requires a rebuild — a Docker image built once and promoted from staging to production keeps the staging value!
-- Only **literal** references are inlined: `process.env.NEXT_PUBLIC_API_URL` ✅, `process.env[name]` ❌.
+- Without the prefix, a variable exists **only on the server** (Server Components, Route Handlers, Server Actions).
+- With `NEXT_PUBLIC_`, the value is **copied into the JavaScript files during `next build`** — like printing it into a book. Change it later → you must rebuild (print again).
+- Watch out: a Docker image built once for staging and then moved to production still has the **staging** value printed inside.
+- Only direct references are copied: `process.env.NEXT_PUBLIC_API_URL` ✅, `process.env[name]` ❌.
 
-### 3. Keep secrets server-side
+### 3. Keep secrets on the server
 
 ```ts
 // lib/data.ts
@@ -80,9 +98,10 @@ export async function getApplications(token: string) {
 }
 ```
 
-Browser code that needs protected data calls **your** Next.js server (a Route Handler or Server Action), which adds the secret and forwards to Flask — the **Backend for Frontend** pattern.
+- `import "server-only"` is a lock: if a Client Component imports this file, the build fails.
+- When browser code needs protected data, it asks **your Next.js server** (a Route Handler or Server Action). The server adds the secret and calls Flask. This is the **BFF** pattern — like a bank teller who uses the vault key for you, instead of giving you the key.
 
-### 4. Validate configuration
+### 4. Check settings at startup
 
 ```ts
 export function readServerEnv(env = process.env) {
@@ -94,9 +113,11 @@ export function readServerEnv(env = process.env) {
 }
 ```
 
-Fail fast with **names, never values** in the message — exactly the Module 2 Week 6 lesson, in TypeScript. (Zod makes this declarative — Week 5.)
+- Stop immediately with a clear message when a setting is missing or wrong — like a pilot's pre-flight check.
+- Show **names, never values** (a secret in an error log is a leak).
+- Same idea as Module 2 Week 6, now in TypeScript. (Zod makes this shorter — Week 5.)
 
-### 5. Static metadata and title templates
+### 5. Page titles
 
 ```tsx
 // app/layout.tsx
@@ -110,9 +131,11 @@ export const metadata: Metadata = {
 };
 ```
 
-A child page with `title: "Applications"` renders `<title>Applications · CareerPilot</title>`. The template applies to **child** segments.
+- `title.template`: a page with `title: "Applications"` shows `Applications · CareerPilot` in the tab.
+- `title.default`: used when a page sets no title.
+- `metadataBase`: turns relative URLs (like `/jobs/1`) into full URLs for previews.
 
-### 6. `generateMetadata` for data-driven pages
+### 6. Titles from data: `generateMetadata`
 
 ```tsx
 // app/jobs/[id]/page.tsx
@@ -130,68 +153,50 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 ```
 
-Metadata exports only work in **Server Components**. Calling `getJob` in both `generateMetadata` and the page is fine — deduplicate with `use cache` or React's `cache()` for non-fetch data sources.
+- Each job page gets its own title and preview — like a name card for each product on a shelf.
+- `canonical` = "this is the main address of this page" (helps Google).
+- `robots: { index: false }` = "don't show this page in Google".
+- Metadata only works in **Server Components**.
 
-### 7. Metadata files
+### 7. Special metadata files
 
-| File in `app/` | Produces |
+| File in `app/` | Creates |
 |---|---|
-| `favicon.ico`, `icon.png`, `apple-icon.png` | icon tags |
-| `opengraph-image.png` or `opengraph-image.tsx` | Open Graph image (can be generated with `ImageResponse`) |
-| `sitemap.ts` | `/sitemap.xml` |
-| `robots.ts` | `/robots.txt` |
+| `favicon.ico`, `icon.png`, `apple-icon.png` | the site icons |
+| `opengraph-image.png` or `opengraph-image.tsx` | the link preview image |
+| `sitemap.ts` | `/sitemap.xml` (a list of pages for Google) |
+| `robots.ts` | `/robots.txt` (which pages Google may visit) |
 
-Private areas (dashboard) should be `noindex`; public job pages should be in the sitemap.
+Private pages (the dashboard) should not be indexed. Public job pages should be in the sitemap.
 
-## ⚖️ Trade-offs
+## ⚠️ Common mistakes
 
-| Choice | ✅ | ❌ |
-|---|---|---|
-| `NEXT_PUBLIC_` | available in browser code | frozen at build time; public |
-| Server-only env + BFF | secrets safe, can change without rebuild | extra hop through the Next.js server |
-| Runtime config endpoint | one image for all environments | extra request; more code |
-| Static metadata | simple, fast | same for every page in the segment |
-| `generateMetadata` | per-resource titles and previews | data fetching for metadata |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ `NEXT_PUBLIC_` only for truly public values (public API base URL, analytics ids, feature flags safe to expose).
-- ✅ Metadata on every public page; Open Graph for shareable pages.
-- 🚫 Never put tokens, keys or internal URLs you don't want public in `NEXT_PUBLIC_`.
-- 🚫 Don't index private or empty pages.
+- `NEXT_PUBLIC_API_KEY=sk-live-…` — a secret made public.
+- Changing a `NEXT_PUBLIC_` value and expecting it to work without rebuilding.
+- Putting `.env` files inside `src/` (Next.js reads them from the project root).
+- Committing `.env.local`.
+- Relative preview image URLs without `metadataBase`.
+- Letting Google index private or empty pages.
 
 ## 🏆 Best practices
 
 - [ ] Commit `.env.example`; never commit `.env.local` or real secrets.
-- [ ] Access secrets only in server code; add `import "server-only"` to data modules.
-- [ ] Validate env vars at startup with helpful messages (no values).
-- [ ] Remember `NEXT_PUBLIC_` values are fixed at build time — plan Docker/CI builds per environment.
-- [ ] Root `metadata` with `metadataBase`, title template and description; `generateMetadata` for dynamic pages.
-- [ ] Canonical URLs, Open Graph images, `sitemap.ts`/`robots.ts`; `noindex` for private and not-found pages.
-- [ ] Test link previews with LinkedIn's Post Inspector or similar tools before launch.
-
-## 🏭 How it's used in industry
-
-- Platforms like Vercel and Netlify manage environment variables per environment (development, preview, production) and warn when secrets use public prefixes.
-- Job portals depend on structured metadata and sitemaps for Google Jobs and social sharing.
-- Security reviews grep builds for leaked keys; secret scanning (Module 2 Week 6) runs on frontend repos too.
-
-## ⚠️ Common mistakes
-
-- `NEXT_PUBLIC_API_KEY=sk-live-…`.
-- Expecting a changed `NEXT_PUBLIC_` value to apply without rebuilding.
-- `.env` files inside `src/` (Next.js loads them from the project root).
-- Relative Open Graph image URLs without `metadataBase`.
+- [ ] Use secrets only in server code; add `import "server-only"` to data files.
+- [ ] Check environment variables at startup, with names but no values in errors.
+- [ ] Remember `NEXT_PUBLIC_` values are fixed at build time — plan builds per environment.
+- [ ] Root `metadata` with `metadataBase`, a title template and a description; `generateMetadata` for dynamic pages.
+- [ ] Add preview images, `sitemap.ts` and `robots.ts`; `noindex` for private and not-found pages.
+- [ ] Test link previews with LinkedIn's Post Inspector before launch.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain to a teammate why `NEXT_PUBLIC_API_TOKEN` is a security incident even though "the site requires login", and what architecture fixes it.
+Using the house-keys-vs-house-number idea, explain to a teammate why `NEXT_PUBLIC_API_TOKEN` is a security problem even though "you have to log in", and what the BFF pattern changes.
 
 ## 📐 Design it
 
-CareerPilot's frontend is built once as a Docker image and promoted from staging to production. It needs: the public site URL, the Flask API URL (server calls), an analytics id, a server-side API service token, and a feature flag "AI match enabled". Design which variables exist, their prefixes, how the browser learns values that differ per environment without rebuilding, and the validation.
+CareerPilot's frontend is built once as a Docker image and then moved from staging to production. It needs: the public site URL, the Flask API URL, an analytics id, a secret API service token, and an "AI match enabled" feature flag. Decide which variables exist, their prefixes, how the browser gets values that differ per environment **without rebuilding**, and how to check them.
 
 :::quiz
 Show a possible design
@@ -200,33 +205,32 @@ Show a possible design
 |---|---|---|
 | `SITE_URL` | server | used in `metadataBase`, sitemap, emails |
 | `API_URL` | server | Server Components / Route Handlers call Flask |
-| `API_SERVICE_TOKEN` | server, secret | service-to-service calls; never in the browser |
-| `ANALYTICS_ID` | server → exposed at runtime | differs per env; image built once |
-| `FEATURE_AI_MATCH` | server → exposed at runtime | flag differs per env |
+| `API_SERVICE_TOKEN` | server, secret | server-to-server calls; never in the browser |
+| `ANALYTICS_ID` | server → given to the browser at runtime | differs per environment; the image is built once |
+| `FEATURE_AI_MATCH` | server → given to the browser at runtime | the flag differs per environment |
 
-**No `NEXT_PUBLIC_` variables** because the image is promoted unchanged: build-time inlining would freeze staging values into production.
-
-**Runtime exposure**: the root layout (Server Component) reads `ANALYTICS_ID` and `FEATURE_AI_MATCH` and passes them as props to a small client `ConfigProvider` (serializable values only), or a `GET /api/config` Route Handler returns the public subset. Browser data requests go through Route Handlers (BFF) that add the user's session and call `API_URL`.
-
-**Validation** in `lib/env.ts` (server-only), run at startup/instrumentation: URLs must be http(s), token length ≥ 32 in production, flags must be `"true"`/`"false"`; errors list names only. `.env.example` documents all of them with placeholders.
+- **No `NEXT_PUBLIC_` variables**, because the same image moves to production: values printed at build time would keep staging values forever.
+- **How the browser gets them**: the root layout (a Server Component) reads `ANALYTICS_ID` and `FEATURE_AI_MATCH` and passes them as props to a small client `ConfigProvider`. Or a `GET /api/config` Route Handler returns only the public values.
+- **Browser data requests** go through Route Handlers (BFF), which add the user's session and call `API_URL`.
+- **Checks** in `lib/env.ts` (server-only), run at startup: URLs must be http(s), the token must be at least 32 characters in production, flags must be `"true"` or `"false"`. Errors list names only. `.env.example` documents everything with fake values.
 :::
 
 ### 📝 Self-review checklist
 
 - [ ] Secrets never reach the browser
-- [ ] Build-once-deploy-many constraint handled
-- [ ] Validation without leaking values
+- [ ] "Build once, deploy to many environments" is handled
+- [ ] Checks without leaking values
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w4/03-env-metadata" ai="no-ai" title="Validated env config and page metadata"}
-Write a fail-fast server env reader and a browser-safe `publicEnv` with literal `NEXT_PUBLIC_` references, document variables in `.env.example`, and add root metadata with a title template plus `generateMetadata` for a dynamic job page (including a not-found variant with `noindex`).
+Write a server env reader that stops early with clear errors, a browser-safe `publicEnv` with direct `NEXT_PUBLIC_` references, document the variables in `.env.example`, and add root metadata with a title template plus `generateMetadata` for a dynamic job page (including a not-found version with `noindex`).
 :::
 
 :::hints
-- Collect problems in an array; throw once with only names in the message.
+- Collect problems in an array; throw once, with only the names in the message.
 - `metadataBase: new URL("https://careerpilot.id")`.
 - `generateMetadata` receives the same `params` Promise as the page.
 :::
@@ -234,27 +238,16 @@ Write a fail-fast server env reader and a browser-safe `publicEnv` with literal 
 ## ✅ Quick check
 
 :::quiz
-When is the value of `process.env.NEXT_PUBLIC_API_URL` decided for browser code?
+When is the value of `process.env.NEXT_PUBLIC_API_URL` fixed for browser code?
 
-At build time (`next build`) — it's replaced with a literal string in the JavaScript bundle.
+At build time (`next build`) — it's replaced with the actual text inside the JavaScript files.
 :::
 
 :::quiz
 What does `title.template` in the root layout do?
 
-It formats titles defined by child segments, e.g. `"%s · CareerPilot"` turns a page title "Jobs" into "Jobs · CareerPilot"; `title.default` is used when a child doesn't set a title.
+It formats the titles of child pages. `"%s · CareerPilot"` turns a page title "Jobs" into "Jobs · CareerPilot". `title.default` is used when a page sets no title.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Environment variable | Variabel lingkungan |
-| Build time / runtime | Saat build / saat berjalan |
-| Inlining | Menyisipkan nilai langsung ke kode |
-| Metadata | Metadata — informasi tentang halaman |
-| Open Graph | Protokol pratinjau tautan di media sosial |
-| Canonical URL | URL utama/kanonik suatu halaman |
 
 ## 📚 Keep learning
 
