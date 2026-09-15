@@ -1,6 +1,6 @@
 ---
 title: "🔥 shadcn/ui: Accessible Components You Own"
-summary: Use the most popular React component approach of the Tailwind era — how shadcn/ui copies Radix-based components into your repo, cva variants, the cn helper, theming with CSS variables, AlertDialog confirmations, and customizing safely.
+summary: How shadcn/ui copies accessible Radix-based components into your project — cva variants, the cn helper, theming with CSS variables, safe delete confirmations, and owning the code.
 type: lesson
 source: original
 roles: { be: none, fe: core, fs: recommended, ai: optional, ops: none }
@@ -12,25 +12,38 @@ tags: [shadcn-ui, radix, tailwind, cva, design-system, accessibility]
 
 ## 🎯 What you'll learn
 
-- What shadcn/ui is (and isn't): a **code distribution** tool, not an npm component library
-- `npx shadcn@latest init` / `add`, `components.json`, and where files land
-- **Radix primitives** for accessibility (focus trap, keyboard, ARIA)
-- **cva** variants and the **`cn()`** helper (`clsx` + `tailwind-merge`)
-- Theming with CSS variables and Tailwind v4
-- Building a **destructive confirmation** with AlertDialog and pending state
+- What shadcn/ui is — and isn't: it copies code into your project; it's not an npm component library
+- `npx shadcn@latest init` / `add`, and where the files go
+- **Radix primitives**: the accessibility built in (focus, keyboard, ARIA)
+- **cva** variants and the **`cn()`** helper (you met both in Week 2)
+- Theming with CSS variables
+- A **delete confirmation** with AlertDialog and a "Deleting…" state
 - Owning and updating copied components responsibly
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **shadcn/ui** | A tool that copies ready-made, accessible components into your code | Komponen yang disalin ke proyekmu |
+| **Radix** | A library of unstyled components that handle keyboard, focus and ARIA | Komponen tanpa gaya |
+| **Headless component** | Behavior only, no styles — you add the look | Komponen tanpa tampilan |
+| **Primitive** | A basic building block like Dialog, Menu, Tabs | Balok dasar |
+| **Focus trap** | Keeping keyboard focus inside a dialog while it's open | Mengunci fokus |
+| **AlertDialog** | A dialog for dangerous actions; a click outside doesn't close it | Dialog konfirmasi |
+| **`asChild`** | Give a component's styles to its child element (like a real link) | Pakai elemen anak |
+| **Design token** | A design value (color, radius) stored as a CSS variable | Token desain |
 
 ## 🧠 The big idea
 
-Most UI libraries are like **renting furniture**: it arrives assembled, you can pick colors from a catalog, but you can't saw off a leg. shadcn/ui is like **IKEA plans plus quality parts**: you get well-designed pieces (built on Radix's accessible hardware) delivered **into your house** (your repo). They're yours — change anything.
+Most UI libraries are like **renting furniture**: it arrives assembled, you pick colors from a catalog, but you can't cut off a leg. shadcn/ui is like **IKEA plans plus quality parts**: you get well-designed pieces (built on Radix's accessible hardware) delivered **into your house** (your project). They're yours — change anything.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Building accessible components from scratch is hard. A correct modal dialog needs: focus trap, return focus on close, `Escape` to close, scroll locking, `aria-modal`, labelled title and description, portal rendering, and screen-reader testing. Traditional libraries (MUI, Ant Design) solve this but come with their own styling systems that fight Tailwind and are hard to customize deeply.
+Building accessible components yourself is hard. A correct popup dialog needs: keeping focus inside, returning focus when closed, `Escape` to close, stopping the page behind from scrolling, a labelled title and description, and testing with screen readers. Traditional libraries (MUI, Ant Design) solve this, but come with their own styling systems that fight Tailwind.
 
-shadcn/ui combines **headless accessible primitives** (Radix) with **Tailwind styles you own**.
+shadcn/ui combines **accessible behavior** (Radix) with **Tailwind styles you own**.
 
-## 💥 What happens if we DON'T?
+A hand-made "modal" usually breaks:
 
 ```tsx
 // ❌ a hand-rolled "modal"
@@ -44,9 +57,12 @@ shadcn/ui combines **headless accessible primitives** (Radix) with **Tailwind st
 )}
 ```
 
-Keyboard users can tab **behind** the modal, screen readers don't announce it, `Escape` does nothing, focus is lost after closing, and a mis-click on the backdrop cancels a destructive action halfway.
+- Keyboard users can Tab to things **behind** the modal.
+- Screen readers don't announce it; `Escape` does nothing.
+- Focus is lost after closing.
+- A mis-click on the dark background cancels a dangerous action halfway.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Setup
 
@@ -66,9 +82,10 @@ lib/
 components.json         ← aliases, style, base color, icon library
 ```
 
-Components import primitives from the `radix-ui` package and icons from `lucide-react`. Recent CLI versions can also scaffold with other primitive libraries — the ideas in this lesson are the same.
+- `init` sets up the project; `add` copies components into `components/ui`.
+- The components use the `radix-ui` package for behavior and `lucide-react` for icons.
 
-### 2. `cn()` — merging classes safely
+### 2. `cn()` — combining classes safely
 
 ```ts
 import { clsx, type ClassValue } from "clsx";
@@ -81,7 +98,7 @@ export function cn(...inputs: ClassValue[]) {
 cn("px-4 bg-red-600", isActive && "ring-2", "bg-purple-600");   // → "px-4 ring-2 bg-purple-600"
 ```
 
-`clsx` handles conditionals; `tailwind-merge` resolves conflicts so a `className` prop can **override** a default.
+Same helper as Week 2 lesson 06: `clsx` adds classes on conditions, `tailwind-merge` removes conflicts so a `className` prop can **override** a default.
 
 ### 3. Variants with `cva`
 
@@ -106,7 +123,7 @@ export function Badge({ tone, className, ...props }: React.ComponentProps<"span"
 }
 ```
 
-Then map **domain** values to **design** variants in one place:
+Then connect your **business** values to **design** variants in one place:
 
 ```tsx
 const STATUS_BADGE = {
@@ -117,7 +134,9 @@ const STATUS_BADGE = {
 } as const;
 ```
 
-### 4. `asChild` and Slot
+The generic `Badge` knows only colors ("tones"). A small table says "interview → warning". That way the design stays reusable, and business words stay in your app code.
+
+### 4. `asChild`
 
 ```tsx
 <Button asChild variant="outline">
@@ -125,14 +144,14 @@ const STATUS_BADGE = {
 </Button>
 ```
 
-`asChild` renders the **child element** (a real `<a>`) with the button's styles and props — no invalid `<button><a/></button>` nesting.
+`asChild` means "don't make your own `<button>` — put your styles on my child". The result is a real link (`<a>`) that looks like a button, without invalid `<button><a/></button>` nesting. Like putting a uniform on a staff member instead of building a new person.
 
-### 5. AlertDialog for destructive actions
+### 5. AlertDialog for dangerous actions
 
 | Component | Closes on outside click? | Role | Use for |
 |---|---|---|---|
 | `Dialog` | yes | `dialog` | forms, details |
-| `AlertDialog` | **no** | `alertdialog` | confirm destructive/irreversible actions |
+| `AlertDialog` | **no** | `alertdialog` | confirming dangerous or permanent actions |
 
 ```tsx
 export function DeleteApplicationDialog({ role, onConfirm }: Props) {
@@ -173,78 +192,63 @@ export function DeleteApplicationDialog({ role, onConfirm }: Props) {
 }
 ```
 
-Radix wires up: focus moves into the dialog (to Cancel — the safe choice), `Tab` is trapped, `Escape` closes, focus returns to the trigger, title/description are linked with ARIA.
+- `event.preventDefault()` stops the dialog from closing immediately; it closes only **after** the delete succeeds.
+- While deleting, `Escape` and outside clicks are ignored (`!pending && setOpen(next)`).
+- If it fails, the error shows **inside** the dialog.
+- Radix does the rest: focus goes to **Cancel** (the safe choice), Tab stays inside, `Escape` closes, focus returns to the Delete button, and the title and description are connected for screen readers.
+
+Like an ATM asking "Are you sure you want to transfer?" — it waits for the bank's answer before printing the receipt.
 
 ### 6. Theming
 
-`init` adds CSS variables (`--background`, `--primary`, `--destructive`, `--radius` …) and maps them to Tailwind utilities (`bg-primary`, `text-destructive`). Change the brand by editing variables, and support dark mode with a `.dark` class — without touching components.
-
-## ⚖️ Trade-offs
-
-| | ✅ | ❌ |
-|---|---|---|
-| shadcn/ui (copied code) | full control, Tailwind-native, accessible primitives, no version lock | **you** maintain updates; copies can drift; many files in your repo |
-| npm component library (MUI, Mantine, Chakra) | updates via `npm update`, big component sets | styling system to learn, harder deep customization |
-| Headless only (Radix, React Aria, Base UI) | maximum freedom | you write all styles |
-| From scratch | total control | accessibility bugs, lots of time |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Tailwind + React/Next.js apps that want a custom look with solid accessibility.
-- ✅ Starting a design system you'll grow.
-- 🚫 If your company already has a design system package — use that.
-- 🚫 Don't copy a component and then never read it — you own the bugs too.
-
-## 🏆 Best practices
-
-- [ ] Treat `components/ui` as **your** code: read it, test critical behavior, review diffs when re-adding.
-- [ ] Customize through variants and CSS variables before editing internals.
-- [ ] Keep domain mapping (status → tone) outside `ui/` primitives.
-- [ ] Use `AlertDialog` for destructive confirmations; keep it open until the action finishes; show errors inside.
-- [ ] Use `asChild` for links styled as buttons.
-- [ ] Always give dialogs a title (visually hidden if needed) and description.
-- [ ] Test with the keyboard and a screen reader (VoiceOver/NVDA) at least once per component type.
-- [ ] Pin `radix-ui`, `cva`, `tailwind-merge` versions; update deliberately.
-
-## 🏭 How it's used in industry
-
-- shadcn/ui is one of the most starred React UI projects and widely used in Next.js SaaS starters, dashboards and AI app templates (including many generated by AI tools like v0).
-- Companies often fork shadcn/ui components into an internal design system, adding brand tokens and Storybook docs.
-- Radix primitives also power other libraries and design systems, so the accessibility patterns you learn transfer.
+`init` adds CSS variables (`--background`, `--primary`, `--destructive`, `--radius`…) and connects them to Tailwind classes (`bg-primary`, `text-destructive`). Change your brand by editing the variables; add dark mode with a `.dark` class — without touching the components.
 
 ## ⚠️ Common mistakes
 
-- Wrapping `<Link>` in `<Button>` instead of `asChild`.
-- Class conflicts because `cn` wasn't used (`className="bg-purple-600"` doesn't override `bg-red-600` without `tailwind-merge`).
-- Closing the confirm dialog immediately, then failing silently.
-- Using `Dialog` for "Delete account" so a stray click outside cancels it.
+- Putting `<Link>` inside `<Button>` instead of using `asChild`.
+- Not using `cn`, so `className="bg-purple-600"` doesn't override `bg-red-600`.
+- Closing the confirm dialog right away, then failing silently.
+- Using `Dialog` for "Delete account", so a stray click outside cancels it.
 - Forgetting `"use client"` in components that use Radix state.
+- Copying a component and never reading it — you own its bugs too.
+- Using shadcn/ui when your company already has its own design system package.
+
+## 🏆 Best practices
+
+- [ ] Treat `components/ui` as **your** code: read it, test important behavior, review changes when you add it again.
+- [ ] Customize with variants and CSS variables before editing the insides.
+- [ ] Keep business mapping (status → tone) outside the `ui/` components.
+- [ ] Use `AlertDialog` for dangerous actions; keep it open until the action finishes; show errors inside.
+- [ ] Use `asChild` for links that look like buttons.
+- [ ] Always give dialogs a title (visually hidden if needed) and a description.
+- [ ] Test each type of component with the keyboard and a screen reader at least once.
+- [ ] Pin the versions of `radix-ui`, `cva` and `tailwind-merge`; update on purpose.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain the "rented furniture vs IKEA plans with quality parts" analogy, and one real downside of owning the component code.
+Explain the "rented furniture vs IKEA plans with quality parts" idea, and one real downside of owning the component code.
 
 ## 📐 Design it
 
-Plan a small **CareerPilot design system** on top of shadcn/ui: which components you'd add first for the applications board, which variants each needs (e.g. `Button`: default/outline/ghost/destructive, sizes), which domain components wrap them (`StatusBadge`, `ApplicationCard`), and how you'd document and test them.
+Plan a small **CareerPilot design system** on top of shadcn/ui: which components to add first for the applications board, which variants each needs (for example `Button`: default/outline/ghost/destructive, with sizes), which app-specific components wrap them (`StatusBadge`, `ApplicationCard`), and how to document and test them.
 
 :::quiz
 Show a possible plan
 
-- **Primitives (`components/ui`)**: Button (default, secondary, outline, ghost, destructive × sm/default/icon), Badge (tones), Card, Input, Textarea, Select, Form (RHF integration), Dialog, AlertDialog, DropdownMenu, Tabs, Tooltip, Skeleton, Sonner/Toast.
-- **Domain components (`components/careerpilot`)**: `StatusBadge` (status → tone), `ApplicationCard` (Card + StatusBadge + DropdownMenu actions), `MoveStatusMenu`, `DeleteApplicationDialog`, `SalaryRange`, `EmptyState`.
-- **Tokens**: brand colors and radius in CSS variables; dark mode via `.dark`.
-- **Docs**: Storybook stories for every variant + accessibility addon; a short `components/README.md` with "which component when".
-- **Tests**: Vitest + Testing Library for behavior (dialog pending/error, menu keyboard), visual snapshots in Storybook/Chromatic or Playwright screenshots for key states; axe checks in CI.
-- **Updates**: re-run `npx shadcn@latest add <component> --diff`-style review (or compare with upstream) quarterly; changes go through PR review.
+- **Basic components (`components/ui`)**: Button (default, secondary, outline, ghost, destructive × sm/default/icon), Badge (tones), Card, Input, Textarea, Select, Form (React Hook Form), Dialog, AlertDialog, DropdownMenu, Tabs, Tooltip, Skeleton, Sonner/Toast.
+- **App components (`components/careerpilot`)**: `StatusBadge` (status → tone), `ApplicationCard` (Card + StatusBadge + DropdownMenu actions), `MoveStatusMenu`, `DeleteApplicationDialog`, `SalaryRange`, `EmptyState`.
+- **Tokens**: brand colors and radius as CSS variables; dark mode with `.dark`.
+- **Docs**: Storybook stories for every variant, with the accessibility add-on, plus a short `components/README.md` saying "which component when".
+- **Tests**: Vitest + Testing Library for behavior (dialog saving/error, menu keyboard); screenshots of key states (Storybook or Playwright); axe checks in CI.
+- **Updates**: every few months, compare your copies with the latest shadcn/ui versions and apply changes through a reviewed pull request.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Primitives stay generic; domain logic lives in wrappers
-- [ ] Destructive actions use AlertDialog
+- [ ] Basic components stay generic; business logic lives in wrappers
+- [ ] Dangerous actions use AlertDialog
 - [ ] Accessibility is tested, not assumed
 
 ::ai-review{task="design"}
@@ -252,12 +256,12 @@ Show a possible plan
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w5/08-shadcn-ui" ai="ai-allowed" title="Badge variants and a delete confirmation"}
-With provided shadcn-style `Button` and `AlertDialog`, build a `cva` badge with tones, a `StatusBadge` mapping, and a `DeleteApplicationDialog` that stays open while deleting, blocks Escape during the request and shows errors inside.
+Using the provided shadcn-style `Button` and `AlertDialog`, build a `cva` badge with tones, a `StatusBadge` mapping, and a `DeleteApplicationDialog` that stays open while deleting, ignores Escape during the request, and shows errors inside.
 :::
 
 :::hints
-- `cn(badgeVariants({ tone }), className)` lets `className` override the tone background.
-- Call `event.preventDefault()` in the action's `onClick` so Radix doesn't close the dialog.
+- `cn(badgeVariants({ tone }), className)` lets `className` override the tone's background.
+- Call `event.preventDefault()` in the action button's `onClick` so Radix doesn't close the dialog.
 - Ignore `onOpenChange(false)` while pending.
 :::
 
@@ -266,25 +270,14 @@ With provided shadcn-style `Button` and `AlertDialog`, build a `cva` badge with 
 :::quiz
 Why does shadcn/ui use `tailwind-merge` inside `cn()`?
 
-Tailwind classes don't override by order in the `class` attribute — CSS order decides. `tailwind-merge` removes conflicting classes (`bg-red-600` vs `bg-purple-600`) so the last one intended wins.
+Tailwind classes don't override each other by their order in the `class` attribute — the CSS file order decides. `tailwind-merge` removes the conflicting class (`bg-red-600` vs `bg-purple-600`) so the one you meant wins.
 :::
 
 :::quiz
-`npx shadcn@latest add button` releases a fix. How do you get it?
+shadcn/ui releases a fix for the button. How do you get it?
 
-It isn't automatic — the code is yours. Re-run `add` (review the diff before overwriting your customizations) or apply the change manually.
+Not automatically — the code is yours. Run `add` again (and review the changes before overwriting your customizations), or apply the fix by hand.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Headless component | Komponen tanpa gaya bawaan (hanya perilaku) |
-| Variant | Varian tampilan komponen |
-| Design system | Sistem desain (komponen + aturan visual) |
-| Focus trap | Menahan fokus keyboard di dalam dialog |
-| Destructive action | Aksi yang menghapus/merusak data |
-| Design token | Nilai desain (warna, radius) sebagai variabel |
 
 ## 📚 Keep learning
 
