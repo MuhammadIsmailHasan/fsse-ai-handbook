@@ -506,7 +506,7 @@ Note: Milestone 1 skips ahead to Module 4 core before Module 3 so a full-stack p
 | Sat | 1.5 h Architecture + 1.5 h CareerPilot |
 | Sun | Light: DSA spaced review + weekly LinkedIn post, or rest |
 
-The **Study Plan** page (`/schedule`) makes this flexible (D34): Settings hold a **daily target** (default 5 h), a **minimum that still counts** (default 1 h) and **study days** (5/6/7). Each day the learner picks how much time they really have; the page splits it by the routine above (weekdays 65% module / 35% DSA, Saturday Architecture + CareerPilot, Sunday module + DSA review), shows the next lessons that fit, logs real study time (timer or +15/30/60 min buttons), and charts the week with an honest recent average.
+The **Study Plan** page (`/schedule`) makes this flexible (D34): Settings hold a **daily target** (default 5 h), a **minimum that still counts** (default 1 h) and **study days** (5/6/7). Each day the learner picks how much time they really have; the page splits it by the routine above (weekdays 65% module / 35% DSA, Saturday Architecture + CareerPilot, Sunday module + DSA review), shows the next lessons that fit, logs real study time (timer or +15/30/60 min buttons), and charts the week with an honest recent average. Milestone cards turn `hours` (per milestone, in `course.json`) minus finished lessons into an apply-by estimate at the target pace and, after 5+ logged study days, at the real recent pace.
 
 ---
 

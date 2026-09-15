@@ -18,78 +18,150 @@
       "title": "Backend: Flask",
       "summary": "Bangun ulang pemahaman backend-mu: tools, PostgreSQL, Python, Flask, REST API, auth, testing, dan deployment.",
       "weeks": {
-        "w1": { "title": "Toolkit Software Engineer" },
-        "w2": { "title": "Database dengan PostgreSQL" },
-        "w3": { "title": "Inti Python" },
-        "w4": { "title": "Framework Flask" },
-        "w5": { "title": "Pengembangan API" },
-        "w6": { "title": "Quality Assurance & Deployment" }
+        "w1": {
+          "title": "Toolkit Software Engineer"
+        },
+        "w2": {
+          "title": "Database dengan PostgreSQL"
+        },
+        "w3": {
+          "title": "Inti Python"
+        },
+        "w4": {
+          "title": "Framework Flask"
+        },
+        "w5": {
+          "title": "Pengembangan API"
+        },
+        "w6": {
+          "title": "Quality Assurance & Deployment"
+        }
       }
     },
     "m3": {
       "title": "Backend: FastAPI",
       "summary": "Framework API Python modern dengan type: Pydantic, async, dependency injection, dan layanan AI sungguhan.",
       "weeks": {
-        "w1": { "title": "Fondasi" },
-        "w2": { "title": "Inti" },
-        "w3": { "title": "Aplikasi Nyata" }
+        "w1": {
+          "title": "Fondasi"
+        },
+        "w2": {
+          "title": "Inti"
+        },
+        "w3": {
+          "title": "Aplikasi Nyata"
+        }
       }
     },
     "m4": {
       "title": "Frontend: Next.js",
       "summary": "HTML, CSS, dan JavaScript sampai TypeScript, Tailwind, React, dan Next.js — lengkap dengan form, auth, dan end-to-end test.",
       "weeks": {
-        "w1": { "title": "HTML, CSS & JavaScript" },
-        "w2": { "title": "TypeScript & Tailwind CSS" },
-        "w3": { "title": "React dengan Next.js" },
-        "w4": { "title": "App Router & API" },
-        "w5": { "title": "Form & Autentikasi" },
-        "w6": { "title": "Quality Assurance & Deployment" }
+        "w1": {
+          "title": "HTML, CSS & JavaScript"
+        },
+        "w2": {
+          "title": "TypeScript & Tailwind CSS"
+        },
+        "w3": {
+          "title": "React dengan Next.js"
+        },
+        "w4": {
+          "title": "App Router & API"
+        },
+        "w5": {
+          "title": "Form & Autentikasi"
+        },
+        "w6": {
+          "title": "Quality Assurance & Deployment"
+        }
       }
     },
     "m5": {
       "title": "Cloud, DevOps & AWS",
       "summary": "Rilis sungguhan: container, CI/CD, AWS, microservices, Kubernetes, dan Terraform — tanpa tagihan kejutan.",
       "weeks": {
-        "w1": { "title": "Container" },
-        "w2": { "title": "CI/CD" },
-        "w3": { "title": "Dasar-Dasar AWS" },
-        "w4": { "title": "Deploy ke AWS" },
-        "w5": { "title": "Microservices" },
-        "w6": { "title": "Orkestrasi" },
-        "w7": { "title": "Infrastructure as Code & Operasional" }
+        "w1": {
+          "title": "Container"
+        },
+        "w2": {
+          "title": "CI/CD"
+        },
+        "w3": {
+          "title": "Dasar-Dasar AWS"
+        },
+        "w4": {
+          "title": "Deploy ke AWS"
+        },
+        "w5": {
+          "title": "Microservices"
+        },
+        "w6": {
+          "title": "Orkestrasi"
+        },
+        "w7": {
+          "title": "Infrastructure as Code & Operasional"
+        }
       }
     },
     "m6": {
       "title": "Pengembangan dengan Bantuan AI",
       "summary": "Bekerja dengan AI coding agent secara profesional: spesifikasi, steering, me-review output AI, dan merilis fitur full-stack.",
       "weeks": {
-        "w1": { "title": "Siklus Pengembangan AI & Requirement" },
-        "w2": { "title": "Steering & Generasi Kode" },
-        "w3": { "title": "Implementasi, Testing & Deployment" }
+        "w1": {
+          "title": "Siklus Pengembangan AI & Requirement"
+        },
+        "w2": {
+          "title": "Steering & Generasi Kode"
+        },
+        "w3": {
+          "title": "Implementasi, Testing & Deployment"
+        }
       }
     },
     "m7": {
       "title": "AI Engineering di Production",
       "summary": "Bangun fitur AI yang benar-benar dirilis perusahaan: LLM API, tool calling, RAG, eval, agent, MCP, keamanan, dan kontrol biaya.",
       "weeks": {
-        "w0": { "title": "Dasar Machine Learning" },
-        "w1": { "title": "Cara Kerja LLM & LLM API" },
-        "w2": { "title": "Prompting & Tools" },
-        "w3": { "title": "Embedding & Pencarian" },
-        "w4": { "title": "RAG Secara Mendalam" },
-        "w5": { "title": "Evaluasi & Observability" },
-        "w6": { "title": "Agent & MCP" },
-        "w7": { "title": "Production" },
-        "w8": { "title": "Keputusan & Studi Kasus" }
+        "w0": {
+          "title": "Dasar Machine Learning"
+        },
+        "w1": {
+          "title": "Cara Kerja LLM & LLM API"
+        },
+        "w2": {
+          "title": "Prompting & Tools"
+        },
+        "w3": {
+          "title": "Embedding & Pencarian"
+        },
+        "w4": {
+          "title": "RAG Secara Mendalam"
+        },
+        "w5": {
+          "title": "Evaluasi & Observability"
+        },
+        "w6": {
+          "title": "Agent & MCP"
+        },
+        "w7": {
+          "title": "Production"
+        },
+        "w8": {
+          "title": "Keputusan & Studi Kasus"
+        }
       }
     },
     "m8": {
       "title": "Karier & Portofolio",
       "summary": "Ubah skill-mu menjadi tawaran kerja: portofolio, LinkedIn, CV, pencarian kerja, dan semua jenis interview.",
       "weeks": {
-        "w1": { "title": "Portofolio & Personal Brand" },
-        "w2": { "title": "Mencari Kerja & Interview" }
+        "w1": {
+          "title": "Portofolio & Personal Brand"
+        },
+        "w2": {
+          "title": "Mencari Kerja & Interview"
+        }
       }
     }
   },
@@ -98,51 +170,84 @@
       "title": "DSA untuk Interview",
       "summary": "Struktur data dan pola algoritma dengan Python, dilatih lewat review berkala sampai benar-benar melekat.",
       "stages": {
-        "stage-1": { "title": "Fondasi" },
-        "stage-2": { "title": "Struktur Inti" },
-        "stage-3": { "title": "Pola" },
-        "stage-4": { "title": "Tree & Graph" },
-        "stage-5": { "title": "Lanjutan" },
-        "stage-6": { "title": "Skill Interview" }
+        "stage-1": {
+          "title": "Fondasi"
+        },
+        "stage-2": {
+          "title": "Struktur Inti"
+        },
+        "stage-3": {
+          "title": "Pola"
+        },
+        "stage-4": {
+          "title": "Tree & Graph"
+        },
+        "stage-5": {
+          "title": "Lanjutan"
+        },
+        "stage-6": {
+          "title": "Skill Interview"
+        }
       }
     },
     "architecture": {
       "title": "Architecture",
       "summary": "Dari clean code ke design pattern sampai system design — dipelajari tepat saat kamu membutuhkan setiap idenya.",
       "stages": {
-        "a-principles": { "title": "A · Prinsip" },
-        "b-system-design-basics": { "title": "B · Dasar System Design" },
-        "c-oop-design": { "title": "C · Desain OOP" },
-        "d-design-patterns": { "title": "D · Design Pattern" },
-        "e-backend-architecture": { "title": "E · Arsitektur Backend" },
-        "f-data-api-design": { "title": "F · Desain Data & API" },
-        "g-frontend-patterns": { "title": "G · Pola Frontend" },
-        "h-distributed-systems": { "title": "H · Sistem Terdistribusi" },
-        "i-system-design-practice": { "title": "I · Latihan System Design" },
-        "j-interviews": { "title": "J · Interview" }
+        "a-principles": {
+          "title": "A · Prinsip"
+        },
+        "b-system-design-basics": {
+          "title": "B · Dasar System Design"
+        },
+        "c-oop-design": {
+          "title": "C · Desain OOP"
+        },
+        "d-design-patterns": {
+          "title": "D · Design Pattern"
+        },
+        "e-backend-architecture": {
+          "title": "E · Arsitektur Backend"
+        },
+        "f-data-api-design": {
+          "title": "F · Desain Data & API"
+        },
+        "g-frontend-patterns": {
+          "title": "G · Pola Frontend"
+        },
+        "h-distributed-systems": {
+          "title": "H · Sistem Terdistribusi"
+        },
+        "i-system-design-practice": {
+          "title": "I · Latihan System Design"
+        },
+        "j-interviews": {
+          "title": "J · Interview"
+        }
       }
     }
   },
   "projects": {
-    "careerpilot": { "tagline": "Asisten AI untuk mencari kerja yang tumbuh di setiap modul." },
+    "careerpilot": {
+      "tagline": "Asisten AI untuk mencari kerja yang tumbuh di setiap modul."
+    },
     "supportdesk-ai": {
       "tagline": "Asisten help desk dengan RAG, tools, guardrail, dan handoff ke manusia."
     },
-    "studymind": { "tagline": "Tutor AI di atas handbook ini — latihan tambahan." }
+    "studymind": {
+      "tagline": "Tutor AI di atas handbook ini — latihan tambahan."
+    }
   },
   "milestones": {
     "junior-full-stack": {
-      "applyFor": "Posisi junior backend, frontend, atau full-stack developer — mulai melamar dari sini.",
-      "estimate": "~320–370 jam · ~4–5 bulan dengan 18 jam/minggu"
+      "applyFor": "Posisi junior backend, frontend, atau full-stack developer — mulai melamar dari sini."
     },
     "ai-integrated-full-stack": {
-      "applyFor": "Posisi full-stack dengan fitur AI, posisi junior applied AI engineer.",
-      "estimate": "+~250 jam · total ~7–8 bulan"
+      "applyFor": "Posisi full-stack dengan fitur AI, posisi junior applied AI engineer."
     },
     "stronger-candidate": {
       "title": "🎯 3 · Kandidat Lebih Kuat",
-      "applyFor": "Posisi AI engineer, tim yang banyak memakai cloud, negosiasi gaji yang lebih baik.",
-      "estimate": "+~300–400 jam · total ~11–13 bulan"
+      "applyFor": "Posisi AI engineer, tim yang banyak memakai cloud, negosiasi gaji yang lebih baik."
     }
   }
 }

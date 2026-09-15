@@ -35,6 +35,50 @@ export function milestoneProgress(
   return countProgress(inScope, completed)
 }
 
+export type MilestoneRemaining = {
+  id: string
+  /** Hours of finished lessons that belong to this milestone. */
+  doneHours: number
+  /** Hours still to study to reach this milestone, INCLUDING earlier milestones. */
+  remainingMin: number
+  remainingMax: number
+}
+
+/**
+ * How many study hours are left until each milestone.
+ *
+ * Milestones are steps: reaching #2 means finishing #1 first, so the remaining hours add up.
+ * The hour ranges in course.json include exercises and projects, so we subtract only the
+ * lessons you've marked done (each lesson counted once, in the first milestone that lists it).
+ */
+export function milestonesRemaining(
+  milestones: Course['milestones'],
+  lessons: LessonMeta[],
+  completed: Record<string, string>,
+): MilestoneRemaining[] {
+  const counted = new Set<string>()
+  let carryMin = 0
+  let carryMax = 0
+  return milestones.map((milestone) => {
+    let doneMinutes = 0
+    for (const lesson of lessons) {
+      if (counted.has(lesson.id)) continue
+      if (!milestone.include.some((prefix) => matchesPrefix(lesson.id, prefix))) continue
+      counted.add(lesson.id)
+      if (completed[lesson.id]) doneMinutes += lesson.durationMinutes
+    }
+    const doneHours = doneMinutes / 60
+    carryMin += Math.max(0, milestone.hours.min - doneHours)
+    carryMax += Math.max(0, milestone.hours.max - doneHours)
+    return {
+      id: milestone.id,
+      doneHours: Math.round(doneHours),
+      remainingMin: Math.round(carryMin),
+      remainingMax: Math.round(carryMax),
+    }
+  })
+}
+
 /** Lessons of one stream, in the recommended order. */
 export function orderedStream(prefixes: string[], lessons: LessonMeta[]): LessonMeta[] {
   const seen = new Set<string>()

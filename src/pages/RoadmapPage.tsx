@@ -33,6 +33,7 @@ export function RoadmapPage() {
             <MilestoneCard key={milestone.id} milestone={milestone} />
           ))}
         </div>
+        <p className="mt-3 text-xs text-slate-500">{t('milestones.explain')}</p>
       </section>
 
       <section>

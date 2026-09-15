@@ -3,12 +3,14 @@ import {
   addMinutes,
   dateKey,
   elapsedMinutes,
+  estimateFinish,
   normalizeGoal,
   planDay,
   recentAverage,
   summarizeWeek,
   weekDates,
   weeklyBudget,
+  weeklyPace,
   type StudyGoal,
 } from './study-time'
 
@@ -133,5 +135,25 @@ describe('timer and log helpers', () => {
     const log = addMinutes({}, '2025-09-17', 30)
     expect(log).toEqual({ '2025-09-17': 30 })
     expect(addMinutes(log, '2025-09-17', -45)).toEqual({})
+  })
+})
+
+describe('pace and finish estimates', () => {
+  it('uses the recent pace only with enough history', () => {
+    const few = { '2025-09-15': 120, '2025-09-16': 120 }
+    expect(weeklyPace(few, goal, wednesday)).toEqual({ target: 1800, recent: null })
+    const log = Object.fromEntries(
+      Array.from({ length: 10 }, (_, i) => [dateKey(new Date(2025, 8, 7 + i)), 120]),
+    )
+    // Sep 7–16: 8 study days × 120 min (Sep 7 and 14 are Sundays = rest days)
+    expect(weeklyPace(log, goal, wednesday)).toEqual({ target: 1800, recent: 720 })
+  })
+
+  it('turns hours into months and dates', () => {
+    const eta = estimateFinish(130, 260, 1800, wednesday)! // 30 h/week
+    expect(eta.monthsMin).toBeCloseTo(1, 1)
+    expect(eta.monthsMax).toBeCloseTo(2, 1)
+    expect(dateKey(eta.from)).toBe('2025-10-18') // 130 h / 30 h = 4.33 weeks → 31 days
+    expect(estimateFinish(10, 20, 0, wednesday)).toBeNull()
   })
 })

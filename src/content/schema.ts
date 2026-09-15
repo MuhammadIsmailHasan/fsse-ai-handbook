@@ -119,7 +119,10 @@ export const courseSchema = z.strictObject({
       id: z.string().regex(/^[a-z0-9-]+$/),
       title: z.string().min(1),
       applyFor: z.string().min(1),
-      estimate: z.string().min(1),
+      /** Study hours for THIS milestone's new scope (lessons, exercises, projects) — not cumulative. */
+      hours: z
+        .strictObject({ min: z.number().int().positive(), max: z.number().int().positive() })
+        .refine((h) => h.min <= h.max, 'hours.min must be ≤ hours.max'),
       include: z.array(z.string().min(1)),
     }),
   ),
@@ -159,7 +162,6 @@ export const courseTranslationSchema = z.strictObject({
       z.strictObject({
         title: z.string().optional(),
         applyFor: z.string().optional(),
-        estimate: z.string().optional(),
       }),
     )
     .default({}),

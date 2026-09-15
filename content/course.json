@@ -409,7 +409,10 @@
       "id": "junior-full-stack",
       "title": "🎯 1 · Junior Full-Stack",
       "applyFor": "Junior backend, frontend or full-stack developer roles — start applying here.",
-      "estimate": "~320–370 h · ~4–5 months at 18 h/week",
+      "hours": {
+        "min": 320,
+        "max": 370
+      },
       "include": [
         "modules/m1",
         "modules/m2",
@@ -436,7 +439,10 @@
       "id": "ai-integrated-full-stack",
       "title": "🎯 2 · AI-Integrated Full-Stack",
       "applyFor": "Full-stack roles with AI features, junior applied AI engineer roles.",
-      "estimate": "+~250 h · ~7–8 months total",
+      "hours": {
+        "min": 230,
+        "max": 270
+      },
       "include": [
         "modules/m3",
         "modules/m6",
@@ -456,7 +462,10 @@
       "id": "stronger-candidate",
       "title": "🎯 3 · Stronger Candidate",
       "applyFor": "AI engineer roles, cloud-heavy teams, better salary negotiation.",
-      "estimate": "+~300–400 h · ~11–13 months total",
+      "hours": {
+        "min": 300,
+        "max": 400
+      },
       "include": [
         "modules/m5",
         "modules/m7/w0",

@@ -120,6 +120,16 @@ export function recentAverage(
   today: Date,
   days = 14,
 ): number | null {
+  return recentStats(log, goal, today, days)?.minutes ?? null
+}
+
+/** Like recentAverage, but also says how many study days the average is based on. */
+export function recentStats(
+  log: StudyLog,
+  goal: StudyGoal,
+  today: Date,
+  days = 14,
+): { minutes: number; days: number } | null {
   const logged = Object.keys(log)
     .filter((key) => (log[key] ?? 0) > 0)
     .sort()
@@ -135,7 +145,40 @@ export function recentAverage(
     total += log[key] ?? 0
     count++
   }
-  return count === 0 ? null : Math.round(total / count)
+  return count === 0 ? null : { minutes: Math.round(total / count), days: count }
+}
+
+/**
+ * Weekly study minutes two ways: the TARGET pace, and the RECENT real pace
+ * (only with at least `minDays` study days of history — a couple of days says little).
+ */
+export function weeklyPace(log: StudyLog, goal: StudyGoal, today: Date, minDays = 5) {
+  const recent = recentStats(log, goal, today)
+  return {
+    target: goal.targetMinutes * goal.studyDays,
+    recent: recent && recent.days >= minDays ? recent.minutes * goal.studyDays : null,
+  }
+}
+
+const WEEKS_PER_MONTH = 52 / 12
+
+/** When will `minHours`–`maxHours` of study be done at `weeklyMinutes` per week? */
+export function estimateFinish(
+  minHours: number,
+  maxHours: number,
+  weeklyMinutes: number,
+  today: Date,
+) {
+  if (weeklyMinutes <= 0) return null
+  const weeks = (hours: number) => (hours * 60) / weeklyMinutes
+  const dateAfter = (w: number) =>
+    new Date(today.getFullYear(), today.getMonth(), today.getDate() + Math.ceil(w * 7))
+  return {
+    monthsMin: weeks(minHours) / WEEKS_PER_MONTH,
+    monthsMax: weeks(maxHours) / WEEKS_PER_MONTH,
+    from: dateAfter(weeks(minHours)),
+    to: dateAfter(weeks(maxHours)),
+  }
 }
 
 /** How a day's time is shared between the study streams. */
