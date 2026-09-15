@@ -1,6 +1,6 @@
 ---
 title: "🔥 Zustand: Shared Client State"
-summary: Manage client-only UI state shared across distant components — Zustand stores, selectors for fine-grained re-renders, immutable updates, persist middleware, the per-request store pattern for Next.js, and where Zustand fits.
+summary: Share browser-only UI state between far-apart components — Zustand stores, selectors so only the right parts re-render, immutable updates, persist, the store-per-provider pattern for Next.js, and when not to use it.
 type: lesson
 source: original
 roles: { be: none, fe: recommended, fs: optional, ai: none, ops: none }
@@ -12,31 +12,44 @@ tags: [zustand, state-management, react, nextjs, selectors]
 
 ## 🎯 What you'll learn
 
-- The four kinds of state and why most don't belong in a global store
+- The four kinds of state, and why most don't belong in a shared store
 - Creating a Zustand store: state, actions, `set`, `get`
-- **Selectors** and `useShallow` for fine-grained subscriptions
+- **Selectors** and `useShallow`, so a component re-renders only when its piece changes
 - Immutable updates and returning results from actions
-- **`persist`** middleware with `partialize`
-- The **store-per-provider** pattern for Next.js App Router (no cross-request leaks)
+- **`persist`** with `partialize`
+- The **store-per-provider** pattern for Next.js (no data leaking between users)
 - Testing stores without React
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Store** | One shared box of state (data + functions to change it) that any component can use | Wadah state bersama |
+| **Action** | A function inside the store that changes the state | Fungsi pengubah state |
+| **Selector** | A small function that picks the piece of state a component needs | Pemilih bagian state |
+| **Subscribe** | "Tell me when this changes" | Berlangganan perubahan |
+| **Re-render** | React running a component again to update the screen | Render ulang |
+| **Persist** | Saving state (e.g. in `localStorage`) so it survives a refresh | Menyimpan agar bertahan |
+| **Hydration** | The browser taking over the HTML the server sent | Hidrasi |
+| **Singleton** | Only one copy, shared by everyone in the same process | Satu salinan bersama |
 
 ## 🧠 The big idea
 
-Context is a **loudspeaker**: when it speaks, everyone listening hears everything. Zustand is a **group chat with notification filters**: the store holds the conversation, and each component subscribes only to the messages it cares about ("tell me only if job 7 is selected"). A change to job 2 doesn't wake up job 7's button.
+Context is a **loudspeaker**: when it speaks, everyone listening hears everything. Zustand is a **group chat with notification filters**: the store holds the conversation, and each component only gets notified about the messages it cares about ("tell me only if job 7 is selected"). A change to job 2 doesn't wake up job 7's button.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-CareerPilot's job list shows 50 cards. Each card has a **Compare** toggle; a floating tray shows "Compare (2/3)"; the header shows a badge with the count. With Context holding `jobIds`, every toggle re-renders **all 50 cards**, the tray and the header. With `useState` in a common parent, you drill props through the list.
+CareerPilot's job list shows 50 cards. Each card has a **Compare** toggle; a floating tray shows "Compare (2/3)"; the header shows the count.
 
-Zustand gives a tiny (~1 KB), hook-based external store with selector subscriptions — no provider required for simple apps, no reducers/boilerplate.
+- With **Context** holding `jobIds`, every toggle re-renders **all 50 cards**, the tray and the header.
+- With **`useState` in a common parent**, you pass props down through many layers (prop drilling).
+- **Redux** works, but needs a lot of setup for 30 lines of logic.
 
-## 💥 What happens if we DON'T?
+Zustand is a tiny (~1 KB) store you use as a hook, with selectors. No provider needed for simple apps, almost no boilerplate.
 
-- Context with frequently changing state → the whole page re-renders on every interaction.
-- Redux for a compare tray → actions, reducers, slices, store setup for 30 lines of logic (Redux Toolkit is great for large, event-heavy apps, but heavy here).
-- Putting **server data** in Zustand → hand-written caching, stale data, no refetch — TanStack Query's job.
+But don't put **server data** (applications, jobs) in it — you'd be writing your own cache by hand. That's TanStack Query's job.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Which state goes where
 
@@ -46,6 +59,8 @@ Zustand gives a tiny (~1 KB), hook-based external store with selector subscripti
 | URL state | filters, tab, page | `searchParams` |
 | Local UI state | a menu is open | `useState` |
 | **Shared client UI state** | compare tray, multi-step drafts, editor panels, player | **Zustand** (or Context if it rarely changes) |
+
+Think of a house: server data lives in the **warehouse** (the API), the URL is the **address you can share**, `useState` is a **drawer in one room**, and Zustand is the **family whiteboard in the hallway** — for notes many rooms need.
 
 ### 2. A basic store
 
@@ -74,7 +89,9 @@ export const useCompareStore = create<CompareState>()((set, get) => ({
 }));
 ```
 
-`set` **merges** the top level (`set({ jobIds })` keeps other keys). Nested objects must be copied yourself.
+- `get()` reads the current state; `set()` changes it.
+- `set` **merges** the top level (`set({ jobIds })` keeps other keys). Nested objects you must copy yourself.
+- The rules (max 3) live **inside** the store, next to the data. The action returns a result so the UI can show "Tray is full".
 
 ### 3. Selectors
 
@@ -91,7 +108,9 @@ import { useShallow } from "zustand/react/shallow";
 const { count, isTrayOpen } = useCompareStore(useShallow((s) => ({ count: s.jobIds.length, isTrayOpen: s.isTrayOpen })));
 ```
 
-Zustand compares the selector result with `Object.is`. Returning a **new object/array** from a selector each time causes extra renders (or, in v5, an infinite-loop warning) — use `useShallow` or select primitives.
+After every change, Zustand runs your selector and compares the new answer with the old one using `Object.is`. Same answer → no re-render.
+
+Watch out: a selector that builds a **new object or array** each time never gives "the same answer", so the component re-renders every time (Zustand v5 may even warn about an infinite loop). Pick simple values (numbers, booleans) or wrap with `useShallow`, which compares the insides.
 
 ### 4. Persist
 
@@ -107,11 +126,13 @@ create<CompareState>()(
 );
 ```
 
-With server rendering, persisted state appears **after hydration** — design the UI so the first render (empty) is acceptable, or use `skipHydration` and call `persist.rehydrate()` in an effect.
+`partialize` chooses **what to pack** before you leave: the selected jobs, not "tray is open".
 
-### 5. The Next.js pattern: a store per provider
+With server rendering, the saved state appears only **after hydration** (the server can't read `localStorage`). Make the first, empty render look fine, or use `skipHydration` and call `persist.rehydrate()` in an effect.
 
-A module-level `create()` store is a **singleton per server process**. During SSR, two users' requests could share it. For anything that might be initialized per user or touched on the server, create the store inside a provider:
+### 5. Next.js: a store per provider
+
+A store made with `create()` at the top of a file is a **singleton per server process**. During server rendering, two users' requests could share it — like two customers writing on the same order form. If a store may hold per-user data or run on the server, create it inside a provider:
 
 ```tsx
 "use client";
@@ -135,7 +156,7 @@ export function useCompareStore<T>(selector: (s: CompareState) => T) {
 }
 ```
 
-The context holds the **store object** (which never changes), so the context itself never triggers re-renders — subscriptions go through selectors.
+The Context only passes the **store object**, which never changes — so the Context itself never causes re-renders. Updates still flow through selectors.
 
 ```mermaid
 flowchart TD
@@ -150,7 +171,7 @@ flowchart TD
 
 ### 6. Testing
 
-Vanilla stores are plain objects — test the logic without rendering:
+A vanilla store is a plain object — test its rules without rendering anything:
 
 ```ts
 const store = createCompareStore();
@@ -160,47 +181,33 @@ expect(store.getState().jobIds).toEqual([1]);
 
 Then test components for behavior, and use React's `<Profiler>` if render counts matter.
 
-## ⚖️ Trade-offs
+### When to use it
 
-| | ✅ | ❌ |
-|---|---|---|
-| Zustand | tiny, simple, selectors, works outside React | less structure; easy to overuse as a server cache |
-| Context + `useReducer` | built-in | no selectors, re-renders all consumers |
-| Redux Toolkit | strong conventions, devtools, RTK Query, great for big teams | more concepts and code |
-| Jotai (atoms) | very granular, composable derived state | different mental model |
-| URL state | shareable, SSR-friendly | only strings, limited size |
+- ✅ Browser-only UI state that far-apart components share and that changes often: compare trays, media players, editor tools, complex wizards.
+- 🚫 Server data → TanStack Query or Server Components.
+- 🚫 Filters people should share with a link → the URL.
+- 🚫 State for one component → `useState`.
 
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Client UI state shared across distant components that changes often: compare trays, media players, canvas/editor tools, complex wizards.
-- 🚫 Server data (use TanStack Query / Server Components).
-- 🚫 Filters users should share via links (use the URL).
-- 🚫 A single component's state (use `useState`).
-
-## 🏆 Best practices
-
-- [ ] Keep stores **small and focused** (one per feature), not one mega-store.
-- [ ] Always use **selectors**; select primitives or use `useShallow`.
-- [ ] Update immutably; keep actions inside the store next to the state they change.
-- [ ] In Next.js, prefer the **store-per-provider** pattern; never put per-user data in module-level stores rendered on the server.
-- [ ] `persist` only what's needed via `partialize`; add `version` + `migrate` when the shape changes.
-- [ ] Don't store secrets or tokens in client stores (they end up in `localStorage`/memory readable by scripts).
-- [ ] Unit-test stores as plain objects.
-- [ ] Use Redux DevTools via the `devtools` middleware in development for complex stores.
-
-## 🏭 How it's used in industry
-
-- Zustand is among the most downloaded React state libraries and is common in Next.js apps alongside TanStack Query (server state) — a popular "modern stack" split.
-- Complex client apps (editors, whiteboards, AI chat UIs with panels) use Zustand or similar stores for UI state.
-- Large enterprises with existing Redux codebases often keep Redux Toolkit; new features may still adopt lighter tools.
+Other options you'll see at work: **Redux Toolkit** (more structure, common in big older codebases) and **Jotai** (many tiny pieces of state called atoms).
 
 ## ⚠️ Common mistakes
 
 - `useStore()` without a selector → re-renders on every change.
-- Selectors returning new arrays/objects (`s.jobs.filter(...)`) → extra renders or loops.
-- Mutating state (`get().jobIds.push(id)`) → components don't update.
-- Global store holding user data in SSR → data shared between requests.
-- Hydration mismatch from reading persisted values during the first render.
+- Selectors returning new arrays or objects (`s.jobs.filter(...)`) → extra renders or loops.
+- Changing state directly (`get().jobIds.push(id)`) → components don't update.
+- A global store holding user data during server rendering → data shared between requests.
+- Reading persisted values in the first render → hydration mismatch.
+
+## 🏆 Best practices
+
+- [ ] Keep stores **small and focused** (one per feature), not one mega-store.
+- [ ] Always use **selectors**; select simple values or use `useShallow`.
+- [ ] Update immutably; keep actions inside the store next to the state they change.
+- [ ] In Next.js, prefer the **store-per-provider** pattern; never keep per-user data in top-level stores used on the server.
+- [ ] `persist` only what's needed via `partialize`; add `version` + `migrate` when the shape changes.
+- [ ] Don't keep secrets or tokens in client stores (scripts on the page can read them).
+- [ ] Unit-test stores as plain objects.
+- [ ] Use the `devtools` middleware in development for complex stores.
 
 ::part[Explain & Design]{n="2"}
 
@@ -210,7 +217,7 @@ Explain the group chat with notification filters analogy, then explain to a team
 
 ## 📐 Design it
 
-CareerPilot's **interview prep workspace** has: a question list, a timer, a notes panel, a "focus mode" toggle that hides the sidebar, and AI feedback fetched after each answer. Decide what goes in a Zustand store (shape + actions), what stays elsewhere, and which selectors each component uses.
+CareerPilot's **interview prep workspace** has: a question list, a timer, a notes panel, a "focus mode" toggle that hides the sidebar, and AI feedback fetched after each answer. Decide what goes in a Zustand store (shape + actions), what stays elsewhere, and which selector each component uses.
 
 :::quiz
 Show a possible design
@@ -228,15 +235,15 @@ type PrepState = {
 };
 ```
 
-- **Store (per provider)**: current question, timer state (store `startedAt` and compute elapsed in the component with an interval effect — don't `set` every 100 ms), focus mode, panel visibility. Persist `focusMode` and `panels` only.
-- **Elsewhere**: question list + AI feedback → TanStack Query (`["prep", "questions"]`, mutation for "submit answer"); notes text → RHF/Server Action with autosave; selected question id also mirrored in the URL (`?q=12`) if sharable.
+- **Store (per provider)**: current question, timer state (store `startedAt` and calculate the elapsed time inside the component with an interval — don't `set` every 100 ms), focus mode, panel visibility. Persist only `focusMode` and `panels`.
+- **Elsewhere**: question list + AI feedback → TanStack Query (`["prep", "questions"]`, a mutation for "submit answer"); notes text → RHF/Server Action with autosave; selected question id also in the URL (`?q=12`) if it should be shareable.
 - **Selectors**: `QuestionItem` → `s.currentQuestionId === id`; `Timer` → `useShallow(s => s.timer)`; `Sidebar` → `s.focusMode`; `NotesPanel` → `s.panels.notes`; buttons select only their action.
 :::
 
 ### 📝 Self-review checklist
 
 - [ ] No server data in the store
-- [ ] High-frequency updates avoided or localized
+- [ ] Very frequent updates avoided or kept local
 - [ ] Every component uses a narrow selector
 
 ::ai-review{task="design"}
@@ -258,7 +265,7 @@ Build a vanilla Zustand store with toggle rules (max 3), a tray, `persist` with 
 :::quiz
 Why is `useCompareStore((s) => s.jobIds.filter((id) => id > 10))` a problem?
 
-`filter` returns a new array every time, so the selected value is never `Object.is`-equal → the component re-renders on every store change (Zustand v5 may warn about an infinite loop). Select raw state and derive in render, or use `useShallow`.
+`filter` returns a new array every time, so the answer is never `Object.is`-equal to the last one → the component re-renders on every store change (Zustand v5 may warn about an infinite loop). Select the raw state and calculate in render, or use `useShallow`.
 :::
 
 :::quiz
@@ -269,7 +276,14 @@ The compare tray should survive a page refresh, but "tray open" shouldn't. How?
 
 ## 🔗 This week in CareerPilot
 
-Week 5 is the core of **CareerPilot Phase 4** (the Next.js frontend for your Phase 2 Flask API): login with httpOnly sessions, protected routes, the new-application form, RBAC-aware navigation, BFF routes for the interactive board, and shadcn/ui components. Start the [Phase 4 brief](/projects/careerpilot/04-phase-4-web-app) now: checkpoints C1–C5 match this week.
+Week 5 is the core of **CareerPilot Phase 4** (the Next.js frontend for your Phase 2 Flask API): login with httpOnly sessions, protected routes, the new-application form, role-aware navigation, BFF routes for the interactive board, and shadcn/ui components. Start the [Phase 4 brief](/projects/careerpilot/04-phase-4-web-app) now: checkpoints C1–C5 match this week.
+
+## 📚 Keep learning
+
+- [Zustand docs](https://zustand.docs.pmnd.rs/) — Introduction, Setup with Next.js, Persisting store data, Prevent re-renders with useShallow
+- [TkDodo: Working with Zustand](https://tkdodo.eu/blog/working-with-zustand)
+
+## 📣 End of Week 5 — share your progress
 
 :::linkedin{type="weekly"}
 🔐 Week 5: forms, authentication and "who can do what" in Next.js.
@@ -285,19 +299,3 @@ Next: testing with Playwright and deploying. 🚀
 
 #NextJS #React #WebSecurity #LearningInPublic
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Store | Tempat penyimpanan state bersama |
-| Selector | Fungsi pemilih bagian state |
-| Subscription | Langganan perubahan state |
-| Persist | Menyimpan state agar bertahan setelah refresh |
-| Hydration | Hidrasi — mencocokkan state klien dengan HTML server |
-| Singleton | Satu instance bersama untuk seluruh proses |
-
-## 📚 Keep learning
-
-- [Zustand docs](https://zustand.docs.pmnd.rs/) — Introduction, Setup with Next.js, Persisting store data, Prevent re-renders with useShallow
-- [TkDodo: Working with Zustand](https://tkdodo.eu/blog/working-with-zustand)

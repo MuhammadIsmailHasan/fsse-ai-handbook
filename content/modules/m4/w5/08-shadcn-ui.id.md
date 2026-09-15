@@ -209,7 +209,7 @@ Seperti ATM yang bertanya "Yakin mau transfer?" — ia menunggu jawaban bank dul
 - Menyalin komponen tanpa pernah membacanya — bug-nya juga jadi milikmu.
 - Memakai shadcn/ui padahal perusahaan sudah punya paket design system sendiri.
 
-## 🏆 Best practices
+## 🏆 Praktik terbaik
 
 - [ ] Perlakukan `components/ui` sebagai kode **milikmu**: baca, uji perilaku penting, dan review perubahan saat menambahkannya lagi.
 - [ ] Kustomisasi lewat variant dan CSS variable sebelum mengubah isi komponen.
@@ -275,7 +275,7 @@ shadcn/ui merilis perbaikan untuk komponen button. Bagaimana cara mendapatkannya
 Tidak otomatis — kodenya milikmu. Jalankan `add` lagi (dan review perubahannya sebelum menimpa kustomisasimu), atau terapkan perbaikannya secara manual.
 :::
 
-## 📚 Belajar lebih lanjut
+## 📚 Lanjut belajar
 
 - [Dokumentasi shadcn/ui](https://ui.shadcn.com/docs) — Installation (Next.js), Theming, AlertDialog, Form
 - [Radix Primitives: Alert Dialog](https://www.radix-ui.com/primitives/docs/components/alert-dialog)
