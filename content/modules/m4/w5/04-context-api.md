@@ -1,6 +1,6 @@
 ---
 title: "Context API"
-summary: Share values without prop drilling — createContext, providers in the App Router, custom hooks that fail loudly, useReducer with split state/dispatch contexts, memoized values, and when Context is the wrong tool.
+summary: Share values without passing props through every layer — createContext, providers in the App Router, hooks that give clear errors, useReducer with separate state and dispatch contexts, stable values, and when Context is the wrong tool.
 type: lesson
 source: core
 sourceRef: "M3 · W5 · L5"
@@ -14,25 +14,37 @@ tags: [react, context, usereducer, state-management, performance]
 
 ## 🎯 What you'll learn
 
-- What **prop drilling** is and when it becomes a problem
-- `createContext`, `<Context>` providers and `useContext` (or `use`)
+- What **prop drilling** is, and when it becomes a problem
+- `createContext`, providers and `useContext`
 - Where providers go in a Next.js App Router project
-- A **strict custom hook** that throws outside its provider
-- `useReducer` + **separate state and dispatch contexts** to limit re-renders
-- Memoizing context values; building a toast system
-- When to use Context, URL state, TanStack Query or Zustand instead
+- A custom hook that gives a clear error when the provider is missing
+- `useReducer` with **separate state and dispatch contexts** to avoid extra redraws
+- Keeping context values stable; a toast example
+- When to use the URL, TanStack Query or Zustand instead
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Prop drilling** | Passing a prop through many components that don't use it | Oper props berlapis |
+| **Context** | A value shared with all components inside a provider | Nilai bersama |
+| **Provider** | The component that gives the context value to everything inside it | Penyedia nilai |
+| **Consumer** | A component that reads the context (`useContext`) | Pembaca nilai |
+| **Reducer** | A function that returns the next state for an action: `(state, action) => newState` | Pengubah state |
+| **Dispatch** | The function you call to send an action to the reducer | Pengirim aksi |
+| **Memoize** | Keep the same value between renders instead of creating a new one | Mengingat nilai |
 
 ## 🧠 The big idea
 
-Prop drilling is like passing a note along a row of 10 people in a cinema just to reach the person at the end — everyone in the middle has to hold it. Context is the **public announcement system**: the provider speaks, and anyone in the building who's listening hears it directly.
+Prop drilling is like passing a note along a row of 10 people in a cinema just to reach the last person — everyone in the middle has to hold it. Context is the **mosque loudspeaker announcement**: the provider speaks, and everyone in the neighbourhood who's listening hears it directly.
 
-The catch: **everyone listening reacts** to every announcement. So you announce carefully — only things many people need, and not too often.
+The catch: **everyone listening reacts** to every announcement. So announce carefully — only things many people need, and not too often.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Some values are needed by many components at different depths: the current user DTO, theme, locale, a toast function, feature flags. Passing them through every layout and component makes intermediate components depend on props they don't use, and refactors become painful.
+Some values are needed by many components at different depths: the current user, theme, language, a "show toast" function. Passing them through every layout and component makes middle components depend on props they don't use.
 
-## 💥 What happens if we DON'T (or use it badly)?
+Two ways it goes wrong:
 
 ```tsx
 // Drilling: ApplicationsPage → Board → Column → Card → CardMenu, just for `showToast`
@@ -42,11 +54,12 @@ Some values are needed by many components at different depths: the current user 
 <AppContext value={{ user, filters, setFilters, toasts, showToast, theme }}>
 ```
 
-The second version re-renders **every consumer** whenever **anything** changes — typing in a search box re-renders the header, the avatar, the toasts.
+- The first: five layers pass `showToast` along.
+- The second: **everything** that reads this context redraws whenever **anything** changes — typing in the search box redraws the header, the avatar and the toasts.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
-### 1. Create, provide, consume
+### 1. Create, provide, read
 
 ```tsx
 "use client";
@@ -66,12 +79,15 @@ export function useUser() {
 }
 ```
 
-- `<UserContext.Provider value>` still works; React 19 allows `<UserContext value>` directly.
-- A **default of `undefined` + a throwing hook** turns "forgot the provider" into a clear error instead of a silent `null` bug.
+1. `createContext` creates the "loudspeaker channel".
+2. The provider (`<UserContext value={user}>`) broadcasts the value to everything inside.
+3. `useUser()` listens. If there's no provider above, it **throws a clear error** instead of silently returning `undefined`.
+
+(`<UserContext.Provider value>` still works; React 19 lets you write `<UserContext value>` directly.)
 
 ### 2. Providers in the App Router
 
-Context needs client features, but layouts should stay Server Components:
+Context needs browser features, but layouts should stay Server Components:
 
 ```tsx
 // app/(app)/layout.tsx — Server Component
@@ -91,9 +107,11 @@ export function Providers({ user, children }: { user: UserDto; children: React.R
 }
 ```
 
-`children` pages can still be Server Components (W4 L5). Place providers **as deep as possible** — a filters provider belongs around the applications page, not the root layout.
+- The layout (server) loads the user and passes a small DTO to a client `Providers` component.
+- The pages inside (`children`) can still be Server Components (Week 4 lesson 05).
+- Put providers **as deep as possible**: a filters provider belongs around the applications page, not the root layout.
 
-### 3. A reusable strict context factory
+### 3. A reusable "strict context" helper
 
 ```tsx
 export function createStrictContext<T>(name: string) {
@@ -110,7 +128,9 @@ export function createStrictContext<T>(name: string) {
 }
 ```
 
-### 4. `useReducer` + split contexts
+One small factory that creates a provider and a strict hook, so you don't repeat the same code for every context.
+
+### 4. `useReducer` + separate contexts
 
 ```tsx
 function filtersReducer(state: Filters, action: FiltersAction): Filters {
@@ -131,18 +151,21 @@ export function FiltersProvider({ children }: { children: React.ReactNode }) {
 }
 ```
 
-A `<ResetFiltersButton>` that only reads dispatch **won't re-render** when filters change (if it's memoized or its parent doesn't re-render).
+- A **reducer** is like a **cashier with a price list**: you give an action ("setStatus: interview"), it returns the new state. All changes follow the same rules in one place.
+- `dispatch` never changes. By putting it in its **own** context, components that only send actions (like a "Reset" button) don't redraw when the filters change.
 
 ```mermaid
 flowchart TD
     P[FiltersProvider state + dispatch] --> S[State context]
     P --> D[Dispatch context — stable]
-    S --> Summary[ResultsSummary re-renders on change]
-    S --> List[JobList re-renders on change]
-    D --> Buttons[FilterButtons — no re-render]
+    S --> Summary[ResultsSummary redraws on change]
+    S --> List[JobList redraws on change]
+    D --> Buttons[FilterButtons — no redraw]
 ```
 
-### 5. Memoize object values
+Like having two radio channels: the "news" channel (state) for people who need updates, and the "request line" (dispatch) for people who only call in.
+
+### 5. Keep object values stable
 
 ```tsx
 const show = useCallback((message: string) => { … }, []);
@@ -151,128 +174,96 @@ const api = useMemo(() => ({ show, dismiss }), [show, dismiss]);
 return <ToastApiContext value={api}>…</ToastApiContext>;
 ```
 
-Without `useMemo`, `{ show, dismiss }` is a new object each render → all consumers re-render. (The **React Compiler** can add this memoization automatically when enabled, but understanding why it matters is still essential.)
+Without `useMemo`, `{ show, dismiss }` is a **new** object on every render, so every consumer redraws even though nothing really changed. `useMemo` and `useCallback` keep the same object and functions. (The **React Compiler** can do this automatically, but you should still understand why.)
 
-### 6. Choosing the right home for state
+### 6. Choose the right place for each kind of state
 
-| State | Best home |
+| State | Best place |
 |---|---|
 | Server data (applications, jobs) | Server Components / **TanStack Query** |
-| Shareable UI state (filters, tab, page) | **URL search params** |
-| Form input | the form (`useActionState`, RHF) |
-| Local UI (open/closed) | `useState` in the component |
-| Rarely-changing app-wide values (user DTO, theme, locale, toast API) | **Context** |
-| Frequently-changing shared client state across distant components | **Zustand** (lesson 09) |
-
-## ⚖️ Trade-offs
-
-| | ✅ | ❌ |
-|---|---|---|
-| Props | explicit, easy to trace | drilling through many layers |
-| Context | built-in, no library, great for stable values | every consumer re-renders on value change; no selectors |
-| Composition (`children`) | often removes drilling without context | not always possible |
-| External store (Zustand) | selectors, fine-grained updates | extra dependency, another pattern |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Theme, locale, current user DTO, toast/modal APIs, compound components (Architecture Stage G).
-- 🚫 Server data caches — use TanStack Query.
-- 🚫 Values that change on every keystroke used by many components.
-- 🚫 As a first reflex for 2 levels of props — try composition first.
-
-## 🏆 Best practices
-
-- [ ] Default `undefined` + a custom hook that throws a helpful error.
-- [ ] Export the hook, not the raw context.
-- [ ] Keep providers small, focused and as low in the tree as possible.
-- [ ] Split state and dispatch (or setters) into separate contexts.
-- [ ] Memoize object/function values (`useMemo`/`useCallback`) or use the React Compiler.
-- [ ] Keep layouts as Server Components; put providers in a `"use client"` wrapper.
-- [ ] Never put secrets or tokens in context — it's all client-side.
-- [ ] Put filter/sort/page state in the URL when users should share or bookmark it.
-
-## 🏭 How it's used in industry
-
-- Libraries expose their setup through providers: `QueryClientProvider`, `ThemeProvider` (next-themes), i18n providers, design system providers.
-- Component libraries (Radix, shadcn/ui) use context internally for compound components like `<Dialog>`, `<Tabs>`.
-- Teams typically combine: server data in TanStack Query, URL state for filters, a few contexts, and sometimes Zustand for complex client UI.
+| Shareable view state (filters, tab, page) | **URL search params** |
+| Form input | the form (`useActionState`, React Hook Form) |
+| Local UI (open/closed) | `useState` in that component |
+| App-wide values that rarely change (user, theme, language, toast API) | **Context** |
+| Shared browser state that changes often, used by distant components | **Zustand** (lesson 09) |
 
 ## ⚠️ Common mistakes
 
-- Using a context **outside** its provider and getting `undefined` silently.
-- Providing `{ value, setValue }` inline without memoization.
+- Using a context **outside** its provider and silently getting `undefined`.
+- Passing `{ value, setValue }` as a new object without `useMemo`.
 - Putting `"use client"` on the root layout to add a provider.
-- Keeping one "AppContext" for everything.
-- A provider rendered **inside** the component that consumes it (it must be an ancestor).
+- One huge "AppContext" for everything.
+- Rendering the provider **inside** the component that reads it (it must be above it).
+- Putting server data, secrets or tokens in context (context is all browser-side).
+- Using context for only 2 levels of props — try `children` composition first.
+
+## 🏆 Best practices
+
+- [ ] Default value `undefined` + a custom hook that throws a helpful error.
+- [ ] Export the hook, not the raw context.
+- [ ] Keep providers small, focused, and as low in the tree as possible.
+- [ ] Put state and dispatch (or setters) in separate contexts.
+- [ ] Keep object and function values stable (`useMemo` / `useCallback`, or the React Compiler).
+- [ ] Keep layouts as Server Components; put providers in a `"use client"` wrapper.
+- [ ] Put filter/sort/page state in the URL when users should share or bookmark it.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain the cinema note vs announcement system analogy, then explain why "announcing too often" is a performance problem and how splitting state and dispatch helps.
+Explain the cinema note vs loudspeaker idea, then explain why "announcing too often" is a performance problem and how separating state and dispatch helps.
 
 ## 📐 Design it
 
-The CareerPilot applications page has: a search box, status tabs, a board with 5 columns of cards, a "compare" selection, toasts after actions, and the logged-in user's avatar in the header. Decide where each piece of state lives (props, URL, Context, TanStack Query, Zustand, local state) and justify it.
+The CareerPilot applications page has: a search box, status tabs, a board with 5 columns of cards, a "compare" selection, toasts after actions, and the user's avatar in the header. Decide where each piece of state lives (props, URL, Context, TanStack Query, Zustand, local state) and explain why.
 
 :::quiz
 Show a possible answer
 
-| State | Home | Why |
+| State | Place | Why |
 |---|---|---|
-| Applications data | Server Component initial data + **TanStack Query** for the interactive board | server state with caching and optimistic moves |
-| Search text (typing) | local `useState` in the search box, debounced | changes every keystroke |
-| Committed search + status tab | **URL** `?q=data&status=interview` | shareable, back button works, server can read it |
-| Current user (avatar) | **Context** from the layout (DTO) | stable, needed in header and menus |
-| Toasts | **Context** with memoized `show()` API | stable API, used everywhere |
-| Compare selection (up to 3) | **Zustand** store per provider | shared by cards and a floating tray, changes often, selectors avoid re-rendering 50 cards |
+| Applications data | Server Component first load + **TanStack Query** for the interactive board | server data with caching and instant status moves |
+| Search text while typing | local `useState` in the search box, debounced | changes on every key press |
+| Final search + status tab | **URL** `?q=data&status=interview` | shareable, Back works, the server can read it |
+| Current user (avatar) | **Context** from the layout (DTO) | rarely changes, used in the header and menus |
+| Toasts | **Context** with a stable `show()` API | the API never changes, used everywhere |
+| Compare selection (up to 3) | **Zustand** store | used by cards and a floating tray, changes often, selectors avoid redrawing 50 cards |
 | Card menu open/closed | local `useState` | only that card cares |
 :::
 
 ### 📝 Self-review checklist
 
 - [ ] No server data in Context
-- [ ] URL state for shareable filters
-- [ ] Contexts only for stable, widely-used values
+- [ ] Shareable filters live in the URL
+- [ ] Contexts only for stable values used in many places
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w5/04-context" ai="no-ai" title="Strict contexts, split filters and toasts"}
-Build a `createStrictContext` factory, a filters provider with `useReducer` and separate state/dispatch contexts (tests count re-renders), and a toast provider with a stable API, auto-dismiss and timer cleanup.
+Build a `createStrictContext` factory, a filters provider with `useReducer` and separate state/dispatch contexts (the tests count redraws), and a toast provider with a stable API, auto-dismiss and timer cleanup.
 :::
 
 :::hints
-- Compare against `undefined`, not falsiness, in the strict hook.
+- In the strict hook, compare with `undefined` — don't check "falsy".
 - `dispatch` from `useReducer` is already stable — just give it its own context.
-- Keep timers in a `useRef(new Map())` and clear them all in an effect cleanup.
+- Keep timers in `useRef(new Map())` and clear them all in an effect cleanup.
 :::
 
 ## ✅ Quick check
 
 :::quiz
-A `ThemeToggle` uses `useTheme()` and re-renders every time the user types in a search box elsewhere. What's the likely cause?
+A `ThemeToggle` uses `useTheme()` and redraws every time the user types in a search box somewhere else. What's the likely cause?
 
-The search state lives in the same context value as the theme (or the provider creates a new value object each render), so every consumer re-renders. Split contexts and memoize the value, or move search state out.
+The search state is in the same context value as the theme (or the provider creates a new value object on every render), so every consumer redraws. Split the contexts and keep the value stable, or move the search state out.
 :::
 
 :::quiz
-Why does the provider wrapper need `"use client"` but the layout that renders it doesn't?
+Why does the provider wrapper need `"use client"`, but the layout that renders it doesn't?
 
-Providers use context (a client feature). The server layout can render a Client Component and pass Server Components as `children`.
+Providers use context, which is a browser feature. A server layout can render a Client Component and still pass Server Components inside it as `children`.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Prop drilling | Meneruskan props melewati banyak komponen |
-| Context | Konteks — nilai bersama untuk subtree komponen |
-| Provider | Penyedia nilai konteks |
-| Consumer | Komponen yang membaca konteks |
-| Reducer | Fungsi pengubah state berdasarkan aksi |
-| Memoization | Menyimpan hasil agar tidak dibuat ulang |
 
 ## 📚 Keep learning
 
