@@ -4,6 +4,7 @@
  *   npm run i18n                      → coverage per module/track + stale translations
  *   npm run i18n -- stamp <file.id.md> → record that the translation matches the current English
  *   npm run i18n -- stamp --all       → stamp every translation (only after reviewing them!)
+ *   npm run i18n -- hash <english.md> [...] → print the sourceHash to put in new translations
  *
  * Teaches: a tiny CLI with subcommands, and editing YAML frontmatter in place
  * without re-serializing (so formatting and comments stay untouched).
@@ -53,7 +54,11 @@ function stamp(translationPath: string) {
 
 const [command, ...args] = process.argv.slice(2)
 
-if (command === 'stamp') {
+if (command === 'hash') {
+  for (const file of args) {
+    console.log(`${sourceHash(readFileSync(path.join(ROOT, file), 'utf8'))}  ${file}`)
+  }
+} else if (command === 'stamp') {
   const targets = args.includes('--all') ? translations : args
   if (targets.length === 0) {
     console.error('Usage: npm run i18n -- stamp <file.id.md> [...] | --all')
