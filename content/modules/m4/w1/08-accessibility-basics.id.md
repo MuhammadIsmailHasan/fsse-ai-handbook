@@ -1,62 +1,75 @@
 ---
 title: "🔥 Dasar-Dasar Aksesibilitas"
-summary: Bangun antarmuka yang bisa dipakai semua orang — prinsip WCAG, akses keyboard dan pengelolaan fokus, accessible name, pola ARIA yang benar, form dan error yang aksesibel, serta pengujian dengan tools dan screen reader.
-sourceHash: 5e0e85d83694
+summary: Bangun halaman yang bisa dipakai semua orang — empat prinsip WCAG, keyboard dan fokus, nama dan role, ARIA yang benar, error form yang mudah ditemukan, serta cara menguji dengan tools dan screen reader.
+sourceHash: a1fe56b0177c
 ---
 
 ::part[Pelajari Konsepnya]{n="1"}
 
 ## 🎯 Yang akan kamu pelajari
 
-- Untuk siapa aksesibilitas, dan empat prinsip **WCAG** (POUR)
-- Akses keyboard: urutan fokus, fokus yang terlihat, **roving tabindex**, pengelolaan fokus
-- Accessible name, role, dan state — accessibility tree
-- Aturan pertama ARIA, dan mengimplementasikan pola ARIA sungguhan (tabs)
-- Error form yang aksesibel dengan `aria-invalid` dan `aria-describedby`
-- Pengujian: axe, Lighthouse, hanya keyboard, screen reader, role query dari Testing Library
+- Siapa yang terbantu oleh aksesibilitas, dan empat prinsip WCAG
+- Membuat semuanya bisa dipakai dengan keyboard, dan memindahkan fokus dengan benar
+- Memberi setiap kontrol role, nama, dan state
+- Kapan memakai ARIA — dan kapan tidak
+- Error form yang bisa ditemukan pengguna screen reader
+- Menguji dengan tools, keyboard, dan screen reader
+
+## 🔤 Istilah penting
+
+| Istilah | Artinya (sederhana) |
+|---|---|
+| **Accessibility (a11y)** | Membuat halaman bisa dipakai semua orang, termasuk penyandang disabilitas |
+| **WCAG** | Buku aturan internasional untuk aksesibilitas web |
+| **Focus** | Elemen yang saat ini menerima tombol keyboard |
+| **Screen reader** | Software yang membacakan halaman (VoiceOver, NVDA, TalkBack) |
+| **Accessible name** | Nama yang dibacakan screen reader untuk sebuah elemen ("Save, button") |
+| **ARIA** | Atribut HTML tambahan yang memberi tahu screen reader sesuatu itu apa |
+| **Live region** | Area yang perubahannya otomatis dibacakan |
 
 ## 🧠 Ide besarnya
 
-Aksesibilitas adalah **ramp di samping tangga**: dibangun untuk pengguna kursi roda, tapi dipakai setiap hari oleh orang tua dengan stroller, pelancong dengan koper, dan kurir. Teks takarir membantu orang di kereta yang bising; shortcut keyboard membantu power user; pesan error yang jelas membantu semua orang. Mendesain untuk kasus pinggiran memperbaiki produk bagi semua.
+Aksesibilitas itu seperti **ramp di samping tangga**. Dibangun untuk pengguna kursi roda, tapi orang tua dengan stroller, pelancong dengan koper, dan kurir juga memakainya setiap hari. Teks takarir membantu orang di kereta yang bising; pesan error yang jelas membantu semua orang. Membangun untuk orang-orang di pinggiran membuat produk lebih baik bagi semua.
 
-## ❓ Kenapa ini ada?
+## ❓ Kenapa ini penting
 
-- Orang memakai web dengan screen reader, keyboard, switch device, kontrol suara, zoom, dan mode kontras tinggi — secara permanen, sementara (tangan patah), atau situasional (sinar matahari terik).
-- Hukum dan aturan pengadaan mewajibkannya (WCAG 2.2 AA adalah target yang umum).
-- Markup yang aksesibel juga yang diandalkan oleh tes otomatis, mesin pencari, dan AI agent.
+- Orang memakai web dengan screen reader, hanya keyboard, kontrol suara, atau zoom — sebagian secara permanen, sebagian sementara (tangan patah), sebagian sesaat (layar HP terkena sinar matahari).
+- Banyak hukum dan perusahaan mewajibkannya (WCAG 2.2 level AA adalah target yang umum).
+- Tes otomatis, Google, dan AI agent juga mengandalkan HTML yang aksesibel.
 
-## 💥 Apa yang terjadi kalau TIDAK?
+Apa yang salah kalau tidak ada:
 
-- Pencari kerja yang memakai VoiceOver tidak bisa menemukan tombol "Apply" karena itu sebuah `<div>`.
-- Pengguna keyboard menekan Tab masuk ke modal… dan fokusnya malah pindah ke belakang modal.
-- "Invalid input" muncul dengan warna merah di atas form, tapi screen reader tidak pernah mengumumkannya dan pesan itu tidak terhubung ke field-nya.
-- Tabs custom terlihat bagus tapi tombol panah tidak berfungsi dan screen reader membacakan "clickable, clickable, clickable".
+- Pencari kerja yang memakai VoiceOver tidak bisa menemukan "Apply" karena itu sebuah `<div>`.
+- Pengguna keyboard membuka popup, tapi fokusnya tetap **di belakang** popup.
+- "Invalid input" muncul dengan warna merah, tapi screen reader tidak pernah membacakannya.
+- Tabs custom terlihat bagus, tapi tombol panah tidak berfungsi.
 
-## 📖 Cara kerjanya, langkah demi langkah
+## 📖 Langkah demi langkah
 
-### 1. Prinsip POUR dari WCAG
+### 1. Empat prinsip WCAG (POUR)
 
-| Prinsip | Contoh |
-|---|---|
-| **Perceivable** (dapat dipersepsi) | alternatif teks, takarir, kontras ≥ 4.5:1, tidak hanya mengandalkan warna |
-| **Operable** (dapat dioperasikan) | semua berfungsi dengan keyboard, fokus terlihat, tanpa jebakan keyboard, waktu yang cukup, ukuran target |
-| **Understandable** (dapat dipahami) | label dan error yang jelas, navigasi yang bisa ditebak, bahasa di-set |
-| **Robust** (tangguh) | markup semantik valid yang bisa ditafsirkan teknologi bantu |
+| Prinsip | Artinya | Contoh |
+|---|---|---|
+| **Perceivable** | Orang bisa melihat atau mendengar kontennya | teks alt, takarir, kontras cukup, tidak hanya warna |
+| **Operable** | Orang bisa memakainya | bisa dengan keyboard, fokus terlihat, tombol cukup besar |
+| **Understandable** | Orang memahaminya | label dan error yang jelas, navigasi yang bisa ditebak |
+| **Robust** | Alat bantu bisa membacanya | HTML yang benar sehingga dipahami alat bantu |
 
-### 2. Accessibility tree: role, name, state
+### 2. Role, nama, dan state
 
-Setiap elemen interaktif butuh:
-- sebuah **role** (button, link, tab, checkbox),
-- sebuah **accessible name** (teks yang terlihat, `<label>`, `aria-label`, `aria-labelledby`),
-- **state** bila relevan (`aria-pressed`, `aria-expanded`, `aria-selected`, `aria-invalid`, `disabled`).
+Screen reader menjelaskan setiap kontrol dengan tiga hal — seperti **name tag** di sebuah acara: *kamu siapa* (role), *namamu* (nama), *sedang apa sekarang* (state).
 
-Elemen native memberikan semua ini secara gratis. Periksa di DevTools → Elements → panel **Accessibility**.
+- **Role**: button, link, tab, checkbox.
+- **Nama**: dari teks yang terlihat, `<label>`, `aria-label`, atau `aria-labelledby`.
+- **State**: ditekan, terbuka, terpilih, tidak valid, nonaktif (`aria-pressed`, `aria-expanded`, `aria-selected`, `aria-invalid`, `disabled`).
 
-### 3. Akses keyboard
+Elemen HTML asli memberikan semua ini secara gratis. Cek di DevTools → Elements → **Accessibility**.
 
-- `Tab` / `Shift+Tab` berpindah antar elemen interaktif sesuai **urutan DOM**.
-- `Enter` mengaktifkan link dan button; `Space` mengaktifkan button dan checkbox.
-- Widget komposit (tabs, menu, listbox) adalah **satu pemberhentian Tab**; tombol panah berpindah di dalamnya — teknik **roving tabindex**:
+### 3. Keyboard dan fokus
+
+- `Tab` / `Shift+Tab` berpindah antar kontrol sesuai urutan HTML.
+- `Enter` menekan link dan button; `Space` menekan button dan checkbox.
+- Kelompok seperti tabs atau menu adalah **satu pemberhentian Tab**. Di dalamnya, tombol panah yang berpindah. Ini disebut **roving tabindex** — seperti mikrofon yang diedarkan di meja rapat: hanya yang sedang memegangnya (`tabindex="0"`) yang bisa dijangkau dengan Tab.
 
 ```js
 buttons.forEach((button, i) => {
@@ -64,16 +77,22 @@ buttons.forEach((button, i) => {
 });
 ```
 
-- Jangan pernah memakai nilai `tabindex` positif (merusak urutan alami).
-- **Kelola fokus** saat konteks berubah: buka dialog → fokus ke dalamnya; tutup → kembalikan fokus ke tombol yang membukanya; submit form yang tidak valid → fokus ke error pertama; navigasi di single-page app → fokus ke heading halaman baru.
+- Jangan pernah memakai `tabindex` lebih dari 0 — merusak urutan alami.
+- **Pindahkan fokus** saat halaman berubah, seperti pemandu yang mengantarmu ke ruangan berikutnya:
+  - buka dialog → fokus ke dalamnya;
+  - tutup dialog → fokus kembali ke tombol yang membukanya;
+  - form ada error → fokus ke error pertama;
+  - pindah halaman di single-page app → fokus ke heading halaman baru.
 
 ### 4. Aturan pertama ARIA
 
-> Kalau elemen atau atribut HTML native sudah memberikan semantik dan perilaku yang kamu butuhkan, **pakai itu, bukan ARIA**.
+> Kalau elemen HTML biasa sudah melakukan apa yang kamu butuhkan, **pakai itu, bukan ARIA**.
 
-ARIA mengubah apa yang **diumumkan**, bukan bagaimana sesuatu **berperilaku** — `role="button"` pada `div` tidak membuatnya bisa difokuskan atau merespons Enter. Saat kamu memang butuh ARIA (tabs, combobox, live region), ikuti pola WAI-ARIA Authoring Practices dengan tepat.
+ARIA hanya mengubah apa yang **dibacakan**, bukan cara sesuatu **berperilaku**. Menaruh `role="button"` di `div` itu seperti menempel stiker "pintu" di tembok: orang diberi tahu itu pintu, tapi tetap tidak bisa dibuka. `div`-nya tetap tidak bisa difokuskan atau ditekan dengan Enter.
 
-### 5. Pola sungguhan: tabs
+Pakai ARIA hanya untuk pola yang tidak ada di HTML (tabs, combobox, live region), dan ikuti pola resmi WAI-ARIA dengan tepat.
+
+### 5. Contoh: tabs
 
 ```html
 <div role="tablist">
@@ -84,9 +103,10 @@ ARIA mengubah apa yang **diumumkan**, bukan bagaimana sesuatu **berperilaku** �
 <div role="tabpanel" id="panel-applied" aria-labelledby="tab-applied" hidden>…</div>
 ```
 
-Keyboard: `ArrowRight`/`ArrowLeft` berpindah (berputar), `Home`/`End` melompat. Seleksi mengikuti fokus.
+- `aria-selected` menunjukkan tab mana yang aktif; `aria-controls` menghubungkan tab ke panelnya.
+- Keyboard: `ArrowRight`/`ArrowLeft` pindah ke tab berikutnya (dan berputar), `Home`/`End` lompat ke tab pertama/terakhir.
 
-### 6. Error form yang aksesibel
+### 6. Error form yang bisa ditemukan
 
 ```html
 <label for="email">Email</label>
@@ -94,112 +114,94 @@ Keyboard: `ArrowRight`/`ArrowLeft` berpindah (berputar), `Home`/`End` melompat. 
 <p id="email-error">Enter a valid email address</p>
 ```
 
-- Error di samping field, berupa teks (bukan hanya border merah), dihubungkan dengan `aria-describedby`.
-- `aria-invalid="true"` pada field yang tidak valid; hapus setelah diperbaiki.
-- Pindahkan fokus ke field tidak valid yang pertama (atau ke ringkasan error yang menautkan ke field-field itu).
-- Umumkan hasil async ("Lamaran tersimpan") dengan live region yang polite.
+- Taruh **teks** error di samping field-nya (bukan hanya border merah).
+- `aria-describedby` menghubungkan pesan ke field, sehingga screen reader membacakannya — seperti sticky note yang ditempel di kotak yang benar.
+- `aria-invalid="true"` menandai field yang salah; hapus setelah diperbaiki.
+- Pindahkan fokus ke field salah yang pertama.
+- Untuk pesan seperti "Lamaran tersimpan", pakai live region yang polite agar dibacakan.
 
-### 7. Aksesibilitas visual
+### 7. Hal-hal yang dilihat orang
 
-- Kontras: 4.5:1 untuk teks normal, 3:1 untuk teks besar serta border/indikator fokus component UI.
-- Jangan menyampaikan makna hanya dengan warna (badge status juga menampilkan teks atau ikon).
-- Dukung zoom sampai 200% dan perubahan ukuran teks; hormati `prefers-reduced-motion`.
-- Ukuran target: minimal 24×24 px CSS (WCAG 2.2), idealnya ~44×44 di layar sentuh.
+- Kontras: minimal 4.5:1 untuk teks normal; 3:1 untuk teks besar, ikon, dan cincin fokus.
+- Jangan hanya memakai warna untuk menunjukkan makna (badge status juga menampilkan teks).
+- Halaman harus tetap berfungsi di zoom 200%; hormati `prefers-reduced-motion`.
+- Tombol minimal 24×24 px (sekitar 44×44 px lebih baik di layar sentuh).
 
-### 8. Menguji aksesibilitas
+### 8. Pengujian
 
-| Metode | Menangkap |
+| Cara | Menemukan |
 |---|---|
-| **Hanya keyboard** (cabut mouse-nya) | jebakan, style fokus yang hilang, kontrol yang tak terjangkau |
-| **Screen reader** (VoiceOver `Cmd+F5`, NVDA di Windows, TalkBack di Android) | nama, pengumuman, urutan baca |
-| **axe DevTools / Lighthouse** | ~30–50% masalah secara otomatis (kontras, label hilang, error ARIA) |
-| **`getByRole` dari Testing Library** | tes gagal kalau elemen tidak punya role/nama — aksesibilitas tertanam di tes |
-| **`jest-axe` / Playwright + axe** | pengecekan otomatis di CI (Minggu 6) |
+| **Hanya keyboard** (singkirkan mouse) | kontrol yang tidak bisa dijangkau, cincin fokus yang hilang, fokus yang terjebak |
+| **Screen reader** (VoiceOver `Cmd+F5` di Mac, NVDA di Windows, TalkBack di Android) | nama yang salah, pengumuman yang hilang, urutan baca yang aneh |
+| **axe DevTools / Lighthouse** | sekitar 30–50% masalah secara otomatis (kontras, label yang hilang) |
+| **`getByRole` dari Testing Library** | tes gagal kalau elemen tidak punya role atau nama |
+| **Playwright + axe** | pengecekan otomatis di CI (Minggu 6) |
 
-Tool otomatis tidak bisa menilai apakah teks alt bermakna atau urutan fokus masuk akal — pengecekan manual tetap penting.
-
-## ⚖️ Trade-off
-
-| Pilihan | ✅ | ❌ |
-|---|---|---|
-| Elemen native | aksesibel secara default | styling beberapa elemen (select, date) terbatas |
-| Widget custom + ARIA | kontrol desain penuh | harus mengimplementasikan keyboard, fokus, dan state dengan tepat |
-| Library headless yang aksesibel (Radix, React Aria) | pola yang sudah benar, kamu yang men-styling | menambah dependency |
-| Hanya pengecekan otomatis | murah, jalan di CI | melewatkan banyak masalah nyata |
-
-## ✅ Kapan dipakai / 🚫 Kapan TIDAK dipakai
-
-- ✅ Sejak baris HTML pertama — memperbaikinya belakangan itu mahal.
-- ✅ Pakai component library aksesibel yang sudah teruji untuk widget kompleks (Minggu 5: shadcn/ui di atas Radix).
-- 🚫 Jangan menambahkan ARIA untuk "memperbaiki" markup non-semantik kalau elemen native-nya ada.
-- 🚫 Jangan menyembunyikan outline fokus atau mematikan zoom (`user-scalable=no`).
-
-## 🏆 Praktik terbaik
-
-- [ ] HTML semantik dulu; ARIA hanya untuk pola yang tidak ada di HTML, mengikuti ARIA Authoring Practices.
-- [ ] Setiap kontrol bisa dijangkau dan dioperasikan dengan keyboard, dengan style `:focus-visible` yang terlihat.
-- [ ] Kelola fokus pada dialog, perpindahan route, dan error validasi.
-- [ ] Setiap input punya label; error berupa teks, dihubungkan lewat `aria-describedby`, dengan `aria-invalid`.
-- [ ] Kontras dan ketidakbergantungan pada warna sudah dicek; hormati reduced motion.
-- [ ] Pakai query berbasis role di tes (`getByRole`) dan jalankan axe di CI.
-- [ ] Lakukan pengecekan 5 menit dengan keyboard + screen reader sebelum merge perubahan UI.
-
-## 🏭 Cara dipakai di industri
-
-- Banyak perusahaan memasukkan aksesibilitas ke Definition of Done dan menjalankan pengecekan axe di CI.
-- Situs pemerintah dan pendidikan (serta vendornya) harus memenuhi WCAG 2.x AA; European Accessibility Act berlaku untuk banyak produk dan layanan digital yang dijual di Uni Eropa sejak Juni 2025.
-- Filosofi Testing Library ("uji dengan cara pengguna memakai aplikasimu") menjadikan query berbasis role sebagai default di tim React.
+Tools tidak bisa menilai apakah teks alt berguna atau urutan fokus masuk akal. Kamu tetap butuh pengecekan manual singkat.
 
 ## ⚠️ Kesalahan umum
 
-- Placeholder sebagai label; tombol berisi ikon saja tanpa accessible name.
-- `tabindex="0"` di semua elemen, atau nilai tabindex positif.
-- Modal tanpa focus trap dan tanpa pengembalian fokus.
-- `aria-label` yang bertentangan dengan teks yang terlihat (pengguna kontrol suara menyebutkan apa yang mereka lihat).
+- Placeholder sebagai pengganti label; tombol berisi ikon saja tanpa nama.
+- `tabindex="0"` di semua elemen, atau nilai di atas 0.
+- Popup (modal) yang tidak menjaga fokus di dalam dan tidak mengembalikannya saat ditutup.
+- `aria-label` yang berbeda dengan teks yang terlihat (pengguna kontrol suara menyebutkan apa yang mereka lihat).
+- Menyembunyikan outline fokus atau mematikan zoom (`user-scalable=no`).
+- Menambahkan ARIA untuk "memperbaiki" `div` padahal `<button>` asli ada.
+
+## 🏆 Praktik terbaik
+
+- [ ] Elemen HTML asli dulu; ARIA hanya untuk pola yang tidak ada di HTML.
+- [ ] Semuanya berfungsi dengan keyboard, dengan style `:focus-visible` yang terlihat.
+- [ ] Pindahkan fokus untuk dialog, perpindahan halaman, dan error form.
+- [ ] Setiap input punya label; error berupa teks, dihubungkan dengan `aria-describedby`, dengan `aria-invalid`.
+- [ ] Cek kontras; jangan pernah menunjukkan makna hanya dengan warna.
+- [ ] Pakai `getByRole` di tes dan jalankan axe di CI.
+- [ ] Sebelum merge perubahan UI, luangkan 5 menit hanya dengan keyboard dan screen reader.
+- [ ] Untuk widget yang rumit, pakai library yang sudah teruji (Radix / shadcn/ui — Minggu 5).
 
 ::part[Jelaskan & Rancang]{n="2"}
 
 ## 🗣️ Jelaskan
 
-Jelaskan ke product manager kenapa "sudah lulus Lighthouse 100" tidak berarti alur melamar kerja sudah aksesibel, dan dua pengecekan manual apa yang akan kamu lakukan sebelum rilis.
+Jelaskan ke product manager kenapa "Lighthouse memberi nilai 100" tidak membuktikan alur melamar kerja sudah aksesibel, dan dua pengecekan manual apa yang akan kamu lakukan sebelum rilis.
 
 ## 📐 Rancang
 
-Rancang kebutuhan aksesibilitas untuk **dialog "Pindahkan lamaran"** CareerPilot (dibuka dari sebuah kartu di papan): dialog ini menampilkan status saat ini, pilihan radio untuk status berikutnya, catatan opsional, dan Simpan/Batal. Cakup role, nama, perilaku keyboard, pengelolaan fokus, error, dan pengumuman.
+Rencanakan aksesibilitas **dialog "Pindahkan lamaran"** CareerPilot (dibuka dari kartu di papan). Isinya status saat ini, pilihan radio untuk status berikutnya, catatan opsional, dan Simpan/Batal. Cakup role, nama, keyboard, fokus, error, dan pengumuman.
 
 :::quiz
-Tampilkan contoh spesifikasinya
+Tampilkan contoh rencananya
 
-- **Pemicu**: `<button aria-haspopup="dialog">Move "Backend Engineer at Kopi Data"</button>` (accessible name yang spesifik, bukan hanya "Move").
-- **Dialog**: `<dialog>` native yang dibuka dengan `showModal()` (focus trap + Escape gratis) atau role="dialog" dengan `aria-modal="true"`; `aria-labelledby` → `<h2>Move application</h2>` milik dialog; `aria-describedby` → "Currently: Applied".
-- **Fokus**: saat dibuka, fokus ke radio pertama (atau ke heading kalau kontennya panjang); Tab berputar di dalam; Escape dan Batal menutup; saat ditutup, **kembalikan fokus ke pemicu**.
-- **Pilihan**: `<fieldset><legend>Next status</legend>` dengan radio native (tombol panah berfungsi secara native); perpindahan yang tidak diizinkan tidak ditampilkan sama sekali (bukan sekadar diabu-abukan) — atau `disabled` beserta penjelasannya.
-- **Catatan**: `<textarea>` berlabel; penghitung karakter diumumkan secara polite hanya saat mendekati batas.
-- **Error**: kalau belum ada status yang dipilih, `aria-invalid` pada fieldset, pesan dihubungkan dengan `aria-describedby`, fokus pindah ke radio pertama. Error server (409 invalid_transition) ditampilkan di region alert di dalam dialog (`role="alert"`).
-- **Berhasil**: tutup dialog, kembalikan fokus, dan umumkan "Dipindahkan ke Interview" di live region polite milik halaman; kolom baru kartu tercermin tanpa memindahkan fokus secara tak terduga.
-- **Visual**: ring fokus terlihat, kontras dicek, status tidak pernah hanya lewat warna; berfungsi di zoom 200% dan di ponsel.
-- **Tes**: `getByRole("dialog", { name: "Move application" })` dari Testing Library, alur keyboard dengan user-event, pengecekan axe di component test.
+- **Tombol pembuka**: `<button aria-haspopup="dialog">Move "Backend Engineer at Kopi Data"</button>` — nama yang spesifik, bukan hanya "Move".
+- **Dialog**: `<dialog>` bawaan yang dibuka dengan `showModal()` (menjaga fokus di dalam dan bisa ditutup dengan Escape secara gratis). `aria-labelledby` menunjuk ke heading "Move application"; `aria-describedby` menunjuk ke "Currently: Applied".
+- **Fokus**: saat dibuka, fokus ke radio pertama; Tab tetap di dalam; Escape dan Batal menutupnya; saat ditutup, **fokus kembali ke tombol pembukanya**.
+- **Pilihan**: `<fieldset><legend>Next status</legend>` dengan radio button biasa (tombol panah otomatis berfungsi). Perpindahan yang tidak diizinkan tidak ditampilkan.
+- **Catatan**: `<textarea>` dengan label.
+- **Error**: belum memilih status → pesan dihubungkan dengan `aria-describedby`, dan fokus pindah ke radio pertama. Error dari server (409) ditampilkan di dalam dialog dengan `role="alert"`.
+- **Berhasil**: tutup dialog, kembalikan fokus, dan umumkan "Dipindahkan ke Interview" di live region polite milik halaman.
+- **Visual**: cincin fokus terlihat, kontras cukup, status tidak hanya lewat warna, berfungsi di zoom 200% dan di ponsel.
+- **Tes**: `getByRole("dialog", { name: "Move application" })`, alur keyboard dengan user-event, dan pengecekan axe.
 :::
 
 ### 📝 Checklist self-review
 
-- [ ] Nama, role, dan state untuk setiap kontrol
-- [ ] Fokus masuk, terkunci di dalam, lalu dikembalikan
-- [ ] Error terhubung dan diumumkan
-- [ ] Keberhasilan diumumkan tanpa merebut fokus
+- [ ] Setiap kontrol punya role, nama, dan (kalau perlu) state
+- [ ] Fokus masuk, tetap di dalam, lalu kembali
+- [ ] Error terhubung ke field dan dibacakan
+- [ ] Keberhasilan diumumkan tanpa membuat fokus melompat-lompat
 
 ::ai-review{task="design"}
 
 ::part[Latihan Kecil]{n="3"}
 
 :::exercise{path="exercises/web/m4/w1/08-accessibility" ai="no-ai" title="Tabs dan error form yang aksesibel"}
-Implementasikan pola ARIA tabs (role, id, roving tabindex, tombol panah/Home/End, panel tersembunyi) dan validasi form yang menandai field tidak valid, menghubungkan pesan error dengan `aria-describedby`, dan memfokuskan error pertama. Tes mencari elemen berdasarkan role dan accessible name — markup yang tidak aksesibel tidak akan lolos.
+Bangun pola ARIA tabs (role, id, roving tabindex, tombol panah/Home/End, panel tersembunyi) dan validasi form yang menandai field yang salah, menghubungkan pesan error dengan `aria-describedby`, dan memfokuskan error pertama. Tes mencari elemen berdasarkan role dan nama — markup yang tidak aksesibel tidak akan lolos.
 :::
 
 :::hints
 - Tulis `select(index, { focus })` yang memperbarui `aria-selected`, `tabIndex`, dan `hidden` untuk semua tab sekaligus.
-- Dengarkan `keydown` di tablist; pakai `document.activeElement` untuk menemukan tab saat ini; panggil `event.preventDefault()` untuk tombol yang ditangani.
-- `firstInvalid ??= input` hanya mengingat field tidak valid yang pertama.
+- Dengarkan `keydown` di tablist; pakai `document.activeElement` untuk menemukan tab saat ini; panggil `event.preventDefault()` untuk tombol yang kamu tangani.
+- `firstInvalid ??= input` hanya mengingat field salah yang pertama.
 :::
 
 ## ✅ Cek cepat
@@ -207,25 +209,14 @@ Implementasikan pola ARIA tabs (role, id, roving tabindex, tombol panah/Home/End
 :::quiz
 Apa aturan pertama ARIA?
 
-Jangan pakai ARIA kalau elemen atau atribut HTML native sudah memberikan semantik dan perilaku yang kamu butuhkan.
+Jangan pakai ARIA kalau elemen atau atribut HTML biasa sudah memberikan makna dan perilaku yang kamu butuhkan.
 :::
 
 :::quiz
-Apa yang dicapai roving tabindex?
+Apa yang dilakukan roving tabindex?
 
-Widget komposit (tabs, toolbar, menu) hanya memakan satu pemberhentian Tab; tombol panah memindahkan fokus di dalamnya, dengan menjaga `tabindex="0"` hanya pada item aktif dan `-1` pada sisanya.
+Kelompok seperti tabs hanya memakan satu pemberhentian Tab; tombol panah berpindah di dalamnya. Hanya item aktif yang punya `tabindex="0"`, sisanya `-1`.
 :::
-
-## 📖 Kamus (glosarium)
-
-| Istilah | Bahasa Indonesia |
-|---|---|
-| Accessibility (a11y) | Aksesibilitas |
-| WCAG | Pedoman aksesibilitas konten web |
-| Accessible name | Nama yang diumumkan teknologi bantu |
-| Focus management | Pengelolaan fokus keyboard |
-| Assistive technology | Teknologi bantu (pembaca layar, kontrol suara) |
-| Keyboard trap | Jebakan keyboard — fokus tidak bisa keluar |
 
 ## 📚 Lanjut belajar
 

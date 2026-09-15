@@ -1,29 +1,43 @@
 ---
 title: "Array JavaScript & Transformasi Data"
-summary: Olah data seperti profesional — map, filter, reduce, find, some/every, flatMap, sorting tanpa mutasi, pengelompokan, dan Set — perlengkapan sehari-hari untuk mengubah response API menjadi UI.
-sourceHash: b9fb2dcfa2bc
+summary: Ubah data API menjadi apa yang dibutuhkan halaman — map, filter, reduce, find, some/every, flatMap, sorting tanpa mengubah data asli, pengelompokan, dan Set — dijelaskan dengan perbandingan Python.
+sourceHash: c55d11af5ede
 ---
 
 ::part[Pelajari Konsepnya]{n="1"}
 
 ## 🎯 Yang akan kamu pelajari
 
-- Dasar array dan method mana yang **memutasi**
-- `map`, `filter`, `reduce`, `find`, `some`, `every`, `includes`
-- `flatMap`, `Set`, `Object.groupBy`, `Object.entries/fromEntries`
-- Sorting dengan comparator — dan `toSorted`, `toReversed`, `with` yang tidak memutasi
-- Merangkai transformasi agar mudah dibaca, dan kapan loop biasa lebih baik
-- Padanan Python untuk semuanya
+- Method array mana yang **mengubah** array asli, dan mana yang membuat array baru
+- `map`, `filter`, `reduce`, `find`, `some`, `every`
+- Mengurutkan angka dan teks dengan benar
+- Menghapus duplikat dan mengelompokkan data
+- Menulis rangkaian langkah yang mudah dibaca
+- Versi Python dari setiap method
+
+## 🔤 Istilah penting
+
+| Istilah | Artinya (sederhana) |
+|---|---|
+| **`map`** | Ubah setiap item dan dapatkan array baru dengan panjang yang sama |
+| **`filter`** | Ambil hanya item yang lolos syarat |
+| **`reduce`** | Gabungkan semua item menjadi satu nilai (total, jumlah, atau object) |
+| **Mutate** | Mengubah data asli secara langsung |
+| **Immutable** | Tidak mengubah data asli — buat salinan baru |
+| **Comparator** | Function kecil yang memberi tahu `sort` mana dari dua item yang duluan |
+| **`Set`** | Kumpulan nilai tanpa duplikat |
 
 ## 🧠 Ide besarnya
 
-Method array adalah **ban berjalan di pabrik**: data mentah dari API masuk, setiap stasiun mengerjakan satu tugas (ambil lowongan remote, ubah jadi data kartu, urutkan berdasarkan gaji), dan data siap-UI keluar di ujungnya — tanpa ada yang mengubah bahan aslinya.
+Method array bekerja seperti **laundry kiloan**: baju kotor masuk, satu meja memilah, meja berikutnya mencuci, meja berikutnya melipat, dan baju bersih yang terlipat keluar. Setiap meja punya satu tugas. Dan tumpukan aslinya tidak dihancurkan — setiap meja membuat tumpukan baru.
 
-## ❓ Kenapa ini ada?
+Dalam kode: lowongan mentah dari API → ambil lowongan remote (`filter`) → ubah masing-masing jadi data kartu (`map`) → urutkan berdasarkan gaji → tampilkan di halaman.
 
-Frontend terus-menerus membentuk ulang data: Flask API-mu mengembalikan daftar lamaran; dashboard butuh jumlah per status, papan butuh pengelompokan per kolom, grafik butuh rata-rata. Method array yang deklaratif menyatakan **apa** yang kamu mau, mudah dites, dan tidak memutasi data yang diandalkan React untuk mendeteksi perubahan (Minggu 3).
+## ❓ Kenapa ini penting
 
-## 💥 Apa yang terjadi kalau TIDAK?
+Frontend terus-menerus membentuk ulang data: Flask API-mu mengembalikan daftar lamaran, dashboard butuh jumlah per status, papan butuh pengelompokan per kolom. Method array menyatakan **apa** yang kamu mau dalam beberapa baris yang jelas, mudah dites, dan tidak mengubah data yang diandalkan React (Minggu 3).
+
+Cara lama gampang menimbulkan bug:
 
 ```js
 function topJobs(jobs) {
@@ -37,7 +51,7 @@ for (let i = 0; i <= jobs.length; i++) {       // 🐛 off-by-one → undefined
 }
 ```
 
-## 📖 Cara kerjanya, langkah demi langkah
+## 📖 Langkah demi langkah
 
 ### 1. Python ↔ JavaScript
 
@@ -53,18 +67,20 @@ for (let i = 0; i <= jobs.length; i++) {       // 🐛 off-by-one → undefined
 | `itertools.groupby` / defaultdict | `Object.groupBy(jobs, (j) => j.city)` |
 | `enumerate(items)` | `items.map((item, index) => ...)` / `items.entries()` |
 
-### 2. Memutasi vs tidak memutasi
+### 2. Mengubah data asli vs membuat array baru
 
-| Memutasi ⚠️ | Mengembalikan array baru ✅ |
+Sebagian method menulis langsung di kertas asli; sebagian lagi memfotokopi dulu.
+
+| Mengubah data asli ⚠️ | Membuat array baru ✅ |
 |---|---|
 | `push`, `pop`, `shift`, `unshift`, `splice` | `concat`, `slice`, spread `[...a, x]` |
 | `sort`, `reverse` | `toSorted`, `toReversed` |
 | `arr[i] = x` | `arr.with(i, x)` |
 | `fill`, `copyWithin` | `map`, `filter`, `flatMap` |
 
-Di kode UI, utamakan kolom kanan — terutama untuk state.
+Di kode halaman — terutama state React — pakai kolom kanan.
 
-### 3. Tiga serangkai
+### 3. Tiga serangkai: `map`, `filter`, `reduce`
 
 ```js
 const remote = jobs.filter((job) => job.remote);
@@ -72,7 +88,11 @@ const cards = remote.map((job) => ({ id: job.id, label: `${job.title} · ${job.c
 const total = jobs.reduce((sum, job) => sum + (job.salaryMax ?? 0), 0);
 ```
 
-`reduce(callback, initialValue)` — selalu berikan nilai awal.
+- `filter` = saringan: hanya yang lolos yang tersisa.
+- `map` = stempel: setiap item diubah dengan cara yang sama.
+- `reduce` = celengan: kamu memasukkan item satu per satu dan berakhir dengan satu total. Angka `0` di akhir adalah jumlah awal — selalu berikan.
+
+`reduce` juga bisa membangun object, seperti menghitung suara:
 
 ```js
 const countsByStatus = applications.reduce((counts, app) => {
@@ -82,7 +102,7 @@ const countsByStatus = applications.reduce((counts, app) => {
 // { saved: 2, applied: 5, interview: 1 }
 ```
 
-### 4. Mencari dan menguji
+### 4. Mencari dan mengecek
 
 ```js
 jobs.find((job) => job.id === id)          // first match or undefined
@@ -92,7 +112,10 @@ jobs.every((job) => job.salaryMax !== null)
 skills.includes("python")                  // uses === (NaN-safe)
 ```
 
-### 5. Sorting dengan benar
+- `some` = "apakah ada **minimal satu**?"
+- `every` = "apakah **semuanya** lolos?"
+
+### 5. Mengurutkan dengan benar
 
 ```js
 [10, 9, 100].sort()                                // [10, 100, 9] 🐛 compares as strings
@@ -101,9 +124,14 @@ jobs.toSorted((a, b) => (b.salaryMax ?? -1) - (a.salaryMax ?? -1) || a.id - b.id
 jobs.toSorted((a, b) => a.title.localeCompare(b.title, "id"))                        // text, locale-aware
 ```
 
-Comparator mengembalikan nilai negatif (a duluan), positif (b duluan), atau 0. `||` merangkai pemecah seri (tie-breaker).
+Tanpa comparator, JavaScript mengurutkan angka **seperti kata** ("100" datang sebelum "9", seperti di kamus). Comparator menjawab "siapa duluan?":
+- angka negatif → `a` duluan,
+- angka positif → `b` duluan,
+- `0` → sama.
 
-### 6. Meratakan, keunikan, pengelompokan
+`||` menambahkan pemecah seri: kalau gajinya sama, urutkan berdasarkan id.
+
+### 6. Meratakan, menghapus duplikat, mengelompokkan
 
 ```js
 const allSkills = jobs.flatMap((job) => job.skills);            // [["py","sql"],["py"]] → ["py","sql","py"]
@@ -114,7 +142,9 @@ const titlesByCity = Object.fromEntries(
 );
 ```
 
-`Object.groupBy` adalah ES2024 (semua browser modern dan Node 21+).
+- `flatMap` = `map`, lalu buka kantong-kantong kecil ke dalam satu kantong besar.
+- `new Set(...)` = simpan setiap nilai sekali saja, seperti daftar tamu yang nama dobelnya dicoret.
+- `Object.groupBy` = masukkan item ke kotak-kotak berdasarkan label (kota, status).
 
 ### 7. Rangkaian yang mudah dibaca
 
@@ -126,57 +156,36 @@ const topRemoteSalaries = jobs
   .map(({ title, salaryMax }) => ({ title, salary: formatRupiah(salaryMax) }));
 ```
 
-Satu langkah per baris, function helper bernama untuk callback yang tidak sepele. Setiap langkah membuat array baru — tidak masalah untuk ratusan atau ribuan item; untuk data sangat besar atau loop yang sering dijalankan, satu `for...of` bisa lebih jelas dan lebih cepat.
-
-## ⚖️ Trade-off
-
-| Pilihan | ✅ | ❌ |
-|---|---|---|
-| Rangkaian method | deklaratif, bisa dites, immutable | array perantara; rangkaian panjang jadi sulit dipahami |
-| Loop `for...of` | bisa `break` lebih awal, satu kali lewat, familier | lebih banyak variabel yang dimutasi |
-| `reduce` untuk semuanya | satu kali lewat | sering lebih sulit dibaca daripada `filter`+`map` atau loop |
-| `sort` di tempat | tanpa salinan | memutasi data bersama |
-| `Object` sebagai map | ramah JSON | key menjadi string; key prototype — pakai `Map` untuk key sembarang |
-
-## ✅ Kapan dipakai / 🚫 Kapan TIDAK dipakai
-
-- ✅ Membentuk response API menjadi data UI; state turunan (jumlah, kelompok, total).
-- ✅ `find`/`some` alih-alih loop pencarian manual.
-- 🚫 `map` hanya untuk looping demi efek samping — pakai `forEach` atau `for...of`.
-- 🚫 Akrobat `reduce` bersarang — tulis function bernama atau loop.
-
-## 🏆 Praktik terbaik
-
-- [ ] Jangan pernah memutasi input atau state: `toSorted`, spread, `map`/`filter`.
-- [ ] Selalu beri `sort` sebuah comparator; pakai `localeCompare` untuk teks.
-- [ ] Selalu beri `reduce` nilai awal.
-- [ ] Tangani array kosong (rata-rata, `Math.max(...[])` bernilai `-Infinity`).
-- [ ] Pakai `??` untuk angka yang tidak ada, bukan `||`.
-- [ ] Beri nama callback yang kompleks (`const isAffordable = (job) => ...`).
-- [ ] Pilih `Set`/`Map` untuk cek keanggotaan dan lookup alih-alih `includes` di dalam loop (O(n²)).
-
-## 🏭 Cara dipakai di industri
-
-- Setiap component React yang me-render list memakai `map`; UI filter dan sorting adalah `filter` + `toSorted`.
-- Reducer Redux/Zustand dan function `select` di TanStack Query mentransformasi data secara immutable.
-- Dashboard data menghitung agregat di sisi client dengan `reduce`/`groupBy` untuk dataset kecil (SQL di server untuk yang besar — Modul 2).
+Satu langkah per baris, seperti resep masakan. Kalau satu langkah rumit, beri nama (`const isRemote = (job) => ...`). Untuk data sangat besar (puluhan ribu item) atau kode yang sangat sering dijalankan, satu loop `for...of` sederhana bisa lebih jelas dan cepat.
 
 ## ⚠️ Kesalahan umum
 
 - `.sort()` pada angka tanpa comparator.
-- Memutasi props/state dengan `push`/`sort`.
-- Lupa `return` di dalam `map` yang memakai kurung kurawal: `map((j) => { j.title })` → isinya `undefined`.
-- Memakai `includes` di dalam loop atas array besar.
+- Mengubah props atau state dengan `push` atau `sort`.
+- Lupa `return` di `map` yang memakai kurung kurawal: `map((j) => { j.title })` menghasilkan `undefined`.
+- Memakai `map` hanya untuk looping (pakai `forEach` atau `for...of`).
+- `reduce` bersarang yang terlalu "pintar" sampai tidak ada yang bisa membacanya.
+- `includes` di dalam loop atas array besar (lambat) — pakai `Set`.
+
+## 🏆 Praktik terbaik
+
+- [ ] Jangan ubah input atau state: pakai `toSorted`, spread, `map`, `filter`.
+- [ ] Selalu beri `sort` sebuah comparator; pakai `localeCompare` untuk teks.
+- [ ] Selalu beri `reduce` nilai awal.
+- [ ] Tangani array kosong (rata-rata dari nol item, `Math.max(...[])` bernilai `-Infinity`).
+- [ ] Pakai `??` untuk angka yang tidak ada, bukan `||`.
+- [ ] Beri nama callback yang rumit (`const isAffordable = (job) => ...`).
+- [ ] Pakai `Set` atau `Map` untuk pengecekan "ada di sini tidak?" yang cepat.
 
 ::part[Jelaskan & Rancang]{n="2"}
 
 ## 🗣️ Jelaskan
 
-Jelaskan ke rekan tim kenapa `applications.sort(...)` di dalam component bisa memicu bug yang tidak terjadi dengan `toSorted`, meskipun hasilnya terlihat sama di layar.
+Jelaskan ke rekan tim kenapa `applications.sort(...)` di dalam component bisa memicu bug yang tidak terjadi dengan `toSorted`, meskipun layarnya terlihat sama. Pakai ide "menulis di kertas asli vs fotokopi".
 
 ## 📐 Rancang
 
-Dashboard CareerPilot menerima `applications: [{ id, status, company: { name }, appliedOn, updatedAt, salaryMax }]`. Rancang function-function pure (signature + sketsa rangkaian method) untuk: (1) jumlah per status dengan semua status tetap ada, (2) kolom papan pipeline secara berurutan, masing-masing diurutkan berdasarkan `updatedAt` terbaru dulu, (3) 5 perusahaan teratas berdasarkan jumlah lamaran, (4) response rate = lamaran yang bergerak melewati `applied` ÷ lamaran yang mencapai `applied`.
+Dashboard CareerPilot menerima `applications: [{ id, status, company: { name }, appliedOn, updatedAt, salaryMax }]`. Rencanakan function-function (nama + rangkaian langkah) untuk: (1) jumlah untuk setiap status, termasuk status yang nol, (2) kolom papan secara berurutan, update terbaru di atas, (3) 5 perusahaan teratas berdasarkan jumlah lamaran, (4) response rate = lamaran yang bergerak melewati `applied` ÷ lamaran yang mencapai `applied`.
 
 :::quiz
 Tampilkan contoh desainnya
@@ -210,52 +219,46 @@ export const responseRate = (apps) => {
 };
 ```
 
-Keputusan yang perlu dicatat: setiap status selalu ada (UI tidak pernah mengecek `undefined`), tie-break eksplisit, penjagaan pembagian dengan nol, timestamp ISO dibandingkan sebagai string. (Apakah "ditolak tanpa screening" dihitung sebagai respons adalah pertanyaan **produk** — tuliskan.)
+- Setiap status selalu ada, jadi halaman tidak perlu mengecek `undefined`.
+- Hasil seri dipecah berdasarkan nama, jadi urutannya tidak pernah loncat-loncat.
+- Pembagian dengan nol sudah ditangani.
+- Tanggal format ISO (`2026-09-01T…`) bisa dibandingkan sebagai teks.
+- "Apakah penolakan tanpa panggilan screening dihitung sebagai respons?" adalah keputusan **produk** — tuliskan.
 :::
 
 ### 📝 Checklist self-review
 
-- [ ] Function pure, tanpa mutasi
+- [ ] Tidak ada function yang mengubah input-nya
 - [ ] Data kosong ditangani
-- [ ] Urutan deterministik dengan tie-break
+- [ ] Urutan selalu sama (pakai pemecah seri)
 
 ::ai-review{task="design"}
 
 ::part[Latihan Kecil]{n="3"}
 
 :::exercise{path="exercises/web/m4/w1/06-array-methods" ai="no-ai" title="Transformasi data lowongan dengan method array"}
-Implementasikan sembilan function data kecil — filter, rata-rata, menghitung, sorting tanpa mutasi, pengelompokan, `every`/`some`, skill unik, dan lookup — atas data input yang dibekukan. Tes gagal kalau kamu memakai loop atau memutasi input.
+Tulis sembilan function data kecil — filter, rata-rata, menghitung, mengurutkan tanpa mengubah input, mengelompokkan, `every`/`some`, skill unik, dan pencarian — dengan data input yang dibekukan. Tes gagal kalau kamu memakai loop atau mengubah input.
 :::
 
 :::hints
-- Data tes dibekukan dengan `Object.freeze`: `sort` padanya akan melempar error — pakai `toSorted`.
-- Untuk `skillCounts`, `flatMap` dulu, lalu `reduce` menjadi sebuah object.
+- Data tes dibekukan dengan `Object.freeze`: memanggil `sort` padanya akan error — pakai `toSorted`.
+- Untuk `skillCounts`, pakai `flatMap` dulu, lalu `reduce` menjadi sebuah object.
 - `jobs.map((j) => j.salaryMax).filter((s) => s !== null)` sebelum menghitung rata-rata.
 :::
 
 ## ✅ Cek cepat
 
 :::quiz
-Apa hasil `[3, 20, 100].sort()` dan kenapa?
+Apa hasil `[3, 20, 100].sort()`, dan kenapa?
 
-`[100, 20, 3]` — tanpa comparator, elemen dibandingkan sebagai string ("100" < "20" < "3").
+`[100, 20, 3]` — tanpa comparator, angka dibandingkan sebagai teks ("100" < "20" < "3").
 :::
 
 :::quiz
-`map` vs `forEach`?
+`map` atau `forEach`?
 
-`map` mengembalikan array baru berisi nilai hasil transformasi; `forEach` mengembalikan `undefined` dan hanya untuk efek samping.
+`map` mengembalikan array baru berisi nilai yang sudah diubah. `forEach` tidak mengembalikan apa-apa — pakai hanya untuk melakukan sesuatu pada setiap item.
 :::
-
-## 📖 Kamus (glosarium)
-
-| Istilah | Bahasa Indonesia |
-|---|---|
-| Immutable | Tidak diubah (membuat salinan baru) |
-| Callback | Fungsi yang diberikan ke fungsi lain |
-| Comparator | Fungsi pembanding untuk pengurutan |
-| Accumulator | Akumulator — nilai yang dibawa `reduce` |
-| Derived data | Data turunan (dihitung dari data lain) |
 
 ## 📚 Lanjut belajar
 

@@ -1,6 +1,6 @@
 ---
 title: "JavaScript Arrays & Data Transformation"
-summary: Transform data like a professional — map, filter, reduce, find, some/every, flatMap, sorting without mutation, grouping and Sets — the everyday toolkit for turning API responses into UI.
+summary: Turn API data into what the page needs — map, filter, reduce, find, some/every, flatMap, sorting without changing the original, grouping and Sets — explained with Python comparisons.
 type: lesson
 source: core
 sourceRef: "M3 · W1 · L5"
@@ -13,22 +13,36 @@ tags: [javascript, arrays, functional-programming, immutability]
 
 ## 🎯 What you'll learn
 
-- Array basics and which methods **mutate**
-- `map`, `filter`, `reduce`, `find`, `some`, `every`, `includes`
-- `flatMap`, `Set`, `Object.groupBy`, `Object.entries/fromEntries`
-- Sorting with comparators — and non-mutating `toSorted`, `toReversed`, `with`
-- Chaining transformations readably, and when a plain loop is better
-- Python equivalents for everything
+- Which array methods **change** the original array, and which make a new one
+- `map`, `filter`, `reduce`, `find`, `some`, `every`
+- Sorting numbers and text correctly
+- Removing duplicates and grouping data
+- Writing readable chains of steps
+- The Python version of each method
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **`map`** | Change every item and get a new array of the same length | Ubah setiap item |
+| **`filter`** | Keep only the items that pass a test | Saring |
+| **`reduce`** | Combine all items into one value (a total, a count, an object) | Gabungkan jadi satu |
+| **Mutate** | Change the original data in place | Mengubah data asli |
+| **Immutable** | Don't change the original — make a new copy instead | Tidak mengubah asli |
+| **Comparator** | A small function that tells `sort` which of two items goes first | Fungsi pembanding |
+| **`Set`** | A collection with no duplicates | Himpunan tanpa duplikat |
 
 ## 🧠 The big idea
 
-Array methods are a **factory conveyor belt**: raw API data enters, each station does one job (keep the remote jobs, turn them into card data, sort by salary), and finished UI-ready data comes out — without anyone changing the original parts.
+Array methods work like a **laundry line**: dirty clothes go in, one station sorts them, the next washes, the next folds, and clean folded clothes come out. Each station does one job. And the original pile isn't destroyed — every station makes a new pile.
 
-## ❓ Why does this exist?
+In code: raw jobs from the API → keep remote jobs (`filter`) → turn each into card data (`map`) → sort by salary → show on the page.
 
-Frontends constantly reshape data: your Flask API returns applications; the dashboard needs counts per status, the board needs them grouped by column, the chart needs averages. Declarative array methods say **what** you want, are easy to test, and don't mutate data that React relies on to detect changes (Week 3).
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T?
+Frontends reshape data all the time: your Flask API returns applications, the dashboard needs counts per status, the board needs them grouped by column. Array methods say **what** you want in a few clear lines, are easy to test, and don't change data React depends on (Week 3).
+
+The old way easily creates bugs:
 
 ```js
 function topJobs(jobs) {
@@ -42,7 +56,7 @@ for (let i = 0; i <= jobs.length; i++) {       // 🐛 off-by-one → undefined
 }
 ```
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Python ↔ JavaScript
 
@@ -58,18 +72,20 @@ for (let i = 0; i <= jobs.length; i++) {       // 🐛 off-by-one → undefined
 | `itertools.groupby` / defaultdict | `Object.groupBy(jobs, (j) => j.city)` |
 | `enumerate(items)` | `items.map((item, index) => ...)` / `items.entries()` |
 
-### 2. Mutating vs non-mutating
+### 2. Changes the original vs makes a new array
 
-| Mutates ⚠️ | Returns a new array ✅ |
+Some methods write on the original paper; others make a photocopy first.
+
+| Changes the original ⚠️ | Makes a new array ✅ |
 |---|---|
 | `push`, `pop`, `shift`, `unshift`, `splice` | `concat`, `slice`, spread `[...a, x]` |
 | `sort`, `reverse` | `toSorted`, `toReversed` |
 | `arr[i] = x` | `arr.with(i, x)` |
 | `fill`, `copyWithin` | `map`, `filter`, `flatMap` |
 
-In UI code, prefer the right column — especially for state.
+In page code — especially React state — use the right column.
 
-### 3. The big three
+### 3. The big three: `map`, `filter`, `reduce`
 
 ```js
 const remote = jobs.filter((job) => job.remote);
@@ -77,7 +93,11 @@ const cards = remote.map((job) => ({ id: job.id, label: `${job.title} · ${job.c
 const total = jobs.reduce((sum, job) => sum + (job.salaryMax ?? 0), 0);
 ```
 
-`reduce(callback, initialValue)` — always pass the initial value.
+- `filter` = a sieve: only what passes stays.
+- `map` = a stamp: every item gets changed the same way.
+- `reduce` = a piggy bank: you drop in items one by one and end with one total. The `0` at the end is the starting amount — always give one.
+
+`reduce` can also build an object, like counting votes:
 
 ```js
 const countsByStatus = applications.reduce((counts, app) => {
@@ -87,7 +107,7 @@ const countsByStatus = applications.reduce((counts, app) => {
 // { saved: 2, applied: 5, interview: 1 }
 ```
 
-### 4. Searching and testing
+### 4. Finding and checking
 
 ```js
 jobs.find((job) => job.id === id)          // first match or undefined
@@ -96,6 +116,9 @@ jobs.some((job) => job.city === "Bandung") // at least one
 jobs.every((job) => job.salaryMax !== null)
 skills.includes("python")                  // uses === (NaN-safe)
 ```
+
+- `some` = "is there **at least one**?"
+- `every` = "do **all** of them pass?"
 
 ### 5. Sorting correctly
 
@@ -106,9 +129,14 @@ jobs.toSorted((a, b) => (b.salaryMax ?? -1) - (a.salaryMax ?? -1) || a.id - b.id
 jobs.toSorted((a, b) => a.title.localeCompare(b.title, "id"))                        // text, locale-aware
 ```
 
-The comparator returns negative (a first), positive (b first) or 0. `||` chains tie-breakers.
+Without a comparator, JavaScript sorts numbers **like words** ("100" comes before "9", like in a dictionary). The comparator answers "who goes first?":
+- negative number → `a` first,
+- positive number → `b` first,
+- `0` → same.
 
-### 6. Flattening, uniqueness, grouping
+`||` adds a tie-breaker: if salaries are equal, sort by id.
+
+### 6. Flattening, removing duplicates, grouping
 
 ```js
 const allSkills = jobs.flatMap((job) => job.skills);            // [["py","sql"],["py"]] → ["py","sql","py"]
@@ -119,7 +147,9 @@ const titlesByCity = Object.fromEntries(
 );
 ```
 
-`Object.groupBy` is ES2024 (all modern browsers and Node 21+).
+- `flatMap` = `map`, then open the small bags into one big bag.
+- `new Set(...)` = keep each value once, like a guest list where duplicate names are removed.
+- `Object.groupBy` = sort items into boxes by a label (city, status).
 
 ### 7. Readable chains
 
@@ -131,57 +161,36 @@ const topRemoteSalaries = jobs
   .map(({ title, salaryMax }) => ({ title, salary: formatRupiah(salaryMax) }));
 ```
 
-One step per line, named helper functions for non-trivial callbacks. Each step creates a new array — fine for hundreds or thousands of items; for huge data or hot loops, a single `for...of` can be clearer and faster.
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Method chains | declarative, testable, immutable | intermediate arrays; long chains get cryptic |
-| `for...of` loop | early `break`, one pass, familiar | more mutable variables |
-| `reduce` for everything | one pass | often harder to read than `filter`+`map` or a loop |
-| `sort` in place | no copy | mutates shared data |
-| `Object` as map | JSON-friendly | keys become strings; prototype keys — `Map` for arbitrary keys |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Shaping API responses into UI data; derived state (counts, groups, totals).
-- ✅ `find`/`some` instead of manual search loops.
-- 🚫 `map` just to loop for side effects — use `forEach` or `for...of`.
-- 🚫 Deeply nested `reduce` gymnastics — write a named function or a loop.
-
-## 🏆 Best practices
-
-- [ ] Never mutate inputs or state: `toSorted`, spread, `map`/`filter`.
-- [ ] Always give `sort` a comparator; use `localeCompare` for text.
-- [ ] Always give `reduce` an initial value.
-- [ ] Handle empty arrays (averages, `Math.max(...[])` is `-Infinity`).
-- [ ] Use `??` for missing numbers, not `||`.
-- [ ] Name complex callbacks (`const isAffordable = (job) => ...`).
-- [ ] Choose `Set`/`Map` for membership and lookups instead of `includes` in loops (O(n²)).
-
-## 🏭 How it's used in industry
-
-- Every React component that renders a list uses `map`; filters and sorting UIs are `filter` + `toSorted`.
-- Redux/Zustand reducers and TanStack Query `select` functions transform data immutably.
-- Data dashboards compute aggregates client-side with `reduce`/`groupBy` for small datasets (server-side SQL for big ones — Module 2).
+One step per line, like a recipe. If a step is complicated, give it a name (`const isRemote = (job) => ...`). For huge data (tens of thousands of items) or very frequent code, one simple `for...of` loop can be clearer and faster.
 
 ## ⚠️ Common mistakes
 
 - `.sort()` on numbers without a comparator.
-- Mutating props/state with `push`/`sort`.
-- Forgetting to `return` inside `map` with braces: `map((j) => { j.title })` → `undefined`s.
-- Using `includes` inside a loop over large arrays.
+- Changing props or state with `push` or `sort`.
+- Forgetting `return` in `map` with braces: `map((j) => { j.title })` gives `undefined`s.
+- Using `map` just to loop (use `forEach` or `for...of`).
+- Very clever nested `reduce` calls that nobody can read.
+- `includes` inside a loop over a big array (slow) — use a `Set`.
+
+## 🏆 Best practices
+
+- [ ] Don't change inputs or state: use `toSorted`, spread, `map`, `filter`.
+- [ ] Always give `sort` a comparator; use `localeCompare` for text.
+- [ ] Always give `reduce` a starting value.
+- [ ] Handle empty arrays (an average of nothing, `Math.max(...[])` is `-Infinity`).
+- [ ] Use `??` for missing numbers, not `||`.
+- [ ] Name complex callbacks (`const isAffordable = (job) => ...`).
+- [ ] Use `Set` or `Map` for fast "is it in here?" checks.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain to a teammate why `applications.sort(...)` inside a component can cause bugs that `toSorted` doesn't, even if the result looks the same on screen.
+Explain to a teammate why `applications.sort(...)` inside a component can cause bugs that `toSorted` doesn't, even if the screen looks the same. Use the "write on the original vs photocopy" idea.
 
 ## 📐 Design it
 
-CareerPilot's dashboard receives `applications: [{ id, status, company: { name }, appliedOn, updatedAt, salaryMax }]`. Design pure functions (signatures + method chain sketch) for: (1) counts per status with all statuses present, (2) the pipeline board columns in order, each sorted by `updatedAt` newest first, (3) top 5 companies by number of applications, (4) response rate = applications that moved past `applied` ÷ applications that reached `applied`.
+CareerPilot's dashboard gets `applications: [{ id, status, company: { name }, appliedOn, updatedAt, salaryMax }]`. Plan functions (name + chain of steps) for: (1) the count for every status, including statuses with zero, (2) board columns in order, newest update first, (3) the top 5 companies by number of applications, (4) the response rate = applications that moved past `applied` ÷ applications that reached `applied`.
 
 :::quiz
 Show a possible design
@@ -215,52 +224,46 @@ export const responseRate = (apps) => {
 };
 ```
 
-Decisions to note: every status present (UI never checks `undefined`), explicit tie-breaks, division-by-zero guard, ISO timestamps compared as strings. (Whether "rejected without screening" counts as a response is a **product** question — write it down.)
+- Every status is always present, so the page never has to check for `undefined`.
+- Ties are broken by name, so the order never jumps around.
+- Division by zero is handled.
+- Dates in ISO format (`2026-09-01T…`) can be compared as text.
+- "Does a rejection without a screening call count as a response?" is a **product** decision — write it down.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Pure functions, no mutation
-- [ ] Empty data handled
-- [ ] Deterministic ordering with tie-breaks
+- [ ] No function changes its input
+- [ ] Empty data is handled
+- [ ] The order is always the same (tie-breakers)
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w1/06-array-methods" ai="no-ai" title="Transform job data with array methods"}
-Implement nine small data functions — filtering, averaging, counting, sorting without mutation, grouping, `every`/`some`, unique skills and lookup — over frozen input data. Tests fail if you use loops or mutate the input.
+Write nine small data functions — filter, average, count, sort without changing the input, group, `every`/`some`, unique skills and lookup — using frozen input data. The tests fail if you use loops or change the input.
 :::
 
 :::hints
-- The test data is frozen with `Object.freeze`: `sort` on it throws — use `toSorted`.
-- For `skillCounts`, `flatMap` first, then `reduce` into an object.
-- `jobs.map((j) => j.salaryMax).filter((s) => s !== null)` before averaging.
+- The test data is frozen with `Object.freeze`: calling `sort` on it throws an error — use `toSorted`.
+- For `skillCounts`, use `flatMap` first, then `reduce` into an object.
+- `jobs.map((j) => j.salaryMax).filter((s) => s !== null)` before calculating the average.
 :::
 
 ## ✅ Quick check
 
 :::quiz
-What does `[3, 20, 100].sort()` return and why?
+What does `[3, 20, 100].sort()` return, and why?
 
-`[100, 20, 3]` — without a comparator, elements are compared as strings ("100" < "20" < "3").
+`[100, 20, 3]` — without a comparator, the numbers are compared as text ("100" < "20" < "3").
 :::
 
 :::quiz
-`map` vs `forEach`?
+`map` or `forEach`?
 
-`map` returns a new array of transformed values; `forEach` returns `undefined` and is only for side effects.
+`map` returns a new array with the changed values. `forEach` returns nothing — use it only to do something for each item.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Immutable | Tidak diubah (membuat salinan baru) |
-| Callback | Fungsi yang diberikan ke fungsi lain |
-| Comparator | Fungsi pembanding untuk pengurutan |
-| Accumulator | Akumulator — nilai yang dibawa `reduce` |
-| Derived data | Data turunan (dihitung dari data lain) |
 
 ## 📚 Keep learning
 
