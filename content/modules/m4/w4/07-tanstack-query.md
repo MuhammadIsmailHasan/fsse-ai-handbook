@@ -1,6 +1,6 @@
 ---
 title: "🔥 TanStack Query: Server State in Client Components"
-summary: Manage API data in the browser without useEffect bugs — queries and query keys, stale time and refetching, loading and error states, mutations, optimistic updates with rollback, invalidation, and combining it with Next.js server data.
+summary: Manage API data in the browser without useEffect bugs — queries and query keys, how long data stays fresh, loading and error states, mutations, instant updates with undo on failure, and when to use it next to Next.js server data.
 type: lesson
 source: original
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: none }
@@ -12,20 +12,37 @@ tags: [tanstack-query, react-query, server-state, mutations, optimistic-updates,
 
 ## 🎯 What you'll learn
 
-- **Server state** vs client state, and why `useEffect` fetching breaks
-- Setting up `QueryClientProvider` in a Next.js App Router project
-- `useQuery`: query keys, `queryFn`, `staleTime`, `gcTime`, `enabled`, `placeholderData`, `signal`
-- Query key factories and invalidation by prefix
-- `useMutation`: pending/error state, `invalidateQueries`, **optimistic updates with rollback**
-- When to use TanStack Query vs Server Components + Server Actions
+- **Server state** vs client state, and why fetching in `useEffect` breaks
+- Setting up TanStack Query in Next.js
+- `useQuery`: query keys, `staleTime`, cancelling old requests
+- Organizing query keys so you can refresh groups of data
+- `useMutation`: saving data and refreshing lists afterwards
+- **Optimistic updates**: show the change instantly, undo it if the server says no
+- When to use TanStack Query vs Server Components
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Server state** | Data that really lives in the backend; the browser only has a copy | Data milik server |
+| **Client state** | Data only the browser cares about: an open menu, a draft | Data milik browser |
+| **Query** | A request that reads data (`useQuery`) | Pengambilan data |
+| **Query key** | The name/address of a cached query: `["applications", "list", filters]` | Kunci query |
+| **Stale** | The copy might be out of date and should be refreshed soon | Basi |
+| **Mutation** | A request that changes data (`useMutation`) | Perubahan data |
+| **Invalidate** | Mark cached data as old so it's fetched again | Tandai perlu ambil ulang |
+| **Optimistic update** | Show the change before the server answers; undo if it fails | Update optimis |
+| **Race condition** | An older, slower response arrives last and overwrites newer data | Balapan respons |
 
 ## 🧠 The big idea
 
-Server state is **borrowed**: it lives in the Flask database, and the browser only holds a **copy** that goes stale the moment someone else changes it. TanStack Query is a **librarian** for those copies: it remembers what you borrowed, notices when copies are old, fetches new ones in the background, avoids duplicate requests, and updates everyone reading the same book.
+Server state is **borrowed**. It lives in the Flask database, and the browser only holds a **copy** that becomes outdated as soon as someone else changes it — like a **photocopy of a library book**.
 
-## ❓ Why does this exist?
+TanStack Query is the **librarian** for those copies: it remembers what you borrowed, notices when copies are old, gets new ones in the background, avoids fetching the same thing twice, and updates everyone reading the same book.
 
-Hand-written fetching looks simple and then accumulates bugs:
+## ❓ Why it matters
+
+Fetching by hand looks simple, then collects bugs:
 
 ```tsx
 const [data, setData] = useState(null);
@@ -35,16 +52,12 @@ useEffect(() => {
 }, [status]);
 ```
 
-- Race condition: switching filters quickly lets an older response overwrite a newer one.
-- No cache: navigating back refetches and flashes a spinner.
-- No retry, no background refresh, no sharing between components, no cancellation.
-- After a mutation, every list showing that data must be updated manually.
+- **Race condition**: switch filters quickly, and an older response can overwrite the newer one.
+- **No cache**: going back to a page loads everything again and flashes a spinner.
+- No retries, no background refresh, no sharing between components.
+- After saving something, every list showing that data must be updated by hand.
 
-## 💥 What happens if we DON'T use a server-state tool?
-
-Multiple components each fetch the same applications list, show inconsistent data after a status change, and the team writes a custom global store to sync API responses — reinventing a cache, badly.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Setup in Next.js
 
@@ -65,7 +78,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 ```
 
-Render `<Providers>` in the layout of the routes that need it. The React Query DevTools panel (`@tanstack/react-query-devtools`) shows every cached query.
+- The `QueryClient` is the librarian: **one** in the browser, and a new one for each server render (so users never share data).
+- Put `<Providers>` in the layout of the pages that need it.
+- The React Query DevTools panel (`@tanstack/react-query-devtools`) shows everything in the cache.
 
 ### 2. Queries and keys
 
@@ -87,16 +102,18 @@ export function useApplications(api: ApplicationsApi, filters: Filters) {
 }
 ```
 
-- The **query key** is like a cache address. Include every variable the `queryFn` uses.
-- A key factory prevents typos and enables **prefix invalidation** (`["applications", "list"]` matches every list).
+- The **query key** is the cache address — like a **library shelf number**. Include **every** value the request uses (like `filters`), or different filters will share the wrong data.
+- A **key factory** (`applicationKeys`) prevents typos and lets you refresh groups: everything starting with `["applications", "list"]` means "all lists".
+- `signal` cancels a request that is no longer needed.
+- `keepPreviousData` keeps the old list on screen while the new filter loads, so the page doesn't flash empty.
 
 | Option | Meaning |
 |---|---|
-| `staleTime` | how long data counts as fresh (default 0 → refetch on mount/focus) |
-| `gcTime` | how long unused data stays in memory (default 5 min) |
-| `enabled` | run only when true (e.g. query text not empty) |
-| `retry` | automatic retries for failed queries (default 3 in the browser) |
-| `refetchOnWindowFocus` | refresh when the tab regains focus (default true) |
+| `staleTime` | how long data counts as fresh (default 0 = refresh often) |
+| `gcTime` | how long unused data stays in memory (default 5 minutes) |
+| `enabled` | only run when this is true (for example, search text isn't empty) |
+| `retry` | automatic retries for failed requests (default 3 in the browser) |
+| `refetchOnWindowFocus` | refresh when you come back to the tab (default true) |
 
 ### 3. States
 
@@ -112,7 +129,8 @@ return (
 );
 ```
 
-`isPending` = no data yet; `isFetching` = a request is running (maybe in the background). TypeScript narrows `query.data` after the checks.
+- `isPending` = no data **yet** (first load) → show a loading screen.
+- `isFetching` = a request is running, maybe in the background while old data is on screen → show a small "Updating…".
 
 ### 4. Mutations and invalidation
 
@@ -127,7 +145,7 @@ const addNote = useMutation({
 {addNote.isError && <p role="alert">Couldn't save the note</p>}
 ```
 
-Invalidation marks matching queries stale and refetches the ones on screen.
+After saving, `invalidateQueries` tells the librarian: "the notes copy is old". Any notes list on screen is fetched again automatically.
 
 ### 5. Optimistic updates
 
@@ -166,69 +184,54 @@ sequenceDiagram
     C->>A: onSettled: refetch lists (truth from the server)
 ```
 
-Use optimistic updates for quick, likely-to-succeed actions (status moves, likes, toggles). For payments or irreversible actions, show pending state and wait for the server.
+Like writing a meeting in **pencil** in your calendar before the other person confirms: if they say no, you erase it.
+
+1. `onMutate`: stop old requests, save a **snapshot** (the pencil-free version), and change the cache right away.
+2. `onError`: put the snapshot back and show an error.
+3. `onSettled`: fetch the real data from the server either way.
+
+Use this for quick actions that usually succeed (moving a status, likes, toggles). For payments or actions you can't undo, show "Saving…" and wait for the server.
 
 ### 6. TanStack Query and Server Components
 
-| Need | Use |
+| You need | Use |
 |---|---|
-| Page data that should be in the initial HTML, SEO, secrets | Server Components (+ `use cache`, lesson 06) |
-| Mutations from forms | Server Actions (Week 5) — they can refresh server data with `updateTag`/`router.refresh()` |
-| Highly interactive client views: live filtering, infinite scroll, polling, optimistic drag-and-drop | TanStack Query |
-| Both | prefetch on the server and hydrate the client cache (`HydrationBoundary`) |
+| Page data in the first HTML, SEO, secrets | Server Components (+ `use cache`, lesson 06) |
+| Saving data from forms | Server Actions (Week 5) |
+| Very interactive screens: live filters, infinite scroll, polling, optimistic drag-and-drop | TanStack Query |
+| Both | load on the server first, then hand the data to the browser cache (`HydrationBoundary`) |
 
-Many Next.js apps use Server Components for most reads and TanStack Query only for the rich interactive parts (like CareerPilot's pipeline board).
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| TanStack Query | caching, dedupe, retries, background refresh, mutations | a library and concepts to learn; client JS |
-| `useEffect` fetching | no dependency | race conditions, no cache, lots of boilerplate |
-| Server Components only | less client JS, secure | less suited for very interactive, frequently-updating UIs |
-| SWR | smaller, simple | fewer mutation features |
-| Optimistic updates | instant feel | rollback logic; risk of confusing users if failures are common |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Client-side data that changes while the user interacts: boards, dashboards with polling, infinite lists, search-as-you-type.
-- ✅ Mutations that should update several views.
-- 🚫 Don't use it to store client UI state (open menus, form drafts) — that's `useState`/Zustand.
-- 🚫 Don't duplicate data already rendered by Server Components unless the client needs to manage it.
-
-## 🏆 Best practices
-
-- [ ] One `QueryClient` per browser session; fresh client per server render.
-- [ ] Query key factories; include every input in the key.
-- [ ] Pass `signal` to fetch for cancellation.
-- [ ] Set a sensible `staleTime` (0 means refetch often).
-- [ ] Handle `isPending`, `isError` and background `isFetching` distinctly.
-- [ ] Invalidate by prefix after mutations; optimistic updates only with snapshot + rollback + `onSettled` refetch.
-- [ ] Keep server state out of global client stores.
-- [ ] Use React Query DevTools while developing.
-
-## 🏭 How it's used in industry
-
-- TanStack Query is one of the most widely used React data libraries; job listings frequently mention "React Query".
-- Trello-like boards, admin dashboards and chat UIs rely on optimistic updates and invalidation.
-- Generated API clients (Orval, openapi-react-query) produce TanStack Query hooks directly from OpenAPI specs.
+Many Next.js apps load most pages with Server Components, and use TanStack Query only for the interactive parts — like CareerPilot's pipeline board.
 
 ## ⚠️ Common mistakes
 
-- Query keys missing a variable (`["applications"]` for every filter) → wrong cached data.
-- Copying query data into `useState` and mutating it.
-- Optimistic updates without cancelling in-flight queries (the old response overwrites the optimistic value).
+- A query key missing a value (`["applications"]` for every filter) → the wrong cached data.
+- Copying query data into `useState` and changing it there.
+- Optimistic updates without `cancelQueries` (an old response overwrites the instant change).
 - Creating a new `QueryClient` inside a component on every render.
+- Using TanStack Query for UI state like open menus — that's `useState` or Zustand.
+- Loading the same data again in the browser that a Server Component already rendered, without a reason.
+
+## 🏆 Best practices
+
+- [ ] One `QueryClient` per browser session; a fresh one per server render.
+- [ ] Use key factories, and put every input in the key.
+- [ ] Pass `signal` to the request so old requests are cancelled.
+- [ ] Choose a sensible `staleTime` (0 means refetching often).
+- [ ] Handle `isPending`, `isError` and background `isFetching` separately.
+- [ ] Invalidate by prefix after mutations; optimistic updates only with snapshot + rollback + `onSettled` refetch.
+- [ ] Keep server data out of global client stores.
+- [ ] Use React Query DevTools while developing.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain the librarian analogy to a teammate and use it to describe what happens when two components request the same applications list at the same time.
+Explain the librarian idea to a teammate, and use it to describe what happens when two components ask for the same applications list at the same time.
 
 ## 📐 Design it
 
-Design the TanStack Query layer for CareerPilot's **pipeline board**: columns per status, drag a card to move status, add a note from the card, poll for updates every 60 seconds while the tab is visible, and show a "3 new updates" banner instead of reordering cards under the user's cursor. Define keys, queries, mutations and their cache updates.
+Design the TanStack Query layer for CareerPilot's **pipeline board**: columns per status, drag a card to change its status, add a note from a card, check for updates every 60 seconds while the tab is visible, and show a "3 new updates" banner instead of moving cards under the user's mouse. Define the keys, queries, mutations and cache updates.
 
 :::quiz
 Show a possible design
@@ -278,28 +281,30 @@ useMutation({
 });
 ```
 
-Keyboard-accessible alternative to drag and drop: a "Move to…" menu using the same mutation.
+- Polling stops when the tab is hidden (saves requests and battery).
+- New data is held back behind a banner, so cards don't jump while the user is working.
+- A "Move to…" menu uses the same mutation, as a keyboard-friendly alternative to drag-and-drop.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Keys cover every input and support prefix invalidation
-- [ ] Polling pauses in background tabs
-- [ ] Optimistic update with cancel, snapshot, rollback, settle
-- [ ] UX avoids content jumping under the cursor
+- [ ] Keys include every input and allow refreshing by prefix
+- [ ] Polling pauses in hidden tabs
+- [ ] Optimistic update with cancel, snapshot, rollback and refetch
+- [ ] Content doesn't jump under the user's cursor
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w4/07-tanstack-query" ai="ai-allowed" title="Queries, keys and an optimistic status mutation"}
-Write a query key factory, a `useApplications` hook with cancellation, stale time and previous data while filters change, and a `useMoveStatus` mutation with optimistic cache updates, rollback and invalidation — then a panel that shows pending, error with retry, background updating and mutation errors. Tests use a real `QueryClient` with a controllable fake API.
+Write a query key factory, a `useApplications` hook with cancellation, stale time and "keep previous data" while filters change, and a `useMoveStatus` mutation with an optimistic cache update, rollback and invalidation — then a panel that shows loading, an error with retry, background updating and mutation errors. The tests use a real `QueryClient` with a controllable fake API.
 :::
 
 :::hints
 - `useQuery({ queryKey, queryFn: ({ signal }) => …, staleTime: 30_000, placeholderData: keepPreviousData })`.
-- `getQueriesData` returns `[key, data]` pairs — restore each with `setQueryData(key, data)`.
-- The failed application's role: find it with `move.variables?.id` when `move.isError`.
+- `getQueriesData` returns `[key, data]` pairs — restore each one with `setQueryData(key, data)`.
+- To name the failed application, use `move.variables?.id` when `move.isError`.
 :::
 
 ## ✅ Quick check
@@ -307,25 +312,14 @@ Write a query key factory, a `useApplications` hook with cancellation, stale tim
 :::quiz
 What's the difference between `isPending` and `isFetching`?
 
-`isPending` means there's no data yet (first load); `isFetching` means a request is in progress, including background refetches while data is already shown.
+`isPending` means there's no data yet (first load). `isFetching` means a request is running, including background refreshes while old data is still on screen.
 :::
 
 :::quiz
 Why call `cancelQueries` at the start of an optimistic update?
 
-So an in-flight refetch doesn't finish afterwards and overwrite the optimistic change with older server data.
+So a request that's already running doesn't finish later and overwrite the instant change with older server data.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Server state | Data milik server yang disalin ke klien |
-| Query key | Kunci kueri (identitas cache) |
-| Stale | Basi — data dianggap perlu diperbarui |
-| Invalidation | Menandai cache agar diambil ulang |
-| Mutation | Perubahan data ke server |
-| Optimistic update | Pembaruan optimis (tampil dulu sebelum server menjawab) |
 
 ## 📚 Keep learning
 
