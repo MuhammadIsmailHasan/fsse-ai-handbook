@@ -1,6 +1,6 @@
 ---
 title: "Forms & Async Responses"
-summary: Build forms that work before JavaScript loads — Server Actions, FormData, Zod validation on the server, useActionState for errors, useFormStatus for pending UI, mapping API 422/409 errors, and redirecting after success.
+summary: Build forms that work even before JavaScript loads — Server Actions, FormData, server checks with Zod, useActionState for errors, useFormStatus for "Saving…", showing Flask 422/409 errors, and redirecting.
 type: lesson
 source: core
 sourceRef: "M3 · W5 · L1"
@@ -13,26 +13,37 @@ tags: [forms, server-actions, useactionstate, zod, validation, nextjs]
 
 ## 🎯 What you'll learn
 
-- How HTML forms, `FormData` and **Server Actions** fit together
-- Validating on the server with **Zod 4** (`safeParse`, `z.flattenError`)
-- Returning errors with **`useActionState`** and pending UI with **`useFormStatus`**
-- Mapping the Flask API's `422` field errors and `409` conflicts back onto the form
-- Revalidating cached data and redirecting after a successful mutation
-- Accessible error messages (`aria-invalid`, `aria-describedby`, `role="alert"`)
+- How HTML forms, `FormData` and **Server Actions** work together
+- Checking form data on the server with **Zod**
+- Showing errors with **`useActionState`** and a "Saving…" button with **`useFormStatus`**
+- Showing the Flask API's `422` and `409` errors on the form
+- Refreshing data and redirecting after a successful save
+- Error messages everyone can find (`aria-invalid`, `aria-describedby`)
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Server Action** | A server function a form can call directly, without writing an API route | Fungsi server untuk form |
+| **`FormData`** | All named fields of a submitted form, as text values | Data form |
+| **Zod** | A library that checks data has the right shape and converts it | Pengecek data |
+| **Schema** | The rules for valid data: "role is required, max 200 characters" | Aturan data |
+| **`useActionState`** | A hook that keeps what the Server Action returned (like errors) | State hasil aksi |
+| **`useFormStatus`** | A hook that tells a button whether its form is being submitted | Status form |
+| **Progressive enhancement** | The page works without JavaScript, and gets nicer when JS loads | Tetap jalan tanpa JS |
+| **Expected error** | An error you plan for: invalid input, duplicate | Error yang diperkirakan |
 
 ## 🧠 The big idea
 
-A form is a **conversation** between the user and the server: "here's what I typed" → "these parts are wrong" → "fixed" → "saved, here's your new page". Every reply must reach the user clearly, even if the network is slow or JavaScript hasn't loaded yet.
+A form is a **conversation** between the user and the server: "here's what I typed" → "these parts are wrong" → "fixed" → "saved, here's your new page". Like filling a form at a **government office counter**: you hand it in, the officer points at the fields to fix, you fix them, and you get your receipt.
 
-Server Actions let a Next.js form talk to the server **directly**, without writing a separate API route and `fetch` call. React takes care of submitting, pending state and showing what the server replied.
+Server Actions let a Next.js form talk to the server **directly** — no separate API route and `fetch` call. React handles sending the form, the waiting state and showing the reply.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Typical hand-made React forms: `useState` for every field, `onSubmit` with `preventDefault`, `fetch` to an API route, a `loading` flag, a `try/catch`, and manual error state. That's a lot of code — and the form is dead until the JavaScript bundle loads.
+A typical hand-made React form needs `useState` for every field, `preventDefault`, a `fetch`, a `loading` flag, `try/catch` and error state. That's a lot of code — and the form doesn't work at all until the JavaScript has downloaded.
 
-HTML already had a working model: `<form action="/somewhere" method="post">`. Server Actions bring that model back, with React on top: **progressive enhancement** (works without JS) plus smooth updates (no full reload) once JS is ready.
-
-## 💥 What happens if we DON'T?
+It also easily gets things wrong:
 
 ```tsx
 "use client";
@@ -49,13 +60,13 @@ export function NewApplication() {
 }
 ```
 
-- Double submissions (button stays enabled).
-- A 422 from Flask is silently ignored; the user thinks it saved.
-- Anyone can `curl` the endpoint with invalid data — the client check is not protection.
+- The button stays enabled → people submit twice.
+- A 422 from Flask is ignored → the user thinks it was saved.
+- The check only runs in the browser → anyone can send bad data with `curl`.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
-### 1. Forms produce `FormData`
+### 1. A form produces `FormData`
 
 ```tsx
 <form action={createApplicationAction}>
@@ -65,7 +76,7 @@ export function NewApplication() {
 </form>
 ```
 
-When submitted, the browser collects every **named** field into `FormData`. All values are **strings** (or `File`) — `"3"`, not `3`; an empty number input is `""`.
+When submitted, the browser puts every field that has a **`name`** into `FormData`. Every value is **text** (or a `File`): `"3"`, not `3`; an empty number field is `""`.
 
 ### 2. A Server Action
 
@@ -78,9 +89,11 @@ export async function createApplicationAction(prevState: FormState, formData: Fo
 }
 ```
 
-`"use server"` at the top marks every export as a Server Action. Next.js turns each one into a **public POST endpoint** with an unguessable id. "Unguessable" is not "private": treat it exactly like an API route — **authenticate, authorize and validate** inside.
+- `"use server"` at the top makes every exported function a Server Action.
+- It runs on the server, so it can use secrets, call Flask and read cookies.
+- Next.js turns it into a **public POST endpoint** with a hard-to-guess id. Hard to guess is **not** private — like an unmarked back door is still a door. Always **check login, check permission and validate** inside.
 
-### 3. Validate with Zod (on the server)
+### 3. Check the data with Zod (on the server)
 
 ```ts
 import { z } from "zod";
@@ -111,11 +124,14 @@ if (!parsed.success) {
 // parsed.data is typed: { company_id: number; role: string; salary_min?: number; ... }
 ```
 
-- `z.coerce.number()` converts the string `"3"` to `3`.
-- `z.flattenError(error).fieldErrors` → `{ role: ["Role is required"], ... }` — perfect for forms.
-- `.refine` with `path` attaches cross-field errors to a specific field.
+A Zod schema is like the **checklist the officer uses** at the counter:
+- `z.coerce.number()` turns the text `"3"` into the number `3`.
+- `z.preprocess` turns an empty field `""` into "not given".
+- `.refine(..., { path: ["salary_max"] })` checks two fields together and puts the error on `salary_max`.
+- `z.flattenError(error).fieldErrors` gives `{ role: ["Role is required"], ... }` — exactly what a form needs.
+- After success, `parsed.data` has real types (numbers are numbers).
 
-### 4. Call the backend and map its errors
+### 4. Call Flask and show its errors
 
 ```ts
 try {
@@ -130,10 +146,13 @@ updateTag("applications");                                  // expire cached lis
 redirect(`/applications/${created.id}`);                    // outside try/catch!
 ```
 
-Your Flask API from Module 2 already returns `{"error": {"code": "validation_failed", "fields": {...}}}` — the same shape the form needs. **Expected** errors (validation, conflicts) are **returned** as state; **unexpected** errors are **thrown** to the error boundary.
+- Your Flask API from Module 2 already returns field errors in the same shape the form uses.
+- **Expected** errors (422 invalid, 409 duplicate) are **returned** and shown on the form.
+- **Unexpected** errors are **thrown** to the error screen.
+- After success: refresh the cached list, then redirect.
 
 :::warning[redirect() throws]
-`redirect()` works by throwing a special error. Call it **after** the `try/catch`, otherwise your `catch` swallows the redirect.
+`redirect()` works by throwing a special signal. Call it **after** the `try/catch`, or your `catch` will swallow the redirect.
 :::
 
 ### 5. `useActionState` — the conversation loop
@@ -163,7 +182,9 @@ export function ApplicationForm({ companies }: Props) {
 }
 ```
 
-The action's **first parameter** becomes the previous state; whatever it returns becomes the next `state`.
+- Give the form `formAction` (from the hook), not the raw action.
+- Whatever the action returns becomes the next `state` — like the officer handing your form back with notes.
+- `role="alert"` reads the summary aloud; `aria-describedby` connects each error to its field.
 
 ```mermaid
 sequenceDiagram
@@ -195,62 +216,42 @@ function SubmitButton() {
 }
 ```
 
-`useFormStatus` only works in a component **rendered inside** the `<form>` — not in the component that renders the form.
+`useFormStatus` only works in a component **inside** the `<form>` — like a lamp that only lights up when it's plugged into that form. That's why the button is its own component.
 
-### 7. Keeping typed values after an error
+### 7. Keeping what the user typed after an error
 
-With `action={formAction}`, React **resets uncontrolled fields** after the action finishes. For a better experience on errors, either return the submitted values in state and use them as `defaultValue`, or make key fields controlled. Keep it simple for short forms; for long forms, React Hook Form (lesson 07) is often the better tool.
-
-## ⚖️ Trade-offs
-
-| Approach | ✅ | ❌ |
-|---|---|---|
-| Server Action + `useActionState` | works without JS, little code, server validation built in | per-keystroke validation needs extra work; fields reset after submit |
-| Client `onSubmit` + `fetch` to Route Handler | full control, easy instant feedback | more code, no progressive enhancement, still need server validation |
-| React Hook Form + Zod (+ action) | best for complex, dynamic forms | extra library; JS required |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Create/edit forms, settings, login, "add note" — most CRUD forms.
-- ✅ Mutations that should revalidate server-rendered data.
-- 🚫 Not for **reading** data (Server Actions are POST and run one at a time) — fetch in Server Components or TanStack Query.
-- 🚫 Not for public APIs other apps call — use Route Handlers (lesson 05).
-
-## 🏆 Best practices
-
-- [ ] Validate **on the server** with a schema (Zod) even if the client validates too.
-- [ ] Authenticate and authorize **inside** every Server Action.
-- [ ] Return expected errors as state; throw unexpected ones to `error.tsx`.
-- [ ] Map backend `422` fields onto the same `fieldErrors` shape — one error UI for both sources.
-- [ ] Disable the submit button while pending; show progress text.
-- [ ] Accessible errors: `aria-invalid`, `aria-describedby`, a summary in `role="alert"`, labels on every field.
-- [ ] Use generic messages for security-sensitive failures (login, duplicates of other users' data).
-- [ ] `updateTag`/`revalidatePath` **after** success, `redirect` outside `try/catch`.
-- [ ] Never trust hidden inputs (`<input type="hidden" name="user_id">`) — read identity from the session.
-
-## 🏭 How it's used in industry
-
-- Next.js teams use Server Actions for internal app mutations and keep Route Handlers for webhooks and public APIs.
-- Remix/React Router popularised the same "forms + actions + progressive enhancement" model; React 19 made `useActionState`/`useFormStatus` part of React itself.
-- Shared Zod schemas are a common way to keep frontend and backend validation rules in sync in TypeScript stacks; with a Python backend, the API's `422` response stays the source of truth.
+With `action={formAction}`, React **clears uncontrolled fields** after the action finishes. For a better experience on errors, return the submitted values in `state` and use them as `defaultValue`, or make key fields controlled. For long, complex forms, React Hook Form (lesson 07) is often better.
 
 ## ⚠️ Common mistakes
 
-- Forgetting `name` on inputs → the field isn't in `FormData`.
-- `redirect()` inside `try` → "NEXT_REDIRECT" caught as an error.
-- `useFormStatus` in the same component as `<form>` → `pending` is always `false`.
-- Treating `formData.get("salary")` as a number.
-- Using the user id from a hidden field instead of the session.
+- An input without `name` → it's missing from `FormData`.
+- `redirect()` inside `try` → it's caught as an error.
+- `useFormStatus` in the same component that renders `<form>` → `pending` is always `false`.
+- Treating `formData.get("salary")` as a number (it's text).
+- Taking the user id from a hidden input instead of the session.
+- Using Server Actions to **read** data — load data in Server Components or TanStack Query.
+
+## 🏆 Best practices
+
+- [ ] Check data **on the server** with a schema, even if the browser checks too.
+- [ ] Check login and permission **inside** every Server Action.
+- [ ] Return expected errors as state; throw unexpected ones to `error.tsx`.
+- [ ] Put Flask's `422` field errors into the same `fieldErrors` shape — one error display for both.
+- [ ] Disable the submit button while saving, and show "Saving…".
+- [ ] Label every field; use `aria-invalid`, `aria-describedby` and a `role="alert"` summary.
+- [ ] Use general messages for security-sensitive failures (like login).
+- [ ] Refresh cached data **after** success; `redirect` outside `try/catch`.
+- [ ] Never trust hidden inputs for identity — read it from the session.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain to a non-programmer why a form checks your input twice — once in the browser and once on the server — using the example of a bank teller who still counts the money even though the ATM already counted it.
+Explain to a non-programmer why a form checks your input twice — once in the browser and once on the server — using a bank teller who still counts your money even though the ATM already counted it.
 
 ## 📐 Design it
 
-Design the **"Schedule interview"** form for CareerPilot: application (preselected from the page), interview type (`hr`, `technical`, `system_design`, `final`), start and end (datetime-local), optional meeting URL, optional notes. Write the Zod schema (including cross-field rules), the `FormState` type, which errors come from Zod vs Flask, and where the action redirects.
+Design the **"Schedule interview"** form: the application (already chosen from the page), the interview type (`hr`, `technical`, `system_design`, `final`), start and end time (datetime-local), an optional meeting URL and optional notes. Write the Zod schema (including rules across fields), the `FormState` type, which errors come from Zod vs Flask, and where to redirect.
 
 :::quiz
 Show a possible design
@@ -274,16 +275,16 @@ type InterviewFormState = {
 };
 ```
 
-- **Zod (shape):** required fields, enum, URL format, end after start, max lengths.
-- **Flask (business rules):** application exists and belongs to the user (404), overlapping interview for the same user (409), start in the past when the application is closed (422).
-- Timezone: `datetime-local` has no timezone → convert using the user's timezone on the server before sending ISO strings to Flask.
-- Success → `updateTag("interviews")`, `redirect(`/applications/${id}?tab=interviews`)`.
+- **Zod checks the shape:** required fields, the allowed types, URL format, end after start, maximum lengths.
+- **Flask checks the business rules:** the application exists and belongs to this user (404), another interview at the same time (409), a start time in the past for a closed application (422).
+- **Time zones:** `datetime-local` has no time zone, so convert using the user's time zone on the server before sending ISO dates to Flask.
+- **Success:** `updateTag("interviews")`, then `redirect(`/applications/${id}?tab=interviews`)`.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Every field has a label and an error slot
-- [ ] Cross-field rule attached to a specific field
+- [ ] Every field has a label and a place for its error
+- [ ] The cross-field rule shows its error on a specific field
 - [ ] Identity comes from the session, not the form
 
 ::ai-review{task="design"}
@@ -291,14 +292,14 @@ type InterviewFormState = {
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w5/01-server-action-forms" ai="no-ai" title="New application form with a Server Action"}
-Write the Zod schema, the `"use server"` action (validation, Flask 422/409 mapping, `updateTag`, `redirect`) and the client form with `useActionState`, `useFormStatus` and accessible errors.
+Write the Zod schema, the `"use server"` action (validation, Flask 422/409 handling, `updateTag`, `redirect`) and the client form with `useActionState`, `useFormStatus` and accessible errors.
 :::
 
 :::hints
 - `Object.fromEntries(formData)` gives a plain object for `safeParse`.
 - Use `z.preprocess` to turn `""` into `undefined` for optional numbers.
 - Put `SubmitButton` in its own component so `useFormStatus` can see the form.
-- The test mocks `redirect` to throw, just like Next.js does — keep it outside `try/catch`.
+- The test makes `redirect` throw, just like Next.js does — keep it outside `try/catch`.
 :::
 
 ## ✅ Quick check
@@ -306,25 +307,14 @@ Write the Zod schema, the `"use server"` action (validation, Flask 422/409 mappi
 :::quiz
 Your action returns `{ fieldErrors }`, but the form never shows them. The form uses `<form action={createApplicationAction}>`. What's wrong?
 
-The form uses the raw action, not the `formAction` returned by `useActionState`, so the returned state goes nowhere. Pass `formAction` to `action`.
+The form uses the raw action instead of the `formAction` from `useActionState`, so the returned state goes nowhere. Pass `formAction` to `action`.
 :::
 
 :::quiz
-Why is a Server Action an authorization risk if you forget to check the session?
+Why is a Server Action risky if you forget to check the session?
 
-It's a public POST endpoint. Anyone can call it with crafted `FormData` even if the page with the form is protected.
+It's a public POST endpoint. Anyone can call it with their own `FormData`, even if the page with the form is protected.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Server Action | Fungsi server yang dipanggil langsung dari form |
-| Progressive enhancement | Peningkatan bertahap — tetap berfungsi tanpa JavaScript |
-| Validation | Validasi input |
-| Pending state | Status menunggu (sedang diproses) |
-| Field error | Pesan kesalahan per kolom |
-| Redirect | Pengalihan halaman |
 
 ## 📚 Keep learning
 
