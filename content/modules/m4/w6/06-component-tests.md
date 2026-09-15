@@ -1,6 +1,6 @@
 ---
 title: "🔥 Component Tests with Vitest + Testing Library"
-summary: Test React components the way users use them — Vitest setup for Next.js, Testing Library queries, user-event, async UI, mocking modules and fetch, testing hooks, what not to test, and measuring test quality with mutation testing.
+summary: Test React components the way users use them — Vitest setup for Next.js, Testing Library queries, user-event, loading and error states, mocking modules and fetch, testing hooks, what not to test, and checking test quality with mutants.
 type: lesson
 source: original
 roles: { be: none, fe: core, fs: core, ai: optional, ops: none }
@@ -12,27 +12,40 @@ tags: [vitest, testing-library, react, component-testing, mocking, mutation-test
 
 ## 🎯 What you'll learn
 
-- Why component tests are the **best value** tests for a React UI
+- Why component tests give the **best value** for a React UI
 - Vitest + jsdom + Testing Library setup in a Next.js project
 - Query priority: `getByRole` → `getByLabelText` → `getByText` → `getByTestId`
 - `getBy` vs `queryBy` vs `findBy`
-- `userEvent` for realistic interactions
-- Testing async states (pending, success, error) with controllable Promises
+- `userEvent` for realistic clicks and typing
+- Testing async states (pending, success, error) with Promises you control
 - Mocking: modules (`vi.mock`), `fetch`, Next.js navigation, timers
 - Testing custom hooks with `renderHook`
 - What **not** to test, and how mutation testing measures test quality
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Component test** | Render one component (with its children) and use it like a user | Tes komponen |
+| **Vitest** | A fast test runner (like Jest) that works well with Vite | Alat menjalankan tes |
+| **jsdom** | A fake browser page that runs inside Node.js | DOM simulasi |
+| **Testing Library** | Helpers to find elements the way users see them (by role, label, text) | Pustaka pencari elemen |
+| **Query** | A function that finds an element: `getByRole`, `findByText`… | Pencarian elemen |
+| **Mock** | A fake version of something (network, router, a module) | Tiruan |
+| **Implementation detail** | How the code works inside (state names, CSS classes) — users never see it | Detail internal |
+| **Coverage** | Which lines of code ran during tests | Cakupan kode |
+
 ## 🧠 The big idea
 
-Testing Library's guiding principle: **the more your tests resemble the way your software is used, the more confidence they give you.** A user doesn't know your component has a `useState` called `deletingId` — they see a button that says "Deleting…" and can't be clicked twice. Test **that**.
+Testing Library's main rule: **the more your tests look like the way your software is used, the more you can trust them.** A user doesn't know your component has a `useState` called `deletingId` — they see a button that says "Deleting…" and can't be clicked twice. Test **that**.
 
-Component tests are a **flight simulator**: realistic enough to practice every emergency (errors, slow networks, empty states) in milliseconds, without the cost of flying the real plane (E2E).
+Component tests are a **flight simulator**: realistic enough to practice every emergency (errors, slow networks, empty lists) in milliseconds, without the cost of flying the real plane (E2E).
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-E2E tests are slow and need a running app, API and database. Unit tests of pure functions miss UI wiring. Component tests render a real React tree in jsdom (a simulated DOM), click and type like a user, and run hundreds of cases per second — perfect for tables, forms, dialogs, conditional rendering and accessibility.
+E2E tests are slow and need a running app, API and database. Unit tests of pure functions miss how the UI is wired. Component tests render a real React tree in jsdom, click and type like a user, and run hundreds of cases per second — perfect for tables, forms, dialogs, conditional rendering and accessibility.
 
-## 💥 What happens if we DON'T (or test the wrong way)?
+Testing the wrong way looks like this:
 
 ```tsx
 // ❌ implementation-detail tests
@@ -41,9 +54,9 @@ expect(container.querySelector(".btn-danger")).toBeTruthy();  // breaks on a CSS
 expect(asFragment()).toMatchSnapshot();                       // 400-line snapshot nobody reads; "update snapshot" on every change
 ```
 
-These tests fail when you refactor correctly and pass when behavior breaks — the worst of both.
+These tests fail when you refactor correctly, and pass when behavior breaks — the worst of both. Like a driving test that checks the engine's color instead of whether you can brake.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Setup in a Next.js project
 
@@ -68,18 +81,20 @@ export default defineConfig({
 import "@testing-library/jest-dom/vitest";   // toBeInTheDocument, toBeDisabled, toHaveAccessibleDescription…
 ```
 
-Async **Server Components** aren't supported by Vitest rendering yet — test their data functions as units, their client children as components, and whole pages with E2E.
+Vitest can't render async **Server Components** yet. Test their data functions as unit tests, their client children as components, and whole pages with E2E.
 
 ### 2. Queries
 
 | Query | No match | Many matches | Async? | Use for |
 |---|---|---|---|---|
 | `getBy…` | throws | throws | no | elements that must be there |
-| `queryBy…` | `null` | throws | no | asserting something is **absent** |
+| `queryBy…` | `null` | throws | no | checking something is **not** there |
 | `findBy…` | rejects after timeout | rejects | **yes** | elements that appear later |
 | `getAllBy…` / `queryAllBy…` / `findAllBy…` | — | array | — | lists |
 
-Priority: `getByRole("button", { name: "Delete Backend Engineer" })` → `getByLabelText("Search")` → `getByText("No applications match your filters")` → `getByTestId` as a last resort. Use `within(row)` to scope to one part of the UI, and `screen.debug()` / `screen.logTestingPlaygroundURL()` when stuck.
+Easy way to remember: `get` = "it's here now", `query` = "maybe it's not here", `find` = "wait for it".
+
+Priority: `getByRole("button", { name: "Delete Backend Engineer" })` → `getByLabelText("Search")` → `getByText("No applications match your filters")` → `getByTestId` as a last resort. Use `within(row)` to search inside one part of the UI, and `screen.debug()` / `screen.logTestingPlaygroundURL()` when stuck.
 
 ### 3. Interactions with `userEvent`
 
@@ -93,9 +108,9 @@ await user.click(screen.getByRole("button", { name: "Applied on" }));
 await user.keyboard("{Escape}");
 ```
 
-`userEvent` fires the full event sequence a browser would (focus, keydown, input, keyup, click) — `fireEvent` fires just one event; use it only when you need that control (e.g. with fake timers).
+`userEvent` fires the whole chain of events a real browser would (focus, keydown, input, keyup, click). `fireEvent` fires just one event — like teleporting a finger onto the button. Use `fireEvent` only when you need that control (for example with fake timers).
 
-### 4. Async states with a controllable Promise
+### 4. Async states with a Promise you control
 
 ```tsx
 test("deletes by id with a pending state", async () => {
@@ -115,7 +130,7 @@ test("deletes by id with a pending state", async () => {
 });
 ```
 
-Resolving the Promise **yourself** lets you assert the in-between state deterministically — no sleeps.
+You hold the **remote control of the network**: the request stays "loading" until you press `finish()`. That lets you check the in-between state every time — no sleeps, no luck.
 
 ### 5. Mocking
 
@@ -134,9 +149,11 @@ vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json([{ id: 1 }])));
 vi.useFakeTimers(); act(() => vi.advanceTimersByTime(4000));
 ```
 
-- Mock at **boundaries** (network, router, time, browser APIs), not your own child components.
-- For many API-driven components, **MSW (Mock Service Worker)** intercepts requests at the network level and can be shared between tests, Storybook and local development.
-- Wrap components that need providers (TanStack Query, context) in a custom `renderWithProviders` helper; create a **new QueryClient per test** with `retry: false`.
+Mock at the **edges** of your app (network, router, time, browser APIs) — like a film set with a painted city in the background, while the actors (your components) are real.
+
+- Don't mock your own child components.
+- For components that call many APIs, **MSW (Mock Service Worker)** fakes requests at the network level and can be shared by tests, Storybook and local development.
+- Wrap components that need providers (TanStack Query, context) in a `renderWithProviders` helper; create a **new QueryClient per test** with `retry: false`.
 
 ### 6. Hooks
 
@@ -144,17 +161,17 @@ vi.useFakeTimers(); act(() => vi.advanceTimersByTime(4000));
 const { result, rerender } = renderHook(({ value }) => useDebouncedValue(value, 300), { initialProps: { value: "d" } });
 ```
 
-Prefer testing hooks through a component that uses them; use `renderHook` for reusable hooks with many cases.
+Prefer testing a hook through a component that uses it; use `renderHook` for reusable hooks with many cases.
 
 ### 7. What not to test
 
 - Internal state, private functions, CSS class names.
-- Third-party library behavior (Radix already tests its focus trap — test **your** usage: title, confirm action, pending state).
+- How a third-party library works (Radix already tests its focus trap — test **your** use of it: title, confirm action, pending state).
 - Large snapshots. Small inline snapshots of stable, meaningful output are fine.
 
 ### 8. Are the tests any good? Mutants again
 
-The exercise gives you a finished component and 9 mutants. A test suite with 100% coverage can still let most of them survive:
+The exercise gives you a finished component and 9 mutants (versions with one bug each). A test suite with 100% coverage can still let most of them survive:
 
 ```tsx
 test("renders", () => {
@@ -163,48 +180,33 @@ test("renders", () => {
 });
 ```
 
-For real projects, **Stryker** runs mutation testing on Vitest suites; use it on critical modules (permissions, pricing, validation).
+Coverage says the simulator was **turned on**; it doesn't say any emergency was practiced. In real projects, **Stryker** runs mutation testing on Vitest suites — use it on critical code (permissions, pricing, validation).
 
-## ⚖️ Trade-offs
+### When to use component tests
 
-| | ✅ | ❌ |
-|---|---|---|
-| Component tests (jsdom) | fast, realistic interactions, a11y-oriented queries | no real layout/CSS, no real browser APIs |
-| Vitest Browser Mode / Playwright component testing | real browser rendering | slower, more setup |
-| E2E | full confidence for journeys | slow, flaky if overused |
-| Snapshots | quick to write | brittle, rarely reviewed |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Forms, tables, filters, dialogs, conditional rendering, loading/error/empty states, accessibility names.
-- ✅ Regression tests for UI bugs found in production.
-- 🚫 Visual layout (use visual regression/E2E screenshots).
-- 🚫 Async Server Components and full routing (use E2E).
-
-## 🏆 Best practices
-
-- [ ] Query by role/label/text; `within` to scope; `getByTestId` last.
-- [ ] `userEvent.setup()` per test; `await` every interaction.
-- [ ] `findBy` / `vi.waitFor` for async; controllable Promises for pending states; never `setTimeout` sleeps.
-- [ ] Test the three states of async UI: pending, success, error — plus empty.
-- [ ] Mock boundaries (network, router, timers), not children; reset mocks between tests (`restoreMocks`).
-- [ ] New providers/clients per test; no shared mutable state.
-- [ ] Each test: one behavior, named like a spec sentence.
-- [ ] Run tests in CI on every PR; check test quality with mutations on critical code.
-
-## 🏭 How it's used in industry
-
-- Testing Library is the de facto standard for React component testing, and Vitest has become a popular default for Vite and many Next.js projects (Jest remains common in older codebases).
-- Teams combine component tests with Storybook stories (interaction tests, accessibility checks) and a small E2E layer.
-- Frontend interviews often include "write tests for this component" — role-based queries and async testing are what reviewers look for.
+- ✅ Forms, tables, filters, dialogs, conditional rendering, loading/error/empty states, accessible names.
+- ✅ Tests for UI bugs found in production.
+- 🚫 Visual layout → visual regression or E2E screenshots (jsdom has no real CSS layout).
+- 🚫 Async Server Components and full routing → E2E.
 
 ## ⚠️ Common mistakes
 
-- `getBy` to assert absence (throws) → use `queryBy` + `not.toBeInTheDocument()`.
-- Forgetting `await` on `user.click` → assertions run before updates.
+- `getBy` to check something is absent (it throws) → use `queryBy` + `not.toBeInTheDocument()`.
+- Forgetting `await` on `user.click` → checks run before the UI updates.
 - Expecting instant updates after async work → use `findBy`.
-- "not wrapped in act(...)" warnings ignored — they usually mean an update happened after the test finished; await the final state.
-- Test data that accidentally matches multiple rows (e.g. searching "data" matches both a role and a company).
+- Ignoring "not wrapped in act(...)" warnings — usually an update happened after the test ended; await the final state.
+- Test data that accidentally matches several rows (searching "data" matches both a role and a company).
+
+## 🏆 Best practices
+
+- [ ] Query by role/label/text; `within` to narrow down; `getByTestId` last.
+- [ ] `userEvent.setup()` per test; `await` every interaction.
+- [ ] `findBy` / `vi.waitFor` for async; Promises you control for pending states; never `setTimeout` sleeps.
+- [ ] Test all states of async UI: pending, success, error — plus empty.
+- [ ] Mock the edges (network, router, timers), not children; reset mocks between tests (`restoreMocks`).
+- [ ] New providers/clients per test; no shared changing state.
+- [ ] One behavior per test, named like a sentence from the spec.
+- [ ] Run tests in CI on every PR; check test quality with mutations on critical code.
 
 ::part[Explain & Design]{n="2"}
 
@@ -222,22 +224,22 @@ Show a possible list
 | Test | Arrange / mock | Act | Assert |
 |---|---|---|---|
 | loads companies | `fetch`/MSW returns 2 companies | render | "Loading companies…" then options appear (`findAllByRole("option")`) |
-| company load error | MSW returns 500 | render | alert "Couldn't load companies" + Retry button refetches |
+| company load error | MSW returns 500 | render | alert "Couldn't load companies" + Retry button fetches again |
 | required fields | companies loaded | click Save | messages for role/company, `aria-invalid`, `onSubmit` not called |
-| skills rows | — | Add skill ×2, type, remove first | remaining row keeps its typed value; Add disabled at max |
-| salary refinement | — | min 20, max 10, blur | "Maximum must be at least the minimum" on max |
-| pending | `onSubmit` returns a controllable Promise | fill valid + Save | button disabled "Saving…"; resolve → enabled |
+| skills rows | — | Add skill ×2, type, remove first | the remaining row keeps its typed value; Add disabled at max |
+| salary rule | — | min 20, max 10, blur | "Maximum must be at least the minimum" on max |
+| pending | `onSubmit` returns a Promise you control | fill valid + Save | button disabled "Saving…"; resolve → enabled |
 | server field error | `onSubmit` resolves `{ fieldErrors: { role: "Already applied" } }` | submit | message under Role, focus moves to Role |
 | success | `onSubmit` resolves `undefined` | submit | status "Application saved", form reset (not dirty) |
 
-Mocks: network via MSW (or `fetch` stub), `next/navigation` router if the form redirects. Not mocked: RHF, Zod, child inputs.
+Mocks: network via MSW (or a `fetch` stub), the `next/navigation` router if the form redirects. Not mocked: RHF, Zod, child inputs.
 :::
 
 ### 📝 Self-review checklist
 
 - [ ] Pending, success, error and empty states covered
-- [ ] Only boundaries mocked
-- [ ] Every assertion is user-visible
+- [ ] Only the edges are mocked
+- [ ] Every assertion is something a user can see
 
 ::ai-review{task="design"}
 
@@ -249,8 +251,8 @@ Write Vitest + Testing Library tests for a finished applications table (sorting,
 
 :::hints
 - Read each rule in the README and ask: "what would a user see if this were broken?"
-- Choose test data where a search matches **only** role or **only** company.
-- A pending-state assertion needs a Promise you resolve yourself.
+- Choose test data where a search matches **only** the role or **only** the company.
+- A pending-state check needs a Promise you resolve yourself.
 :::
 
 ## ✅ Quick check
@@ -258,25 +260,14 @@ Write Vitest + Testing Library tests for a finished applications table (sorting,
 :::quiz
 When do you use `queryByText` instead of `getByText`?
 
-When asserting that something is **not** there: `expect(screen.queryByText("Error")).not.toBeInTheDocument()`. `getBy` would throw before the assertion.
+When checking that something is **not** there: `expect(screen.queryByText("Error")).not.toBeInTheDocument()`. `getBy` would throw before the check runs.
 :::
 
 :::quiz
 Why create a new TanStack `QueryClient` for every test?
 
-The cache would otherwise leak data between tests, making results depend on test order.
+Otherwise the cache leaks data from one test to the next, so results depend on the order tests run in.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Component test | Tes komponen |
-| Query (Testing Library) | Cara mencari elemen di DOM |
-| Mock | Tiruan untuk dependensi |
-| jsdom | DOM simulasi di Node.js |
-| Coverage | Cakupan kode yang dijalankan tes |
-| Mutation testing | Pengujian mutasi (menilai kualitas tes) |
 
 ## 📚 Keep learning
 
