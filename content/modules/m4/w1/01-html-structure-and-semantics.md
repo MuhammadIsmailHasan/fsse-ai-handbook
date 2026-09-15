@@ -1,6 +1,6 @@
 ---
 title: "HTML Structure & Semantics"
-summary: Structure pages with the right elements — document basics, landmarks, headings, lists, links, images and forms — so browsers, search engines and screen readers understand them.
+summary: Build pages with the right HTML elements — page skeleton, main areas, headings, lists, links, images and forms — so browsers, search engines and screen readers understand them.
 type: lesson
 source: core
 sourceRef: "M3 · W1 · L1"
@@ -14,28 +14,39 @@ tags: [html, semantics, accessibility, seo, forms]
 
 ## 🎯 What you'll learn
 
-- What HTML is for: **meaning**, not appearance
-- The document skeleton: `doctype`, `lang`, `charset`, viewport, `title`
-- **Landmarks** (`header`, `nav`, `main`, `footer`, `aside`), `article` vs `section`, heading hierarchy
-- Text-level semantics: lists, links, images with `alt`, `time`, `data`
-- Accessible forms: `label`, input types, `required`, `button type`
-- How the browser turns HTML into the **DOM** and the accessibility tree
+- What HTML is for: saying what content **is**, not how it looks
+- The basic page skeleton
+- The main page areas (`header`, `nav`, `main`, `footer`) and headings
+- Lists, links, images and forms written the right way
+- How the browser turns HTML into something JavaScript and screen readers use
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Element** | One building block of a page, like `<button>` or `<h1>` | Elemen |
+| **Semantic HTML** | Choosing the element that matches the meaning (a button is a `<button>`) | HTML semantik |
+| **Landmark** | A big named area of the page: header, navigation, main content, footer | Wilayah halaman |
+| **Screen reader** | Software that reads the page aloud for blind users | Pembaca layar |
+| **Accessibility (a11y)** | Making the page usable for everyone, including people with disabilities | Aksesibilitas |
+| **DOM** | The page as a tree of objects that JavaScript can read and change | Pohon elemen halaman |
+| **Attribute** | Extra information on an element, like `href` or `alt` | Atribut |
 
 ## 🧠 The big idea
 
-HTML is the **skeleton and labels** of a page; CSS is the clothes; JavaScript is the muscles. If the skeleton is wrong — a "button" that's really a `<div>` — no amount of clothing fixes it for keyboard users, screen readers, search engines or AI agents browsing your site.
+HTML is like the **labels in a supermarket**. The shelves can look beautiful, but if nothing is labeled, people get lost. When a "button" is really a `<div>`, the page may look fine, but keyboards, screen readers and Google can't tell what it is.
 
-:term[Semantic HTML]{bahasa="HTML semantik — memakai elemen sesuai maknanya, bukan hanya tampilannya"} means choosing elements for what content **is**.
+Semantic HTML = put the right label on every part of the page.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Your Flask API returns JSON. Humans need that data turned into a page that:
-- **everyone** can use (≈16% of people live with a disability — WHO),
-- search engines can index,
-- browsers can enhance for free (form validation, keyboard support, reader mode),
-- your React components (Week 3) will output — React produces HTML too.
+Your Flask API returns JSON. People need that data shown as a page that:
+- **everyone** can use (about 16% of people live with a disability — WHO),
+- Google can understand,
+- gets free help from the browser (keyboard support, form checks),
+- your React components will produce later (React also outputs HTML).
 
-## 💥 What happens if we DON'T?
+A page built with the wrong elements breaks quietly:
 
 ```html
 <div class="btn" onclick="submitForm()">Send</div>
@@ -44,13 +55,15 @@ Email <input id="email">
 ```
 
 - Keyboard users can't reach or press the "button".
-- Screen readers announce "Backend Engineer" as plain text, not the page's main heading.
-- Clicking the word "Email" doesn't focus the input; the reader just says "edit text".
-- Mobile keyboards don't show `@` for email; the browser doesn't validate.
+- Screen readers don't know "Backend Engineer" is the page title.
+- Clicking the word "Email" doesn't focus the input.
+- Phones don't show the `@` keyboard, and the browser doesn't check the email.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
-### 1. The document skeleton
+### 1. The page skeleton
+
+Every page starts the same way — like the frame of a house before the walls.
 
 ```html
 <!doctype html>                    <!-- standards mode -->
@@ -64,36 +77,42 @@ Email <input id="email">
 </html>
 ```
 
-### 2. Landmarks and sections
+- `lang` tells screen readers which language to speak.
+- `viewport` makes the page fit phone screens.
+- `title` is the text in the browser tab and in Google results.
+
+### 2. Main areas (landmarks)
+
+Think of a newspaper: a header at the top, the main story, side notes, and a footer. HTML has an element for each area.
 
 ```mermaid
 flowchart TB
     B[body] --> H["header<br/>logo + nav"]
     B --> M["main (one per page)"]
     B --> F[footer]
-    M --> A["article<br/>self-contained: a job posting"]
+    M --> A["article<br/>a job posting"]
     A --> S1["section + h2: Requirements"]
     A --> S2["section + h2: Apply"]
     M --> AS["aside: related jobs"]
 ```
 
-| Element | Use for |
+| Element | Use it for |
 |---|---|
-| `header` / `footer` | intro/outro of the page (or of an article) |
-| `nav` | major navigation blocks |
-| `main` | the unique main content — exactly one |
-| `article` | content that makes sense on its own (post, job card, comment) |
-| `section` | a thematic group **with a heading** |
-| `aside` | related but secondary content |
-| `div` / `span` | no meaning — for styling hooks only |
+| `header` / `footer` | top and bottom of the page (or of an article) |
+| `nav` | a group of main navigation links |
+| `main` | the main content — only **one** per page |
+| `article` | something that makes sense alone (a job card, a post) |
+| `section` | a group of related content **with a heading** |
+| `aside` | extra, less important content |
+| `div` / `span` | no meaning — only for styling |
 
-Screen reader users jump between landmarks and headings like a table of contents.
+Screen reader users jump between these areas like using a table of contents.
 
-### 3. Headings are an outline
+### 3. Headings are the outline
 
-One `h1` per page (the page's topic), then `h2` for sections, `h3` inside those. **Don't skip levels** to get smaller text — that's CSS's job.
+Headings work like a book's table of contents: one `h1` (the page topic), then `h2` for sections, `h3` inside them. **Don't skip levels** just to get smaller text — change the size with CSS.
 
-### 4. Text semantics
+### 4. Lists, links, images and text
 
 ```html
 <ul><li>Python</li><li>PostgreSQL</li></ul>                     <!-- unordered list -->
@@ -106,9 +125,9 @@ Posted <time datetime="2026-09-01">1 September 2026</time>
 <strong>Required</strong> vs <em>preferred</em>                  <!-- importance vs emphasis -->
 ```
 
-- `alt` describes the image's **purpose**; empty `alt=""` hides decorative images.
-- Links **go somewhere** (`href`); buttons **do something**.
-- Link text must make sense out of context — screen readers can list all links.
+- `alt` = a short description of the image, read aloud when the image can't be seen. Use `alt=""` for pure decoration.
+- A **link** takes you somewhere (`href`). A **button** does something on this page. Like a door vs a light switch.
+- Link text must make sense alone. "Kopi Data company profile" is good; "click here" is not.
 
 ### 5. Forms
 
@@ -127,70 +146,47 @@ Posted <time datetime="2026-09-01">1 September 2026</time>
 </form>
 ```
 
-- `label for` ↔ `id`: click the label to focus; screen readers read the label.
-- `type="email" | "tel" | "number" | "date" | "search"` → right mobile keyboard + built-in validation.
-- `name` is what the server receives (your Flask `request.form["email"]`).
-- `autocomplete` lets browsers and password managers fill fields.
-- Buttons default to `type="submit"` inside forms — set `type="button"` for non-submit actions.
+- `label for="email"` connects to `id="email"` — like a name tag on a box. Clicking the label focuses the input.
+- `type="email"` gives phones the right keyboard and lets the browser check the value.
+- `name` is the key your Flask server receives (`request.form["email"]`).
+- Inside a form, a button **submits by default**. Use `type="button"` for other actions.
 
 ### 6. From HTML to DOM
 
-The browser parses HTML into the **DOM** (a tree of objects JavaScript can change — lesson 05) and builds an **accessibility tree** from it (roles, names, states). Semantic elements get correct roles automatically: `<button>` → role *button*, `<nav>` → *navigation*.
+The browser reads your HTML and builds the **DOM** — a tree of objects that JavaScript can change (lesson 05). From the same tree, it builds what screen readers read. Correct elements get correct roles for free: `<button>` is announced as "button".
 
 :::note[🐍 Coming from Flask]
-Jinja templates render HTML on the server. Everything here applies to Jinja, React JSX and Next.js alike — they all end up as HTML in the browser.
+Jinja templates also produce HTML. Everything here applies to Jinja, React and Next.js — they all end up as HTML in the browser.
 :::
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Semantic elements | accessibility, SEO, free browser behavior | need to learn which element fits |
-| `div` + ARIA roles | possible when no native element exists | easy to get wrong; "no ARIA is better than bad ARIA" |
-| Native form validation | free, accessible | limited styling/messages → often combined with custom validation (Week 5) |
-| Many `section`s | structure | a `section` without a heading adds noise |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Always start from native semantic elements.
-- ✅ `article` for repeated self-contained items (job cards).
-- 🚫 Don't use headings for size, `<br>` for spacing, or tables for layout.
-- 🚫 Don't add ARIA roles to elements that already have them (`<button role="button">`).
-
-## 🏆 Best practices
-
-- [ ] Include `lang`, `charset`, viewport and a descriptive `title` on every page.
-- [ ] Use landmarks; exactly one `main` and one `h1`; never skip heading levels.
-- [ ] Links for navigation, buttons for actions; descriptive link text.
-- [ ] Meaningful `alt` for informative images, `alt=""` for decorative ones; set `width`/`height` to avoid layout shift.
-- [ ] Every form control has a visible `label`; use the right `type`, `name`, `autocomplete`, `required`.
-- [ ] No inline `style` or `onclick` — keep structure, presentation and behavior separate.
-- [ ] Validate with the W3C validator and check with a screen reader or the browser's accessibility inspector.
-
-## 🏭 How it's used in industry
-
-- Public-sector and enterprise sites must meet **WCAG 2.2 AA**; accessibility lawsuits and regulations (e.g. the European Accessibility Act, effective June 2025) make semantics a business requirement.
-- SEO teams rely on headings, `title`, structured data and semantic markup.
-- Component libraries (shadcn/ui, Radix — Week 5) are built on semantic HTML plus ARIA patterns.
-- AI browsing agents read the accessibility tree too — accessible sites are easier for agents to use.
 
 ## ⚠️ Common mistakes
 
-- Clickable `div`s and `span`s.
-- Placeholder text instead of labels.
-- `alt="image"` or file names as alt text.
-- Multiple `h1`s used for styling.
-- Forgetting `type="button"` and accidentally submitting forms.
+- Clickable `div`s and `span`s instead of `<button>` or `<a>`.
+- Placeholder text instead of a real `<label>`.
+- `alt="image"` or a file name as alt text.
+- Many `h1`s, or headings chosen only for their size.
+- Adding ARIA roles to elements that already have them (`<button role="button">`).
+- Forgetting `type="button"`, so a button submits the form by accident.
+
+## 🏆 Best practices
+
+- [ ] Every page has `lang`, `charset`, viewport and a clear `title`.
+- [ ] Use landmarks; exactly one `main` and one `h1`; don't skip heading levels.
+- [ ] Links for going somewhere, buttons for actions; link text that makes sense alone.
+- [ ] Useful `alt` for real images, `alt=""` for decoration; set `width` and `height`.
+- [ ] Every form field has a visible `label`, the right `type`, a `name` and `autocomplete`.
+- [ ] No inline `style` or `onclick` — keep HTML, CSS and JavaScript separate.
+- [ ] Check your page with the W3C validator and your browser's accessibility panel.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain to a backend teammate why a `<div>` styled like a button "works for me" but is broken for other users. Mention keyboard, screen readers and what the browser gives you for free.
+A backend teammate says: "My `<div>` button works when I click it." Explain, using the supermarket-label idea, why it is still broken for keyboard and screen reader users, and what `<button>` gives for free.
 
 ## 📐 Design it
 
-Sketch the HTML outline (elements only, no CSS) for CareerPilot's **application detail page**: top navigation, application title and company, status pipeline (saved → applied → interview…), notes list with an "add note" form, a sidebar with company info, and a footer.
+Write the HTML outline (elements only, no CSS) for CareerPilot's **application detail page**: top navigation, job title and company, a status list (saved → applied → interview…), a notes list with an "add note" form, a side box with company info, and a footer.
 
 :::quiz
 Show a possible outline
@@ -232,27 +228,27 @@ Show a possible outline
 </body>
 ```
 
-Choices worth defending: `ol` for the pipeline (order matters), `aria-current="step"` for the current status, `aside` for secondary company info, a real `form` for notes.
+Why these choices: `ol` because the status steps have an order; `aria-current="step"` marks the current status; `aside` because company info is extra; a real `form` for notes.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] One `main`, one `h1`, no skipped levels
-- [ ] Lists where content is a list; ordered where order matters
-- [ ] Form controls labeled, submit is a `button`
+- [ ] One `main`, one `h1`, no skipped heading levels
+- [ ] Lists for list content; `ol` when the order matters
+- [ ] Every form field has a label; submit is a `button`
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w1/01-html-semantics" ai="no-ai" title="Rescue a div-soup job page"}
-Rewrite a job posting built from `<div>`s into semantic HTML: document basics, landmarks, a correct heading outline, lists, `time`/`data`, meaningful `alt` and link text, and a fully labeled form — without inline styles or handlers. The tests parse your HTML and check each rule.
+A job page is built only from `<div>`s. Rewrite it with the right elements: page skeleton, main areas, correct headings, lists, `time`/`data`, useful `alt` and link text, and a form where every field has a label — with no inline styles or handlers. The tests read your HTML and check each rule.
 :::
 
 :::hints
-- Start from the skeleton in section 1, then wrap content in `header`, `main > article`, `footer`.
+- Start from the skeleton in step 1, then wrap the content in `header`, `main > article` and `footer`.
 - "Posted 1 September 2026" → `Posted <time datetime="2026-09-01">1 September 2026</time>`.
-- "here" links: rewrite the sentence so the link text says where it goes.
+- For "here" links, rewrite the sentence so the link text says where it goes.
 :::
 
 ## ✅ Quick check
@@ -260,25 +256,14 @@ Rewrite a job posting built from `<div>`s into semantic HTML: document basics, l
 :::quiz
 When should an image have `alt=""`?
 
-When it's purely decorative and adds no information — empty alt tells screen readers to skip it.
+When it is only decoration and adds no information. Empty alt tells screen readers to skip it.
 :::
 
 :::quiz
 What's the difference between a link and a button?
 
-A link navigates to a URL (`<a href>`); a button performs an action on the current page (submit, open, toggle).
+A link goes to another page or place (`<a href>`). A button does an action on the current page, like submit, open or toggle.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Semantic HTML | HTML semantik |
-| Landmark | Penanda wilayah halaman (header, nav, main…) |
-| Accessibility (a11y) | Aksesibilitas |
-| Screen reader | Pembaca layar |
-| DOM | Model objek dokumen — pohon elemen halaman |
-| Alt text | Teks alternatif gambar |
 
 ## 📚 Keep learning
 

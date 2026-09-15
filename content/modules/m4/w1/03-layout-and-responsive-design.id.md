@@ -1,46 +1,59 @@
 ---
 title: "Layout CSS & Desain Responsif"
-summary: Susun halaman dengan Flexbox dan Grid, bangun secara mobile-first dengan media query dan container query, dan jaga gambar, teks, serta spacing tetap fleksibel di berbagai ukuran layar.
-sourceHash: 1154903a540f
+summary: Atur posisi elemen di halaman dengan Flexbox dan Grid, bangun untuk ponsel lebih dulu, dan buat gambar, teks, serta jarak menyesuaikan ukuran layar apa pun.
+sourceHash: e95c6889c646
 ---
 
 ::part[Pelajari Konsepnya]{n="1"}
 
 ## 🎯 Yang akan kamu pelajari
 
-- Normal flow, `display`, dan kapan kamu butuh sistem layout
-- **Flexbox** untuk perataan satu dimensi
-- **Grid** untuk layout dua dimensi, termasuk `repeat(auto-fill, minmax())`
-- Media query **mobile-first** dan cara memilih breakpoint
-- Container query, tipografi fleksibel dengan `clamp()`, gambar responsif
-- Men-debug layout dengan DevTools
+- Kapan alur normal halaman sudah cukup, dan kapan kamu butuh alat layout
+- **Flexbox** untuk satu baris (atau kolom) item
+- **Grid** untuk baris dan kolom sekaligus
+- **Mobile first**: mulai dari ponsel, lalu tambahkan ruang untuk layar yang lebih besar
+- Teks dan gambar yang fleksibel
+- Menemukan masalah layout dengan DevTools
+
+## 🔤 Istilah penting
+
+| Istilah | Artinya (sederhana) |
+|---|---|
+| **Layout** | Letak setiap hal di halaman |
+| **Flexbox** | Alat CSS untuk menjajarkan item ke satu arah (baris atau kolom) |
+| **Grid** | Alat CSS untuk baris dan kolom sekaligus |
+| **Responsive** | Halaman menyesuaikan diri dengan ukuran layar |
+| **Viewport** | Area jendela browser yang terlihat |
+| **Media query** | Rule CSS yang hanya berlaku di ukuran layar tertentu |
+| **Breakpoint** | Lebar layar tempat layout berubah |
 
 ## 🧠 Ide besarnya
 
-Flexbox adalah **satu baris rak buku**: item berjajar ke satu arah dan kamu menentukan cara mereka berbagi ruang dan rata. Grid adalah **denah lantai**: baris dan kolom ditentukan di awal, lalu item ditempatkan ke area-areanya.
+**Flexbox** seperti orang yang **berbaris satu antrean** di halte bus: kamu atur arahnya, jaraknya, dan cara mereka berjajar.
+**Grid** seperti **tempat parkir**: garis baris dan kolom dicat dulu, lalu mobil parkir di kotak-kotaknya.
 
-Desain responsif ibarat **air dalam wadah**: konten harus mengikuti bentuk layar tempat ia dituangkan — bukan kotak 1200 px kaku yang tumpah di ponsel.
+**Desain responsif** seperti **air di dalam gelas**: konten mengikuti bentuk layar, bukan kotak 1200 px kaku yang tumpah di ponsel.
 
-## ❓ Kenapa ini ada?
+## ❓ Kenapa ini penting
 
-Di Indonesia, sebagian besar penggunaan internet terjadi di ponsel. Recruiter membuka link lowongan di ponsel; pengguna yang sama membuka CareerPilot di laptop belakangan. Satu codebase harus bisa menyesuaikan diri. Sebelum Flexbox dan Grid (2017+), layout butuh float dan berbagai trik; sekarang cukup beberapa declaration.
+Di Indonesia, kebanyakan orang memakai internet lewat ponsel. Recruiter membuka link lowongan di HP; orang yang sama mungkin membuka CareerPilot di laptop belakangan. Satu halaman harus jalan di keduanya.
 
-## 💥 Apa yang terjadi kalau TIDAK?
+Layout yang lebarnya tetap akan rusak di ponsel:
 
 ```css
 .page { width: 1200px; }
 .sidebar { float: left; width: 300px; }
 ```
 
-Di ponsel 390 px: scroll horizontal, teks mungil karena di-zoom out, area sentuh terlalu kecil, sidebar menghimpit konten. Mobile-first indexing Google juga menurunkan peringkat halamannya.
+Di ponsel 390 px: harus scroll ke samping, teksnya mungil, tombol terlalu kecil untuk ditekan. Google juga menurunkan peringkat halaman yang tidak nyaman di ponsel.
 
-## 📖 Cara kerjanya, langkah demi langkah
+## 📖 Langkah demi langkah
 
-### 1. Normal flow dulu
+### 1. Alur normal dulu
 
-Elemen block bertumpuk vertikal; elemen inline mengalir seperti teks. Banyak layout tidak butuh apa-apa selain HTML yang baik plus `max-width` dan spacing. Pakai Flex/Grid saat kamu butuh perataan atau kolom.
+Tanpa CSS layout apa pun, elemen block (seperti `div`, `p`) bertumpuk dari atas ke bawah, dan elemen inline (seperti `a`, `strong`) mengalir seperti kata dalam kalimat. Banyak halaman cukup memakai ini ditambah `max-width` dan jarak. Pakai Flexbox atau Grid saat kamu butuh item bersebelahan atau sejajar.
 
-### 2. Flexbox
+### 2. Flexbox — satu baris item
 
 ```css
 .site-header {
@@ -58,9 +71,15 @@ flowchart LR
     A[Logo] --- B["Search (flex: 1)"] --- C[Link]
 ```
 
-Cocok untuk: navbar, toolbar, grup tombol, centering, layout bagian dalam kartu (dorong tombol ke bawah dengan `margin-top: auto`).
+- `justify-content` — cara item menyebar **sepanjang** baris (awal, tengah, space-between).
+- `align-items` — cara item sejajar **melintang** baris (atas, tengah, bawah).
+- `flex-wrap: wrap` — kalau barisnya penuh, lanjut ke baris berikutnya.
+- `gap` — jarak antar item.
+- `flex: 1` — "ambil ruang yang kosong", seperti orang yang duduk melebar di bangku yang sepi.
 
-### 3. Grid
+Cocok untuk: navbar, grup tombol, menaruh sesuatu di tengah, isi bagian dalam kartu.
+
+### 3. Grid — baris dan kolom
 
 ```css
 .page {
@@ -78,9 +97,10 @@ Cocok untuk: navbar, toolbar, grup tombol, centering, layout bagian dalam kartu 
 }
 ```
 
-`fr` = pecahan dari sisa ruang. `minmax(16rem, 1fr)` + `auto-fill` menghasilkan grid kartu responsif **tanpa media query sama sekali**.
+- `fr` = "bagian dari ruang kosong". `16rem 1fr` = sidebar tetap, dan konten mengambil sisanya.
+- `repeat(auto-fill, minmax(16rem, 1fr))` = "buat kolom sebanyak yang muat, masing-masing minimal 16rem". Kartu menyusun ulang dirinya sendiri di layar apa pun — **tanpa media query**.
 
-Named area membuat layout halaman mudah dibaca:
+Kamu juga bisa memberi nama area, seperti menggambar denah rumah:
 
 ```css
 .layout {
@@ -97,7 +117,7 @@ Named area membuat layout halaman mudah dibaca:
 
 ### 4. Mobile first
 
-Tulis style dasar untuk layar **terkecil**; tambahkan media query `min-width` seiring ruang bertambah:
+Tulis CSS dasar untuk layar **terkecil**. Lalu tambahkan rule dengan `min-width` untuk layar yang lebih besar — seperti mengisi tas kecil dulu, lalu menambah barang hanya saat kamu punya koper yang lebih besar.
 
 ```css
 .filters { display: none; }                 /* phones: filters behind a button */
@@ -106,11 +126,10 @@ Tulis style dasar untuk layar **terkecil**; tambahkan media query `min-width` se
 }
 ```
 
-- Ponsel mendapat CSS paling sederhana (lebih sedikit yang diunduh dan di-override).
-- Pilih breakpoint di titik **kontenmu** mulai rusak, bukan per model perangkat. Titik awal yang umum: `40rem`, `48rem`, `64rem`, `80rem` (Tailwind memakai yang mirip).
-- Pakai `em`/`rem` di media query agar menghormati zoom pengguna.
+- Ponsel mendapat CSS yang paling sederhana.
+- Taruh breakpoint di titik **kontenmu** mulai terlihat jelek, bukan di model HP tertentu. Nilai yang umum: `40rem`, `48rem`, `64rem`, `80rem`.
 
-### 5. Lebih dari media query
+### 5. Teks dan component yang fleksibel
 
 ```css
 .card-list { container-type: inline-size; }
@@ -121,6 +140,9 @@ Tulis style dasar untuk layar **terkecil**; tambahkan media query `min-width` se
 h1 { font-size: clamp(1.75rem, 1.2rem + 2vw, 2.75rem); }   /* fluid type with limits */
 .prose { max-width: 65ch; }                                 /* readable line length */
 ```
+
+- **Container query** (`@container`): kartu berubah berdasarkan **kotak tempatnya berada**, bukan seluruh layar. Seperti perabot yang menyesuaikan dengan ruangan tempat ia ditaruh.
+- `clamp(min, ideal, max)`: heading membesar mengikuti layar, tapi tidak pernah lebih kecil dari min atau lebih besar dari max.
 
 ### 6. Gambar responsif
 
@@ -135,117 +157,89 @@ img { max-width: 100%; height: auto; display: block; }
      alt="Kopi Data office" width="800" height="450" loading="lazy" />
 ```
 
-Browser memilih file terkecil yang tetap terlihat tajam. `<Image>` di Next.js melakukannya untukmu (Minggu 6).
+- `max-width: 100%` mencegah gambar lebih lebar dari kotaknya.
+- `srcset` memberi browser beberapa ukuran; browser mengunduh yang terkecil tapi tetap tajam — seperti memilih cetak foto kecil atau besar sesuai bingkainya. `<Image>` di Next.js melakukannya untukmu (Minggu 6).
 
-### 7. Debugging
+### 7. Menemukan masalah layout
 
-DevTools: nyalakan **device mode**, aktifkan **overlay grid/flex**, cek panel **box model**, dan cari elemen yang lebih lebar dari viewport (trik cepat: `* { outline: 1px solid red }` sementara).
-
-## ⚖️ Trade-off
-
-| Pilihan | ✅ | ❌ |
-|---|---|---|
-| Flexbox | ukuran mengikuti konten, perataan sederhana | layout dua dimensi jadi canggung |
-| Grid | baris/kolom eksplisit, area, auto-fill | sedikit lebih banyak yang harus dipelajari |
-| Media query | perubahan level halaman | component bergantung pada viewport, bukan slot tempatnya |
-| Container query | component yang benar-benar reusable | model berpikir yang lebih baru |
-| Menyembunyikan konten di ponsel | layar kecil lebih sederhana | konten tersembunyi bisa jadi penting; tetap buat bisa dijangkau |
-
-## ✅ Kapan dipakai / 🚫 Kapan TIDAK dipakai
-
-- ✅ Flex di dalam component dan untuk baris; Grid untuk struktur halaman dan koleksi kartu.
-- ✅ Mobile-first untuk setiap halaman baru.
-- 🚫 Lebar/tinggi tetap dalam `px` untuk container.
-- 🚫 Breakpoint untuk setiap perangkat; jangan mendesain khusus untuk "iPhone 16".
-
-## 🏆 Praktik terbaik
-
-- [ ] Mobile first dengan media query `min-width` dalam `rem`/`em`.
-- [ ] Pakai `gap` alih-alih margin di antara item flex/grid.
-- [ ] Container dengan `max-width` + `margin-inline: auto`; `max-width: 65ch` untuk teks panjang.
-- [ ] `img { max-width: 100%; height: auto }` dan dimensi gambar eksplisit untuk mencegah layout shift.
-- [ ] Utamakan layout intrinsik (`auto-fill`, `minmax`, `clamp`) daripada banyak breakpoint.
-- [ ] Area sentuh minimal ~44×44 px; tes dengan ponsel sungguhan dan zoom 200%.
-- [ ] Jaga urutan visual sama dengan urutan DOM (pengguna keyboard dan screen reader mengikuti DOM).
-
-## 🏭 Cara dipakai di industri
-
-- Portal lowongan (JobStreet, Glints, Kalibrr) terutama dipakai di ponsel — layout responsif dan gambar yang cepat berpengaruh langsung pada jumlah lamaran yang masuk.
-- Design system menyediakan primitive layout responsif (`Stack`, `Grid`, `Container`).
-- Prefix responsif Tailwind (`md:grid-cols-2`) sebenarnya adalah media query mobile-first — Minggu 2.
+Di DevTools: nyalakan **device mode** (tampilan ponsel), nyalakan **overlay grid/flex**, dan lihat panel **box model**. Trik cepat untuk menemukan elemen yang terlalu lebar: tambahkan `* { outline: 1px solid red }` sebentar.
 
 ## ⚠️ Kesalahan umum
 
-- CSS desktop-first dengan query `max-width` yang meng-override semuanya di ponsel.
-- Lupa meta tag viewport (halaman ter-render dalam keadaan zoom out).
-- `height: 100vh` di ponsel (pakai `dvh`).
-- Mengubah urutan item secara visual dengan `order` sehingga fokus keyboard melompat-lompat.
+- Membangun untuk desktop dulu, lalu menulis banyak rule untuk "memperbaiki" tampilan ponsel.
+- Lupa meta tag viewport (halaman terlihat mengecil di ponsel).
+- `height: 100vh` di ponsel (toolbar browser menutupi sebagian — pakai `dvh`).
+- Lebar tetap dalam `px` untuk container.
+- Mengubah urutan tampilan dengan `order`, sehingga fokus keyboard melompat-lompat.
+- Menyembunyikan konten penting di ponsel, bukan membuatnya tetap bisa dijangkau.
+
+## 🏆 Praktik terbaik
+
+- [ ] Mobile first, dengan media query `min-width` dalam `rem`.
+- [ ] Flexbox untuk satu baris item, Grid untuk struktur halaman dan daftar kartu.
+- [ ] Pakai `gap` untuk jarak antar item, bukan margin.
+- [ ] Container dengan `max-width` + `margin-inline: auto`; `max-width: 65ch` untuk teks panjang.
+- [ ] `img { max-width: 100%; height: auto }` dan set `width`/`height` gambar.
+- [ ] Utamakan layout yang menyesuaikan sendiri (`auto-fill`, `minmax`, `clamp`) daripada banyak breakpoint.
+- [ ] Tombol dan link minimal sekitar 44×44 px agar mudah ditekan; tes di ponsel sungguhan dan di zoom 200%.
 
 ::part[Jelaskan & Rancang]{n="2"}
 
 ## 🗣️ Jelaskan
 
-Jelaskan ke seorang desainer beda "mobile first" dan "desktop first", dan kenapa mobile first biasanya menghasilkan CSS yang lebih sedikit.
+Jelaskan ke seorang desainer beda "mobile first" dan "desktop first", dan kenapa mobile first biasanya butuh CSS lebih sedikit.
 
 ## 📐 Rancang
 
-Rencanakan layout responsif **dashboard lamaran** CareerPilot: kartu statistik, papan pipeline dengan lima kolom (saved, applied, interview, offer, closed), dan panel filter. Jelaskan layout-nya di lebar ponsel, tablet, dan desktop, serta di mana kamu akan memakai Flexbox/Grid/container query.
+Rencanakan layout **dashboard lamaran** CareerPilot di ponsel, tablet, dan desktop. Isinya kartu statistik, papan dengan lima kolom (saved, applied, interview, offer, closed), dan panel filter. Sebutkan di mana kamu memakai Flexbox, Grid, atau container query.
 
 :::quiz
 Tampilkan contoh rencananya
 
-- **Ponsel (dasar)**: satu kolom. Statistik: `grid` dengan `repeat(2, 1fr)` (kartu 2×2). Pipeline: kolom menjadi baris yang **di-scroll horizontal** (`display: flex; overflow-x: auto; scroll-snap-type: x mandatory`), setiap kolom `flex: 0 0 85%` agar kolom berikutnya mengintip. Filter di balik tombol "Filter" (sebuah dialog).
-- **Tablet (`min-width: 48rem`)**: statistik dalam 4 kolom (`repeat(4, 1fr)`); pipeline masih di-scroll tapi kolomnya `flex-basis: 16rem`; filter sebagai panel yang bisa dilipat di atas papan.
-- **Desktop (`min-width: 80rem`)**: grid halaman `grid-template-columns: 16rem 1fr` (sidebar filter + main); pipeline `grid-template-columns: repeat(5, minmax(0, 1fr))`, tanpa scroll.
-- **Kartu lamaran** di dalam kolom memakai **container query**: di kolom sempit tampilkan judul + perusahaan; saat container ≥ 20rem, tampilkan gaji dan update terakhir di kolom kedua.
-- Header: flex dengan wrap. Jaga urutan DOM = urutan baca (statistik → papan), dan jaga drag-and-drop tetap aksesibel dengan tombol ("Pindahkan ke…") sebagai alternatif.
+- **Ponsel (CSS dasar)**: satu kolom.
+  - Statistik: `grid` dengan `repeat(2, 1fr)` → kartu 2×2.
+  - Papan: lima kolom menjadi satu baris yang digeser ke samping (`display: flex; overflow-x: auto; scroll-snap-type: x mandatory`). Setiap kolom `flex: 0 0 85%` agar kolom berikutnya terlihat mengintip.
+  - Filter: disembunyikan di balik tombol "Filter" yang membuka dialog.
+- **Tablet (`min-width: 48rem`)**: statistik dalam 4 kolom; papan masih bisa digeser, kolom `flex-basis: 16rem`; filter sebagai panel yang bisa dibuka di atas papan.
+- **Desktop (`min-width: 80rem`)**: grid halaman `grid-template-columns: 16rem 1fr` (filter di kiri); papan `grid-template-columns: repeat(5, minmax(0, 1fr))`, tanpa scroll.
+- **Kartu** di dalam kolom memakai **container query**: kolom sempit → judul + perusahaan saja; container ≥ 20rem → tambah gaji dan update terakhir.
+- Jaga urutan HTML sama dengan urutan baca, dan sediakan tombol "Pindahkan ke…" sebagai alternatif drag-and-drop.
 :::
 
 ### 📝 Checklist self-review
 
-- [ ] Layout ponsel dirancang lebih dulu
-- [ ] Setiap tool dipilih berdasarkan alasan 1D vs 2D
-- [ ] Adaptasi di level component sudah dipertimbangkan
-- [ ] Aksesibilitas pengurutan ulang/scroll sudah dipertimbangkan
+- [ ] Layout ponsel direncanakan lebih dulu
+- [ ] Flexbox untuk satu arah, Grid untuk baris dan kolom
+- [ ] Kartu menyesuaikan dengan kolomnya (container query)
+- [ ] Scroll dan pemindahan tetap bisa dipakai pengguna keyboard
 
 ::ai-review{task="design"}
 
 ::part[Latihan Kecil]{n="3"}
 
 :::exercise{path="exercises/web/m4/w1/03-layout-responsive" ai="no-ai" title="Halaman lowongan mobile-first"}
-Ganti layout tetap 1200 px dengan stylesheet mobile-first: container di tengah, header flex yang bisa wrap, grid halaman satu kolom yang menjadi sidebar + konten di 48rem, grid kartu auto-fill, dan gambar yang fleksibel. Tes akan mem-parse rule dan media query-mu.
+Ganti layout tetap 1200 px dengan CSS mobile-first: container di tengah, header yang bisa pindah baris dengan Flexbox, halaman satu kolom yang menjadi sidebar + konten di 48rem, grid kartu dengan `auto-fill`, dan gambar yang tidak pernah meluber. Tes akan membaca rule dan media query-mu.
 :::
 
 :::hints
 - Rule `.page` dasar **tidak boleh** mengatur kolom; taruh `grid-template-columns: 16rem 1fr` di dalam `@media (min-width: 48rem)`.
 - `repeat(auto-fill, minmax(16rem, 1fr))` tidak butuh media query.
-- `margin-inline: auto` menaruh block ber-`max-width` di tengah.
+- `margin-inline: auto` menaruh block yang punya `max-width` di tengah.
 :::
 
 ## ✅ Cek cepat
 
 :::quiz
-Flexbox atau Grid untuk deretan tag yang harus bisa wrap?
+Flexbox atau Grid untuk deretan tag yang harus pindah ke baris berikutnya?
 
-Flexbox dengan `flex-wrap: wrap` dan `gap` — satu dimensi dan ukurannya mengikuti konten.
+Flexbox dengan `flex-wrap: wrap` dan `gap` — satu arah, dan tag menentukan ukurannya sendiri.
 :::
 
 :::quiz
 Apa yang dilakukan `repeat(auto-fill, minmax(16rem, 1fr))`?
 
-Membuat kolom sebanyak yang muat, masing-masing minimal selebar 16rem, dan membagi sisa ruang secara merata — grid responsif tanpa media query.
+Membuat kolom sebanyak yang muat, masing-masing minimal 16rem, dan membagi sisa ruang secara merata. Grid menyesuaikan diri tanpa media query.
 :::
-
-## 📖 Kamus (glosarium)
-
-| Istilah | Bahasa Indonesia |
-|---|---|
-| Responsive design | Desain responsif — menyesuaikan ukuran layar |
-| Mobile first | Mulai dari layar ponsel |
-| Breakpoint | Titik ubah tata letak |
-| Media / container query | Kueri media / kueri wadah |
-| Viewport | Area tampilan browser |
-| Layout shift | Pergeseran tata letak |
 
 ## 📚 Lanjut belajar
 

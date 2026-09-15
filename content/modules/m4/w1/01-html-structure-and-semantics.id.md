@@ -1,35 +1,46 @@
 ---
 title: "Struktur & Semantik HTML"
-summary: Susun halaman dengan elemen yang tepat — dasar dokumen, landmark, heading, list, link, gambar, dan form — agar browser, mesin pencari, dan screen reader memahaminya.
-sourceHash: ebe346efe3a4
+summary: Bangun halaman dengan elemen HTML yang tepat — kerangka halaman, area utama, heading, list, link, gambar, dan form — agar browser, mesin pencari, dan screen reader memahaminya.
+sourceHash: a5b8595a89f7
 ---
 
 ::part[Pelajari Konsepnya]{n="1"}
 
 ## 🎯 Yang akan kamu pelajari
 
-- Untuk apa HTML: **makna**, bukan tampilan
-- Kerangka dokumen: `doctype`, `lang`, `charset`, viewport, `title`
-- **Landmark** (`header`, `nav`, `main`, `footer`, `aside`), `article` vs `section`, hierarki heading
-- Semantik level teks: list, link, gambar dengan `alt`, `time`, `data`
-- Form yang aksesibel: `label`, tipe input, `required`, `button type`
-- Bagaimana browser mengubah HTML menjadi **DOM** dan accessibility tree
+- Untuk apa HTML: menyatakan konten itu **apa**, bukan tampilannya
+- Kerangka dasar halaman
+- Area utama halaman (`header`, `nav`, `main`, `footer`) dan heading
+- Menulis list, link, gambar, dan form dengan benar
+- Bagaimana browser mengubah HTML menjadi sesuatu yang dipakai JavaScript dan screen reader
+
+## 🔤 Istilah penting
+
+| Istilah | Artinya (sederhana) |
+|---|---|
+| **Element** | Satu balok penyusun halaman, seperti `<button>` atau `<h1>` |
+| **Semantic HTML** | Memilih elemen yang sesuai maknanya (tombol ya pakai `<button>`) |
+| **Landmark** | Area besar halaman yang punya nama: header, navigasi, konten utama, footer |
+| **Screen reader** | Software yang membacakan halaman untuk pengguna tunanetra |
+| **Accessibility (a11y)** | Membuat halaman bisa dipakai semua orang, termasuk penyandang disabilitas |
+| **DOM** | Halaman dalam bentuk pohon object yang bisa dibaca dan diubah JavaScript |
+| **Attribute** | Informasi tambahan pada elemen, seperti `href` atau `alt` |
 
 ## 🧠 Ide besarnya
 
-HTML adalah **kerangka dan label** sebuah halaman; CSS adalah pakaiannya; JavaScript adalah ototnya. Kalau kerangkanya salah — "tombol" yang sebenarnya `<div>` — pakaian sebagus apa pun tidak akan memperbaikinya bagi pengguna keyboard, screen reader, mesin pencari, atau AI agent yang menjelajahi situsmu.
+HTML itu seperti **label di rak supermarket**. Raknya boleh cantik, tapi kalau tidak ada label, orang tersesat. Kalau "tombol" sebenarnya `<div>`, halaman mungkin terlihat baik, tapi keyboard, screen reader, dan Google tidak tahu itu apa.
 
-:term[Semantic HTML]{bahasa="HTML semantik — memakai elemen sesuai maknanya, bukan hanya tampilannya"} berarti memilih elemen berdasarkan konten itu **apa**.
+HTML semantik = pasang label yang benar di setiap bagian halaman.
 
-## ❓ Kenapa ini ada?
+## ❓ Kenapa ini penting
 
-Flask API-mu mengembalikan JSON. Manusia butuh data itu diubah menjadi halaman yang:
-- bisa dipakai **semua orang** (≈16% orang hidup dengan disabilitas — WHO),
-- bisa diindeks mesin pencari,
-- bisa ditingkatkan browser secara gratis (validasi form, dukungan keyboard, reader mode),
-- akan dihasilkan oleh component React-mu (Minggu 3) — React juga menghasilkan HTML.
+Flask API-mu mengembalikan JSON. Orang butuh data itu ditampilkan sebagai halaman yang:
+- bisa dipakai **semua orang** (sekitar 16% orang hidup dengan disabilitas — WHO),
+- dipahami Google,
+- mendapat bantuan gratis dari browser (dukungan keyboard, pengecekan form),
+- nanti dihasilkan oleh component React-mu (React juga menghasilkan HTML).
 
-## 💥 Apa yang terjadi kalau TIDAK?
+Halaman dengan elemen yang salah rusak diam-diam:
 
 ```html
 <div class="btn" onclick="submitForm()">Send</div>
@@ -38,13 +49,15 @@ Email <input id="email">
 ```
 
 - Pengguna keyboard tidak bisa mencapai atau menekan "tombol" itu.
-- Screen reader membacakan "Backend Engineer" sebagai teks biasa, bukan heading utama halaman.
-- Mengeklik kata "Email" tidak memfokuskan input; screen reader hanya bilang "edit text".
-- Keyboard ponsel tidak menampilkan `@` untuk email; browser tidak memvalidasi.
+- Screen reader tidak tahu "Backend Engineer" adalah judul halaman.
+- Mengeklik kata "Email" tidak memfokuskan input.
+- Ponsel tidak menampilkan keyboard `@`, dan browser tidak mengecek email-nya.
 
-## 📖 Cara kerjanya, langkah demi langkah
+## 📖 Langkah demi langkah
 
-### 1. Kerangka dokumen
+### 1. Kerangka halaman
+
+Setiap halaman dimulai dengan cara yang sama — seperti rangka rumah sebelum dindingnya dipasang.
 
 ```html
 <!doctype html>                    <!-- standards mode -->
@@ -58,14 +71,20 @@ Email <input id="email">
 </html>
 ```
 
-### 2. Landmark dan section
+- `lang` memberi tahu screen reader bahasa apa yang dibacakan.
+- `viewport` membuat halaman pas di layar ponsel.
+- `title` adalah teks di tab browser dan di hasil pencarian Google.
+
+### 2. Area utama (landmark)
+
+Bayangkan koran: ada kepala di atas, berita utama, catatan samping, dan kaki di bawah. HTML punya elemen untuk setiap area itu.
 
 ```mermaid
 flowchart TB
     B[body] --> H["header<br/>logo + nav"]
     B --> M["main (satu per halaman)"]
     B --> F[footer]
-    M --> A["article<br/>berdiri sendiri: lowongan kerja"]
+    M --> A["article<br/>sebuah lowongan kerja"]
     A --> S1["section + h2: Persyaratan"]
     A --> S2["section + h2: Melamar"]
     M --> AS["aside: lowongan terkait"]
@@ -73,21 +92,21 @@ flowchart TB
 
 | Elemen | Dipakai untuk |
 |---|---|
-| `header` / `footer` | pembuka/penutup halaman (atau sebuah article) |
-| `nav` | blok navigasi utama |
-| `main` | konten utama yang unik — tepat satu |
-| `article` | konten yang bermakna walau berdiri sendiri (post, kartu lowongan, komentar) |
-| `section` | kelompok tematik **dengan heading** |
-| `aside` | konten terkait tapi sekunder |
-| `div` / `span` | tanpa makna — hanya untuk kait styling |
+| `header` / `footer` | bagian atas dan bawah halaman (atau sebuah article) |
+| `nav` | kumpulan link navigasi utama |
+| `main` | konten utama — hanya **satu** per halaman |
+| `article` | sesuatu yang bermakna walau berdiri sendiri (kartu lowongan, post) |
+| `section` | kelompok konten yang saling terkait **dengan heading** |
+| `aside` | konten tambahan yang kurang penting |
+| `div` / `span` | tanpa makna — hanya untuk styling |
 
-Pengguna screen reader melompat antar landmark dan heading seperti daftar isi.
+Pengguna screen reader melompat antar area ini seperti memakai daftar isi.
 
-### 3. Heading adalah kerangka tulisan
+### 3. Heading adalah kerangka isi
 
-Satu `h1` per halaman (topik halaman), lalu `h2` untuk section, `h3` di dalamnya. **Jangan melompati level** hanya demi teks yang lebih kecil — itu tugas CSS.
+Heading bekerja seperti daftar isi buku: satu `h1` (topik halaman), lalu `h2` untuk bagian-bagian, `h3` di dalamnya. **Jangan melompati level** hanya demi teks yang lebih kecil — ubah ukurannya dengan CSS.
 
-### 4. Semantik teks
+### 4. List, link, gambar, dan teks
 
 ```html
 <ul><li>Python</li><li>PostgreSQL</li></ul>                     <!-- unordered list -->
@@ -100,9 +119,9 @@ Posted <time datetime="2026-09-01">1 September 2026</time>
 <strong>Required</strong> vs <em>preferred</em>                  <!-- importance vs emphasis -->
 ```
 
-- `alt` menjelaskan **tujuan** gambar; `alt=""` yang kosong menyembunyikan gambar dekoratif.
-- Link **pergi ke suatu tempat** (`href`); button **melakukan sesuatu**.
-- Teks link harus bermakna di luar konteks — screen reader bisa menampilkan daftar semua link.
+- `alt` = deskripsi singkat gambar, dibacakan saat gambar tidak bisa dilihat. Pakai `alt=""` untuk hiasan saja.
+- **Link** membawamu ke tempat lain (`href`). **Button** melakukan sesuatu di halaman ini. Seperti pintu vs saklar lampu.
+- Teks link harus bermakna walau dibaca sendiri. "Kopi Data company profile" bagus; "klik di sini" tidak.
 
 ### 5. Form
 
@@ -121,70 +140,47 @@ Posted <time datetime="2026-09-01">1 September 2026</time>
 </form>
 ```
 
-- `label for` ↔ `id`: klik label untuk memfokuskan input; screen reader membacakan label.
-- `type="email" | "tel" | "number" | "date" | "search"` → keyboard ponsel yang tepat + validasi bawaan.
-- `name` adalah yang diterima server (`request.form["email"]` di Flask-mu).
-- `autocomplete` memungkinkan browser dan password manager mengisi field.
-- Di dalam form, button default-nya `type="submit"` — set `type="button"` untuk aksi yang bukan submit.
+- `label for="email"` terhubung ke `id="email"` — seperti label nama di sebuah kotak. Mengeklik label memfokuskan input.
+- `type="email"` memberi ponsel keyboard yang tepat dan membuat browser mengecek nilainya.
+- `name` adalah key yang diterima server Flask-mu (`request.form["email"]`).
+- Di dalam form, button **otomatis men-submit**. Pakai `type="button"` untuk aksi lain.
 
 ### 6. Dari HTML ke DOM
 
-Browser mem-parse HTML menjadi **DOM** (pohon objek yang bisa diubah JavaScript — materi 05) dan membangun **accessibility tree** darinya (role, nama, state). Elemen semantik otomatis mendapat role yang benar: `<button>` → role *button*, `<nav>` → *navigation*.
+Browser membaca HTML-mu dan membangun **DOM** — pohon object yang bisa diubah JavaScript (materi 05). Dari pohon yang sama, browser membangun apa yang dibaca screen reader. Elemen yang benar otomatis mendapat role yang benar: `<button>` dibacakan sebagai "button".
 
 :::note[🐍 Datang dari Flask]
-Template Jinja me-render HTML di server. Semua yang dibahas di sini berlaku sama untuk Jinja, JSX React, dan Next.js — semuanya berakhir sebagai HTML di browser.
+Template Jinja juga menghasilkan HTML. Semua yang dibahas di sini berlaku untuk Jinja, React, dan Next.js — semuanya berakhir sebagai HTML di browser.
 :::
-
-## ⚖️ Trade-off
-
-| Pilihan | ✅ | ❌ |
-|---|---|---|
-| Elemen semantik | aksesibilitas, SEO, perilaku browser gratis | perlu belajar elemen mana yang cocok |
-| `div` + role ARIA | bisa dipakai saat tidak ada elemen native | mudah salah; "tanpa ARIA lebih baik daripada ARIA yang buruk" |
-| Validasi form native | gratis, aksesibel | styling/pesan terbatas → sering dikombinasikan dengan validasi custom (Minggu 5) |
-| Banyak `section` | struktur | `section` tanpa heading hanya menambah noise |
-
-## ✅ Kapan dipakai / 🚫 Kapan TIDAK dipakai
-
-- ✅ Selalu mulai dari elemen semantik native.
-- ✅ `article` untuk item berulang yang berdiri sendiri (kartu lowongan).
-- 🚫 Jangan pakai heading untuk ukuran, `<br>` untuk jarak, atau table untuk layout.
-- 🚫 Jangan tambahkan role ARIA ke elemen yang sudah punya role itu (`<button role="button">`).
-
-## 🏆 Praktik terbaik
-
-- [ ] Sertakan `lang`, `charset`, viewport, dan `title` yang deskriptif di setiap halaman.
-- [ ] Pakai landmark; tepat satu `main` dan satu `h1`; jangan pernah melompati level heading.
-- [ ] Link untuk navigasi, button untuk aksi; teks link yang deskriptif.
-- [ ] `alt` yang bermakna untuk gambar informatif, `alt=""` untuk gambar dekoratif; set `width`/`height` untuk mencegah layout shift.
-- [ ] Setiap kontrol form punya `label` yang terlihat; pakai `type`, `name`, `autocomplete`, `required` yang tepat.
-- [ ] Tanpa `style` atau `onclick` inline — pisahkan struktur, tampilan, dan perilaku.
-- [ ] Validasi dengan W3C validator dan cek dengan screen reader atau accessibility inspector di browser.
-
-## 🏭 Cara dipakai di industri
-
-- Situs sektor publik dan enterprise harus memenuhi **WCAG 2.2 AA**; gugatan dan regulasi aksesibilitas (misalnya European Accessibility Act, berlaku Juni 2025) menjadikan semantik sebagai kebutuhan bisnis.
-- Tim SEO mengandalkan heading, `title`, structured data, dan markup semantik.
-- Component library (shadcn/ui, Radix — Minggu 5) dibangun di atas HTML semantik plus pola ARIA.
-- AI browsing agent juga membaca accessibility tree — situs yang aksesibel lebih mudah dipakai agent.
 
 ## ⚠️ Kesalahan umum
 
-- `div` dan `span` yang bisa diklik.
-- Teks placeholder sebagai pengganti label.
+- `div` dan `span` yang bisa diklik, bukan `<button>` atau `<a>`.
+- Teks placeholder sebagai pengganti `<label>` sungguhan.
 - `alt="image"` atau nama file sebagai teks alt.
-- Banyak `h1` yang dipakai untuk styling.
-- Lupa `type="button"` sehingga form ter-submit tanpa sengaja.
+- Banyak `h1`, atau heading yang dipilih hanya karena ukurannya.
+- Menambahkan role ARIA ke elemen yang sudah punya role itu (`<button role="button">`).
+- Lupa `type="button"`, sehingga tombol men-submit form tanpa sengaja.
+
+## 🏆 Praktik terbaik
+
+- [ ] Setiap halaman punya `lang`, `charset`, viewport, dan `title` yang jelas.
+- [ ] Pakai landmark; tepat satu `main` dan satu `h1`; jangan melompati level heading.
+- [ ] Link untuk berpindah tempat, button untuk aksi; teks link yang bermakna walau berdiri sendiri.
+- [ ] `alt` yang berguna untuk gambar sungguhan, `alt=""` untuk hiasan; set `width` dan `height`.
+- [ ] Setiap field form punya `label` yang terlihat, `type` yang tepat, `name`, dan `autocomplete`.
+- [ ] Tanpa `style` atau `onclick` inline — pisahkan HTML, CSS, dan JavaScript.
+- [ ] Cek halamanmu dengan W3C validator dan panel accessibility di browser.
 
 ::part[Jelaskan & Rancang]{n="2"}
 
 ## 🗣️ Jelaskan
 
-Jelaskan ke rekan tim backend kenapa `<div>` yang di-styling seperti tombol "jalan di komputerku" tapi rusak untuk pengguna lain. Sebutkan keyboard, screen reader, dan apa yang diberikan browser secara gratis.
+Rekan tim backend bilang: "Tombol `<div>`-ku jalan kok kalau diklik." Jelaskan dengan ide label supermarket kenapa itu tetap rusak bagi pengguna keyboard dan screen reader, dan apa yang diberikan `<button>` secara gratis.
 
 ## 📐 Rancang
 
-Buat sketsa kerangka HTML (elemen saja, tanpa CSS) untuk **halaman detail lamaran** CareerPilot: navigasi atas, judul lamaran dan perusahaan, pipeline status (saved → applied → interview…), daftar catatan dengan form "tambah catatan", sidebar berisi info perusahaan, dan footer.
+Tulis kerangka HTML (elemen saja, tanpa CSS) untuk **halaman detail lamaran** CareerPilot: navigasi atas, judul lowongan dan perusahaan, daftar status (saved → applied → interview…), daftar catatan dengan form "tambah catatan", kotak samping berisi info perusahaan, dan footer.
 
 :::quiz
 Tampilkan contoh kerangkanya
@@ -226,27 +222,27 @@ Tampilkan contoh kerangkanya
 </body>
 ```
 
-Pilihan yang layak dipertahankan: `ol` untuk pipeline (urutan penting), `aria-current="step"` untuk status saat ini, `aside` untuk info perusahaan yang sekunder, `form` sungguhan untuk catatan.
+Alasan pilihannya: `ol` karena langkah status punya urutan; `aria-current="step"` menandai status saat ini; `aside` karena info perusahaan hanya tambahan; `form` sungguhan untuk catatan.
 :::
 
 ### 📝 Checklist self-review
 
-- [ ] Satu `main`, satu `h1`, tidak ada level yang dilompati
-- [ ] List dipakai untuk konten berbentuk daftar; ordered list saat urutan penting
-- [ ] Kontrol form punya label, submit berupa `button`
+- [ ] Satu `main`, satu `h1`, tidak ada level heading yang dilompati
+- [ ] List untuk konten berbentuk daftar; `ol` saat urutan penting
+- [ ] Setiap field form punya label; submit berupa `button`
 
 ::ai-review{task="design"}
 
 ::part[Latihan Kecil]{n="3"}
 
 :::exercise{path="exercises/web/m4/w1/01-html-semantics" ai="no-ai" title="Selamatkan halaman lowongan penuh div"}
-Tulis ulang halaman lowongan kerja yang dibangun dari `<div>` menjadi HTML semantik: dasar dokumen, landmark, kerangka heading yang benar, list, `time`/`data`, teks `alt` dan link yang bermakna, serta form yang semua field-nya berlabel — tanpa style atau handler inline. Tes akan mem-parse HTML-mu dan mengecek setiap aturan.
+Sebuah halaman lowongan dibangun hanya dari `<div>`. Tulis ulang dengan elemen yang tepat: kerangka halaman, area utama, heading yang benar, list, `time`/`data`, teks `alt` dan link yang berguna, serta form yang setiap field-nya punya label — tanpa style atau handler inline. Tes akan membaca HTML-mu dan mengecek setiap aturan.
 :::
 
 :::hints
-- Mulai dari kerangka di bagian 1, lalu bungkus konten dengan `header`, `main > article`, `footer`.
+- Mulai dari kerangka di langkah 1, lalu bungkus konten dengan `header`, `main > article`, dan `footer`.
 - "Posted 1 September 2026" → `Posted <time datetime="2026-09-01">1 September 2026</time>`.
-- Link bertuliskan "here": tulis ulang kalimatnya agar teks link menyebutkan tujuannya.
+- Untuk link bertuliskan "here", tulis ulang kalimatnya agar teks link menyebutkan tujuannya.
 :::
 
 ## ✅ Cek cepat
@@ -254,25 +250,14 @@ Tulis ulang halaman lowongan kerja yang dibangun dari `<div>` menjadi HTML seman
 :::quiz
 Kapan sebuah gambar sebaiknya memakai `alt=""`?
 
-Saat gambar itu murni dekoratif dan tidak menambah informasi — alt kosong memberi tahu screen reader untuk melewatinya.
+Saat gambar itu hanya hiasan dan tidak menambah informasi. Alt kosong memberi tahu screen reader untuk melewatinya.
 :::
 
 :::quiz
-Apa bedanya link dan button?
+Apa beda link dan button?
 
-Link berpindah ke sebuah URL (`<a href>`); button melakukan aksi di halaman saat ini (submit, buka, toggle).
+Link pergi ke halaman atau tempat lain (`<a href>`). Button melakukan aksi di halaman saat ini, seperti submit, membuka, atau toggle.
 :::
-
-## 📖 Kamus (glosarium)
-
-| Istilah | Bahasa Indonesia |
-|---|---|
-| Semantic HTML | HTML semantik |
-| Landmark | Penanda wilayah halaman (header, nav, main…) |
-| Accessibility (a11y) | Aksesibilitas |
-| Screen reader | Pembaca layar |
-| DOM | Model objek dokumen — pohon elemen halaman |
-| Alt text | Teks alternatif gambar |
 
 ## 📚 Lanjut belajar
 

@@ -1,30 +1,41 @@
 ---
 title: "Dasar-Dasar CSS"
-summary: Bagaimana CSS menentukan tampilan sebuah elemen — selector, cascade dan specificity, box model, unit, warna, custom property, dan state interaksi — plus kebiasaan yang membuat stylesheet mudah dirawat.
-sourceHash: 4cfb71007938
+summary: Bagaimana CSS menentukan tampilan elemen — selector, aturan mana yang menang, box model, satuan ukuran, warna, variabel CSS, dan style hover/fokus — plus kebiasaan yang membuat stylesheet mudah diubah.
+sourceHash: 424b964ddb77
 ---
 
 ::part[Pelajari Konsepnya]{n="1"}
 
 ## 🎯 Yang akan kamu pelajari
 
-- Rule, selector, dan declaration
-- **Cascade**: origin, specificity, urutan — dan inheritance
-- **Box model** dan `box-sizing: border-box`
-- Unit (`px`, `rem`, `em`, `%`, `vw`, `ch`) dan kapan memakai masing-masing
-- Warna, tipografi, **custom property** (design token)
-- State: `:hover`, `:focus-visible`, `:disabled`
-- Konvensi penamaan (BEM) dan posisi Tailwind nanti (Minggu 2)
+- Cara menulis sebuah rule CSS
+- Bagaimana browser memutuskan **rule mana yang menang** kalau rule-rule saling bertentangan
+- Box model: content, padding, border, margin
+- Satuan mana yang dipakai (`rem`, `px`, `%`…)
+- Variabel CSS untuk warna dan jarak
+- Style untuk hover, fokus keyboard, dan tombol nonaktif
+
+## 🔤 Istilah penting
+
+| Istilah | Artinya (sederhana) |
+|---|---|
+| **Selector** | Bagian yang memilih elemen mana yang diberi style, misalnya `.card` |
+| **Declaration** | Satu baris style: `color: navy;` |
+| **Cascade** | Cara browser memilih rule pemenang |
+| **Specificity** | Seberapa "kuat" sebuah selector — id mengalahkan class, class mengalahkan tag |
+| **Box model** | Setiap elemen adalah kotak: content, padding, border, margin |
+| **`rem`** | Ukuran yang mengikuti ukuran font dasar halaman (biasanya 16px) |
+| **CSS variable** | Nilai bernama yang dipakai berulang, misalnya `--color-primary` |
 
 ## 🧠 Ide besarnya
 
-CSS adalah kumpulan **aturan yang saling bersaing**. Banyak rule bisa ingin mengatur warna tombol yang sama; browser menggelar turnamen — **cascade** — untuk menentukan pemenangnya. Kebanyakan momen "CSS-nya rusak!" sebenarnya adalah "aku tidak tahu rule mana yang menang dan kenapa".
+Rule CSS itu seperti **beberapa orang memberi perintah** untuk baju yang sama: ibumu bilang biru, temanmu bilang merah. Kamu ikut siapa? CSS punya aturan tetap untuk ini, namanya **cascade**. Kebanyakan momen "CSS-nya rusak!" sebenarnya artinya "aku tidak tahu rule mana yang menang".
 
-## ❓ Kenapa ini ada?
+## ❓ Kenapa ini penting
 
-Memisahkan **tampilan** (CSS) dari **struktur** (HTML) berarti satu stylesheet bisa mengubah gaya ribuan halaman, pengguna bisa menerapkan style mereka sendiri (font lebih besar, kontras tinggi), dan HTML yang sama bisa terlihat benar di ponsel, laptop, maupun saat dicetak.
+Memisahkan tampilan (CSS) dari struktur (HTML) berarti satu stylesheet bisa mengubah tampilan seluruh situs, dan pengguna bisa memakai font lebih besar atau kontras tinggi.
 
-## 💥 Apa yang terjadi kalau TIDAK memahaminya?
+Kalau rule-nya berantakan, tidak ada yang berani mengubah apa pun:
 
 ```css
 #job-list .card .title { color: navy; }
@@ -32,11 +43,13 @@ Memisahkan **tampilan** (CSS) dari **struktur** (HTML) berarti satu stylesheet b
 .card-title-new-final { color: purple !important; }  /* escalation */
 ```
 
-Perang specificity dan `!important` terus memanas sampai tidak ada yang berani mengubah apa pun. `#4f46e5` yang di-hardcode di 60 tempat berarti rebranding makan waktu seminggu. `font-size: 12px` di mana-mana mengabaikan pengguna yang memperbesar ukuran font browser mereka.
+- Rule terus "bertengkar", dan `!important` membuatnya makin parah.
+- Warna brand yang disalin ke 60 tempat membuat desain ulang makan waktu seminggu.
+- `font-size: 12px` di mana-mana mengabaikan pengguna yang memperbesar teks browser-nya.
 
-## 📖 Cara kerjanya, langkah demi langkah
+## 📖 Langkah demi langkah
 
-### 1. Anatomi sebuah rule
+### 1. Bentuk sebuah rule
 
 ```css
 .card__title {            /* selector */
@@ -45,52 +58,56 @@ Perang specificity dan `!important` terus memanas sampai tidak ada yang berani m
 }
 ```
 
-| Selector | Cocok dengan | Specificity (id, class, type) |
+Selector dari yang lemah ke yang kuat:
+
+| Selector | Memilih | Kekuatan (id, class, tag) |
 |---|---|---|
 | `h2` | setiap h2 | 0,0,1 |
-| `.card` | class | 0,1,0 |
-| `.card h2` | h2 di dalam .card | 0,1,1 |
-| `.button:hover` | pseudo-class dihitung sebagai class | 0,2,0 |
-| `#main` | id | 1,0,0 |
-| `style="..."` | inline | mengalahkan semua selector |
+| `.card` | elemen dengan class `card` | 0,1,0 |
+| `.card h2` | h2 di dalam `.card` | 0,1,1 |
+| `.button:hover` | tombol yang sedang di-hover (`:hover` dihitung seperti class) | 0,2,0 |
+| `#main` | elemen dengan id `main` | 1,0,0 |
+| `style="..."` | style inline | mengalahkan semua selector |
 
-### 2. Cascade, berurutan
+### 2. Rule mana yang menang?
 
-1. **Origin & importance**: default browser < style-mu; `!important` membalik urutannya (hindari).
-2. **Specificity**: yang lebih tinggi menang (bandingkan id, lalu class, lalu type).
-3. **Urutan**: specificity sama → rule yang **lebih akhir** menang.
+Seperti turnamen sepak bola dengan babak yang tetap:
 
-Ditambah **inheritance**: property teks (`color`, `font-family`, `line-height`) mengalir dari parent ke child; property kotak (`margin`, `border`) tidak.
+1. **`!important`** menang atas rule biasa (hindari — memicu pertengkaran).
+2. **Selector yang lebih kuat** menang (bandingkan id, lalu class, lalu tag).
+3. Kalau sama kuat, **rule yang ditulis belakangan** menang.
 
-Jaga specificity tetap **rendah dan datar** (satu class saja) agar urutan dan maksudnya tetap mudah ditebak. `:where()` memberi selector specificity nol — berguna untuk style dasar.
+Beberapa property **diwariskan**, seperti sifat keluarga: style teks (`color`, `font-family`) turun dari parent ke child. Style kotak (`margin`, `border`) tidak.
+
+Tips: jaga selector tetap **lemah dan sederhana** (satu class saja). Dengan begitu kamu cukup ingat "yang belakangan menang".
 
 ### 3. Box model
 
+Setiap elemen adalah kotak, seperti **foto berbingkai**: fotonya (content), ruang putih di sekelilingnya (padding), bingkainya (border), dan jarak ke foto berikutnya di dinding (margin).
+
 ```mermaid
 flowchart LR
-    M["margin (di luar, transparan)"] --> B["border"] --> P["padding (di dalam, background terlihat)"] --> C["content"]
+    M["margin (jarak luar)"] --> B["border (bingkai)"] --> P["padding (ruang dalam)"] --> C["content"]
 ```
 
 ```css
 *, *::before, *::after { box-sizing: border-box; }
 ```
 
-Dengan default `content-box`, `width: 300px; padding: 20px` menghasilkan kotak 340 px. `border-box` menjaganya tetap 300 px — itulah alasan setiap reset modern menyertakan baris ini.
+Tanpa baris ini, `width: 300px; padding: 20px` menghasilkan kotak 340 px (padding ditambahkan di luar lebar). Dengan `border-box`, kotaknya tetap 300 px. Itulah kenapa hampir setiap proyek dimulai dengan baris ini.
 
-Margin vertikal antar blok **collapse** (yang lebih besar menang); padding tidak pernah.
+### 4. Satuan ukuran
 
-### 4. Unit
-
-| Unit | Relatif terhadap | Dipakai untuk |
+| Satuan | Mengikuti | Dipakai untuk |
 |---|---|---|
-| `rem` | ukuran font root (biasanya 16px) | ukuran font, spacing — menghormati pengaturan pengguna |
-| `em` | ukuran font elemen saat ini | padding yang ikut membesar bersama teks component |
-| `px` | pixel CSS | border, shadow, garis tipis |
+| `rem` | ukuran font dasar halaman | ukuran font dan jarak — menghormati pengaturan pengguna |
+| `em` | ukuran font elemen ini | padding yang ikut membesar bersama teks |
+| `px` | pixel layar yang tetap | border dan garis tipis |
 | `%` | ukuran parent | lebar yang fleksibel |
-| `vw` / `vh` / `dvh` | viewport | section layar penuh (`dvh` menangani toolbar ponsel) |
-| `ch` | lebar karakter "0" | panjang baris yang nyaman dibaca: `max-width: 65ch` |
+| `vw` / `dvh` | ukuran layar | section layar penuh |
+| `ch` | lebar karakter "0" | lebar baca yang nyaman: `max-width: 65ch` |
 
-### 5. Warna dan tipografi
+### 5. Warna dan teks
 
 ```css
 body {
@@ -102,9 +119,11 @@ body {
 .overlay { background: rgb(15 23 42 / 0.6); }   /* alpha channel */
 ```
 
-Cek **kontras**: WCAG AA mensyaratkan 4.5:1 untuk teks normal.
+Cek **kontras** (seberapa beda warna teks dan latar belakangnya): teks normal butuh minimal 4.5:1. DevTools browser menampilkan angka ini.
 
-### 6. Custom property (design token)
+### 6. Variabel CSS (design token)
+
+Variabel CSS itu seperti **kontak di HP-mu**: nomornya disimpan sekali dengan nama "Ibu" lalu dipakai di mana-mana. Kalau nomornya berubah, cukup ubah di satu tempat.
 
 ```css
 :root {
@@ -119,9 +138,9 @@ Cek **kontras**: WCAG AA mensyaratkan 4.5:1 untuk teks normal.
 }
 ```
 
-Token adalah jembatan ke design system dan ke Tailwind v4, yang menghasilkan utility-nya dari variabel CSS.
+Dark mode jadi mudah: ubah variabelnya, bukan setiap component. Tailwind (Minggu 2) juga dibangun di atas variabel CSS.
 
-### 7. State
+### 7. Hover, fokus, dan nonaktif
 
 ```css
 .button:hover { filter: brightness(1.1); }
@@ -129,65 +148,44 @@ Token adalah jembatan ke design system dan ke Tailwind v4, yang menghasilkan uti
 .button:disabled { opacity: 0.5; cursor: not-allowed; }
 ```
 
-`:focus-visible` menampilkan focus ring untuk pengguna **keyboard** tanpa memunculkannya setiap kali mouse diklik. Jangan pernah `outline: none` tanpa penggantinya.
+- `:hover` — mouse sedang berada di atasnya.
+- `:focus-visible` — pengguna sampai ke elemen itu dengan **keyboard** (Tab). Muncul cincin agar mereka tahu posisinya, seperti kursor.
+- Jangan pernah menulis `outline: none` tanpa menambahkan style fokus lain yang terlihat.
 
-### 8. Penamaan: BEM
+### 8. Memberi nama class: BEM
 
-`block__element--modifier`: `.card`, `.card__title`, `.badge--remote`. Selector class yang datar, hubungan yang jelas, tanpa perang nesting. (Minggu 2 menggantinya dengan utility class Tailwind — kamu akan tahu apa yang dihasilkannya.)
+BEM adalah kebiasaan penamaan: `block__element--modifier`, misalnya `.card`, `.card__title`, `.badge--remote`. Namanya menunjukkan bagian mana milik siapa, dan setiap selector tetap satu class sederhana. (Di Minggu 2, Tailwind menggantikan sebagian besar cara ini.)
 
-## ⚖️ Trade-off
+## ⚠️ Kesalahan umum
 
-| Pilihan | ✅ | ❌ |
-|---|---|---|
-| CSS biasa + BEM | tanpa tooling, kontrol penuh | butuh disiplin penamaan; CSS yang tak terpakai menumpuk |
-| Utility-first (Tailwind) | cepat, konsisten, tanpa pusing penamaan | daftar class panjang; harus mempelajari utility |
-| CSS Modules / scoped styles | tanpa tabrakan global | butuh build step |
-| Custom property | theming saat runtime, token | tidak ada pengecekan typo saat compile |
-| `!important` | override cepat | merusak cascade; memicu eskalasi |
-
-## ✅ Kapan dipakai / 🚫 Kapan TIDAK dipakai
-
-- ✅ Token untuk warna, spacing, radius, dan font sejak hari pertama.
-- ✅ Selector satu class untuk component.
-- 🚫 ID untuk styling (simpan untuk anchor dan `label for`).
-- 🚫 `!important`, kecuali untuk meng-override inline style dari pihak ketiga atau "jalan darurat" utility.
+- Lupa `box-sizing: border-box`, lalu bergulat dengan lebar elemen.
+- Ukuran font `px` yang mengabaikan pengaturan browser pengguna.
+- Menghapus outline fokus karena "terlihat jelek".
+- Teks abu-abu muda di atas putih (kontras rendah).
+- Styling dengan id, lalu butuh `!important` untuk menimpanya.
 
 ## 🏆 Praktik terbaik
 
 - [ ] Mulai dengan reset kecil: `box-sizing: border-box`, `margin: 0` pada body, `img { max-width: 100% }`.
-- [ ] Definisikan **design token** di `:root`; jangan pernah hardcode warna brand di component.
-- [ ] Jaga specificity tetap datar; hindari ID dan rantai descendant yang dalam.
-- [ ] Pakai `rem` untuk tipografi dan spacing, `line-height` tanpa unit, dan font stack dengan fallback.
-- [ ] Selalu styling `:focus-visible`; cek kontras warna (DevTools menampilkan rasionya).
-- [ ] Hormati preferensi pengguna: `prefers-color-scheme`, `prefers-reduced-motion`.
-- [ ] Pakai panel **Computed** dan **Styles** di DevTools untuk melihat rule mana yang menang.
-
-## 🏭 Cara dipakai di industri
-
-- Design system (Material, Radix Themes, UI kit perusahaan) dibangun di atas token yang diedit desainer di Figma dan dipakai developer sebagai variabel CSS.
-- Tailwind CSS mendominasi proyek React/Next.js baru — memahami cascade membuat utility-nya mudah ditebak.
-- CSS modern (`:has()`, container query, nesting, `@layer`) didukung semua browser evergreen dan menggantikan banyak JavaScript lama.
-
-## ⚠️ Kesalahan umum
-
-- Lupa `border-box`, lalu bergulat dengan lebar elemen.
-- Memakai ukuran font `px` yang mengabaikan pengaturan browser pengguna.
-- Menghapus outline fokus demi estetika.
-- Teks abu-abu berkontras rendah di atas putih.
-- Styling dengan ID, lalu butuh `!important` untuk meng-override.
+- [ ] Taruh warna, jarak, dan radius di variabel CSS di `:root`; jangan salin warna brand ke component.
+- [ ] Jaga selector tetap sederhana (satu class); hindari id dan rantai panjang.
+- [ ] Pakai `rem` untuk teks dan jarak, dan `line-height` tanpa satuan.
+- [ ] Selalu beri style `:focus-visible`; cek kontras warna.
+- [ ] Hormati pengaturan pengguna: `prefers-color-scheme`, `prefers-reduced-motion`.
+- [ ] Kalau style tidak berlaku, buka DevTools → **Styles** untuk melihat rule mana yang menang dan kenapa.
 
 ::part[Jelaskan & Rancang]{n="2"}
 
 ## 🗣️ Jelaskan
 
-Seorang rekan bertanya: "Aku menulis `.title { color: red }` di bagian bawah file, kenapa masih biru?" Jelaskan cascade dan bagaimana dia bisa menemukan rule pemenangnya di DevTools.
+Rekan tim bertanya: "Aku menulis `.title { color: red }` di bagian bawah file. Kenapa masih biru?" Jelaskan aturan "siapa yang menang" dan cara menemukan rule pemenangnya di DevTools.
 
 ## 📐 Rancang
 
-Rancang kumpulan token untuk UI CareerPilot: warna (termasuk warna status untuk saved/applied/interview/offer/rejected), skala spacing, radius, ukuran font, dan cara kerja dark mode — sebagai CSS custom property.
+Rencanakan variabel CSS untuk CareerPilot: warna (termasuk warna untuk setiap status: saved, applied, interview, offer, rejected), skala jarak, radius sudut, ukuran font, dan cara kerja dark mode.
 
 :::quiz
-Tampilkan contoh kumpulan tokennya
+Tampilkan contoh kumpulan variabelnya
 
 ```css
 :root {
@@ -216,54 +214,45 @@ Tampilkan contoh kumpulan tokennya
 }
 ```
 
-Component hanya mereferensikan token **semantik** (`--status-offer`, `--color-surface`), jadi dark mode dan rebranding cukup mengubah token. Jangan pernah menyampaikan status hanya lewat warna — badge juga menampilkan teks.
+- Nama menjelaskan **kegunaannya** (`--status-offer`), bukan warnanya (`--green`). Jadi desain ulang cukup mengubah nilainya.
+- Dark mode hanya mengubah variabel.
+- Jangan pernah menampilkan status hanya dengan warna — badge juga menampilkan teks.
 :::
 
 ### 📝 Checklist self-review
 
-- [ ] Nama semantik (untuk apa), bukan nama literal (`--blue`)
-- [ ] Skala spacing yang konsisten
-- [ ] Dark mode mengubah token, bukan component
-- [ ] Status tidak pernah hanya bergantung pada warna
+- [ ] Nama menjelaskan kegunaan, bukan warna
+- [ ] Satu skala jarak yang konsisten
+- [ ] Dark mode mengubah variabel, bukan component
+- [ ] Status tidak pernah hanya ditunjukkan dengan warna
 
 ::ai-review{task="design"}
 
 ::part[Latihan Kecil]{n="3"}
 
 :::exercise{path="exercises/web/m4/w1/02-css-fundamentals" ai="no-ai" title="Styling kartu lowongan dengan design token"}
-Tulis stylesheet dari nol untuk halaman yang disediakan: token di `:root`, reset border-box, tipografi body yang nyaman dibaca, component kartu dan badge ala BEM, state hover dan focus-visible — tanpa ID, `!important`, atau ukuran font pixel. Tes akan mem-parse rule CSS-mu.
+Tulis stylesheet dari nol untuk halaman yang disediakan: variabel di `:root`, reset `border-box`, teks body yang nyaman dibaca, style kartu dan badge ala BEM, serta state hover dan focus-visible — tanpa id, tanpa `!important`, dan tanpa ukuran font `px`. Tes akan membaca rule CSS-mu.
 :::
 
 :::hints
-- Mulai dari token dan reset, lalu `body`, lalu component dari atas ke bawah.
-- Pakai token dengan `var(--name)` di setiap rule component.
-- `.badge--remote` hanya meng-override bagian yang berbeda dari `.badge`.
+- Mulai dari variabel dan reset, lalu `body`, lalu component dari atas ke bawah.
+- Pakai variabel dengan `var(--name)` di setiap rule component.
+- `.badge--remote` hanya mengubah bagian yang berbeda dari `.badge`.
 :::
 
 ## ✅ Cek cepat
 
 :::quiz
-Dua rule dengan specificity sama mengatur `color`. Mana yang menang?
+Dua rule yang sama kuat mengatur `color`. Mana yang menang?
 
-Yang muncul lebih akhir di stylesheet (urutan sumber).
+Yang ditulis belakangan di stylesheet.
 :::
 
 :::quiz
-Kenapa lebih baik memakai `rem` daripada `px` untuk ukuran font?
+Kenapa memakai `rem` dan bukan `px` untuk ukuran font?
 
-`rem` mengikuti ukuran font root, jadi menghormati pengguna yang memperbesar ukuran teks default browser mereka.
+`rem` mengikuti ukuran font dasar halaman, jadi menghormati pengguna yang memperbesar teks browser-nya.
 :::
-
-## 📖 Kamus (glosarium)
-
-| Istilah | Bahasa Indonesia |
-|---|---|
-| Cascade | Kaskade — aturan menentukan style mana yang menang |
-| Specificity | Spesifisitas — "kekuatan" selector |
-| Box model | Model kotak (content, padding, border, margin) |
-| Custom property / design token | Variabel CSS / token desain |
-| Inheritance | Pewarisan style dari elemen induk |
-| Contrast ratio | Rasio kontras warna |
 
 ## 📚 Lanjut belajar
 

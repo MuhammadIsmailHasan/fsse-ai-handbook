@@ -1,6 +1,6 @@
 ---
 title: "CSS Layout & Responsive Design"
-summary: Lay out pages with Flexbox and Grid, build mobile-first with media and container queries, and keep images, text and spacing fluid across screen sizes.
+summary: Place things on the page with Flexbox and Grid, build for phones first, and make images, text and spacing adapt to any screen size.
 type: lesson
 source: core
 sourceRef: "M3 · W1 · L2"
@@ -13,39 +13,52 @@ tags: [css, flexbox, grid, responsive, media-queries, mobile-first]
 
 ## 🎯 What you'll learn
 
-- Normal flow, `display`, and when you need a layout system
-- **Flexbox** for one-dimensional alignment
-- **Grid** for two-dimensional layouts, including `repeat(auto-fill, minmax())`
-- **Mobile-first** media queries and choosing breakpoints
-- Container queries, fluid type with `clamp()`, responsive images
-- Debugging layouts with DevTools
+- When the normal page flow is enough, and when you need a layout tool
+- **Flexbox** for a row (or column) of items
+- **Grid** for rows and columns together
+- **Mobile first**: start with the phone, then add space for bigger screens
+- Flexible text and images
+- Finding layout problems with DevTools
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Layout** | Where things are placed on the page | Tata letak |
+| **Flexbox** | CSS tool to line up items in one direction (a row or a column) | Susunan satu arah |
+| **Grid** | CSS tool for rows and columns at the same time | Susunan baris & kolom |
+| **Responsive** | The page adapts to the screen size | Responsif |
+| **Viewport** | The visible area of the browser window | Area layar browser |
+| **Media query** | A CSS rule that applies only on certain screen sizes | Aturan per ukuran layar |
+| **Breakpoint** | The screen width where the layout changes | Titik ubah layout |
 
 ## 🧠 The big idea
 
-Flexbox is a **bookshelf row**: items line up in one direction and you decide how they share space and align. Grid is a **floor plan**: rows and columns defined up front, items placed into areas.
+**Flexbox** is like people standing **in one line** at a bus stop: you decide the direction, the spacing, and how they line up.
+**Grid** is like a **parking lot**: rows and columns are painted first, then cars park in the spaces.
 
-Responsive design is **water in containers**: the content should take the shape of whatever screen it's poured into — instead of a fixed 1200 px box that spills over phones.
+**Responsive design** is like **water in a glass**: the content takes the shape of the screen, instead of a fixed 1200 px box that spills over on phones.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-In Indonesia, the large majority of internet use happens on phones. Recruiters open job links on mobile; the same user checks CareerPilot on a laptop later. One codebase must adapt. Before Flexbox and Grid (2017+), layouts needed floats and hacks; now they're a few declarations.
+In Indonesia, most people use the internet on their phones. Recruiters open job links on mobile; the same person may open CareerPilot on a laptop later. One page must work on both.
 
-## 💥 What happens if we DON'T?
+A fixed layout breaks on phones:
 
 ```css
 .page { width: 1200px; }
 .sidebar { float: left; width: 300px; }
 ```
 
-On a 390 px phone: horizontal scrolling, tiny zoomed-out text, tap targets too small, sidebar squeezing content. Google's mobile-first indexing also ranks the page lower.
+On a 390 px phone: sideways scrolling, tiny text, buttons too small to tap. Google also ranks pages that don't work on mobile lower.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Normal flow first
 
-Block elements stack vertically; inline elements flow like text. Many layouts need nothing more than good HTML plus `max-width` and spacing. Reach for Flex/Grid when you need alignment or columns.
+Without any layout CSS, block elements (like `div`, `p`) stack from top to bottom, and inline elements (like `a`, `strong`) flow like words in a sentence. Many pages only need this plus a `max-width` and some spacing. Use Flexbox or Grid when you need items side by side or aligned.
 
-### 2. Flexbox
+### 2. Flexbox — one line of items
 
 ```css
 .site-header {
@@ -63,9 +76,15 @@ flowchart LR
     A[Logo] --- B["Search (flex: 1)"] --- C[Links]
 ```
 
-Great for: navbars, toolbars, button groups, centering, cards' internal layout (push the button to the bottom with `margin-top: auto`).
+- `justify-content` — how items spread **along** the line (start, center, space-between).
+- `align-items` — how items line up **across** the line (top, center, bottom).
+- `flex-wrap: wrap` — if the line is full, continue on the next line.
+- `gap` — the space between items.
+- `flex: 1` — "take the free space", like a person spreading out on an empty bench.
 
-### 3. Grid
+Good for: navbars, button groups, centering something, the inside of a card.
+
+### 3. Grid — rows and columns
 
 ```css
 .page {
@@ -83,9 +102,10 @@ Great for: navbars, toolbars, button groups, centering, cards' internal layout (
 }
 ```
 
-`fr` = a fraction of the remaining space. `minmax(16rem, 1fr)` + `auto-fill` gives a responsive card grid **without any media query**.
+- `fr` = "a share of the free space". `16rem 1fr` = a fixed sidebar, and the content takes the rest.
+- `repeat(auto-fill, minmax(16rem, 1fr))` = "make as many columns as fit, each at least 16rem wide". Cards rearrange by themselves on any screen — **no media query needed**.
 
-Named areas make page layouts readable:
+You can also name areas, like drawing a floor plan:
 
 ```css
 .layout {
@@ -102,7 +122,7 @@ Named areas make page layouts readable:
 
 ### 4. Mobile first
 
-Write base styles for the **smallest** screen; add `min-width` media queries as space grows:
+Write the basic CSS for the **smallest** screen. Then add rules with `min-width` for bigger screens — like packing a small bag first, and adding more only when you have a bigger suitcase.
 
 ```css
 .filters { display: none; }                 /* phones: filters behind a button */
@@ -111,11 +131,10 @@ Write base styles for the **smallest** screen; add `min-width` media queries as 
 }
 ```
 
-- Phones get the simplest CSS (less to download and override).
-- Choose breakpoints where **your content** breaks, not per device model. Common starting points: `40rem`, `48rem`, `64rem`, `80rem` (Tailwind uses similar ones).
-- Use `em`/`rem` in media queries so they respect user zoom.
+- Phones get the simplest CSS.
+- Put breakpoints where **your content** starts to look bad, not at specific phone models. Common values: `40rem`, `48rem`, `64rem`, `80rem`.
 
-### 5. Beyond media queries
+### 5. Flexible text and components
 
 ```css
 .card-list { container-type: inline-size; }
@@ -126,6 +145,9 @@ Write base styles for the **smallest** screen; add `min-width` media queries as 
 h1 { font-size: clamp(1.75rem, 1.2rem + 2vw, 2.75rem); }   /* fluid type with limits */
 .prose { max-width: 65ch; }                                 /* readable line length */
 ```
+
+- **Container query** (`@container`): the card changes based on the **box it sits in**, not the whole screen. Like furniture that fits the room it's placed in.
+- `clamp(min, preferred, max)`: the heading grows with the screen, but never smaller than min or bigger than max.
 
 ### 6. Responsive images
 
@@ -140,117 +162,89 @@ img { max-width: 100%; height: auto; display: block; }
      alt="Kopi Data office" width="800" height="450" loading="lazy" />
 ```
 
-The browser picks the smallest file that looks sharp. Next.js's `<Image>` does this for you (Week 6).
+- `max-width: 100%` stops images from being wider than their box.
+- `srcset` gives the browser several sizes; it downloads the smallest one that still looks sharp — like choosing a small or large photo print depending on the frame. Next.js `<Image>` does this for you (Week 6).
 
-### 7. Debugging
+### 7. Finding layout problems
 
-DevTools: toggle **device mode**, turn on the **grid/flex overlays**, check the **box model** panel, and look for elements wider than the viewport (a quick trick: `* { outline: 1px solid red }` temporarily).
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Flexbox | content-driven sizing, simple alignment | two-dimensional layouts get awkward |
-| Grid | explicit rows/columns, areas, auto-fill | slightly more to learn |
-| Media queries | page-level changes | components depend on viewport, not their slot |
-| Container queries | truly reusable components | newer mental model |
-| Hiding content on mobile | simpler small screens | hidden content may be important; keep it reachable |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Flex inside components and for rows; Grid for page structure and card collections.
-- ✅ Mobile-first for every new page.
-- 🚫 Fixed widths/heights in `px` for containers.
-- 🚫 A breakpoint for every device; don't design for "iPhone 16" specifically.
-
-## 🏆 Best practices
-
-- [ ] Mobile first with `min-width` media queries in `rem`/`em`.
-- [ ] Use `gap` instead of margins between flex/grid items.
-- [ ] `max-width` + `margin-inline: auto` containers; `max-width: 65ch` for long text.
-- [ ] `img { max-width: 100%; height: auto }` and explicit image dimensions to avoid layout shift.
-- [ ] Prefer intrinsic layouts (`auto-fill`, `minmax`, `clamp`) over many breakpoints.
-- [ ] Tap targets at least ~44×44 px; test with real phones and zoom at 200%.
-- [ ] Keep visual order matching DOM order (keyboard and screen reader users follow the DOM).
-
-## 🏭 How it's used in industry
-
-- Job portals (JobStreet, Glints, Kalibrr) are primarily used on mobile — responsive layouts and fast images directly affect applications submitted.
-- Design systems ship responsive layout primitives (`Stack`, `Grid`, `Container`).
-- Tailwind's responsive prefixes (`md:grid-cols-2`) are mobile-first media queries under the hood — Week 2.
+In DevTools: turn on **device mode** (phone view), turn on the **grid/flex overlay**, and look at the **box model** panel. Quick trick to find the element that is too wide: add `* { outline: 1px solid red }` for a moment.
 
 ## ⚠️ Common mistakes
 
-- Desktop-first CSS with `max-width` queries that override everything on phones.
-- Forgetting the viewport meta tag (the page renders zoomed out).
-- `height: 100vh` on mobile (use `dvh`).
-- Reordering items visually with `order` so keyboard focus jumps around.
+- Building desktop first, then writing many rules to "fix" phones.
+- Forgetting the viewport meta tag (the page looks zoomed out on phones).
+- `height: 100vh` on phones (the browser toolbar hides part of it — use `dvh`).
+- Fixed widths in `px` for containers.
+- Changing the visual order with `order`, so keyboard focus jumps around.
+- Hiding important content on mobile instead of making it reachable.
+
+## 🏆 Best practices
+
+- [ ] Mobile first, with `min-width` media queries in `rem`.
+- [ ] Flexbox for one line of items, Grid for page structure and card lists.
+- [ ] Use `gap` for space between items instead of margins.
+- [ ] Containers with `max-width` + `margin-inline: auto`; `max-width: 65ch` for long text.
+- [ ] `img { max-width: 100%; height: auto }` and set image `width`/`height`.
+- [ ] Prefer self-adjusting layouts (`auto-fill`, `minmax`, `clamp`) over many breakpoints.
+- [ ] Buttons and links at least about 44×44 px to tap; test on a real phone and at 200% zoom.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain to a designer the difference between "mobile first" and "desktop first", and why mobile first usually produces less CSS.
+Explain to a designer the difference between "mobile first" and "desktop first", and why mobile first usually needs less CSS.
 
 ## 📐 Design it
 
-Plan the responsive layout of CareerPilot's **applications dashboard**: stats cards, a pipeline board with five columns (saved, applied, interview, offer, closed), and a filters panel. Describe the layout at phone, tablet and desktop widths, and which of Flexbox/Grid/container queries you'd use where.
+Plan the layout of CareerPilot's **applications dashboard** on phone, tablet and desktop. It has stats cards, a board with five columns (saved, applied, interview, offer, closed), and a filters panel. Say where you'd use Flexbox, Grid or container queries.
 
 :::quiz
 Show a possible plan
 
-- **Phone (base)**: single column. Stats: `grid` with `repeat(2, 1fr)` (2×2 cards). Pipeline: columns become a **horizontal scroll** row (`display: flex; overflow-x: auto; scroll-snap-type: x mandatory`), each column `flex: 0 0 85%` so the next column peeks in. Filters behind a "Filters" button (a dialog).
-- **Tablet (`min-width: 48rem`)**: stats in 4 columns (`repeat(4, 1fr)`); pipeline still scrolls but columns `flex-basis: 16rem`; filters as a collapsible panel above the board.
-- **Desktop (`min-width: 80rem`)**: page grid `grid-template-columns: 16rem 1fr` (filters sidebar + main); pipeline `grid-template-columns: repeat(5, minmax(0, 1fr))`, no scrolling.
-- **Application cards** inside columns use a **container query**: in a narrow column show title + company; when the container is ≥ 20rem, show salary and last update in a second column.
-- Header: flex with wrap. Keep DOM order = reading order (stats → board), and keep drag-and-drop accessible with buttons ("Move to…") as an alternative.
+- **Phone (base CSS)**: one column.
+  - Stats: `grid` with `repeat(2, 1fr)` → 2×2 cards.
+  - Board: the five columns become one row you swipe sideways (`display: flex; overflow-x: auto; scroll-snap-type: x mandatory`). Each column is `flex: 0 0 85%` so you can see the next one peeking in.
+  - Filters: hidden behind a "Filters" button that opens a dialog.
+- **Tablet (`min-width: 48rem`)**: stats in 4 columns; the board still scrolls, columns `flex-basis: 16rem`; filters as a panel you can open above the board.
+- **Desktop (`min-width: 80rem`)**: page grid `grid-template-columns: 16rem 1fr` (filters on the left); board `grid-template-columns: repeat(5, minmax(0, 1fr))`, no scrolling.
+- **Cards** in a column use a **container query**: narrow column → title + company only; container ≥ 20rem → also salary and last update.
+- Keep the HTML order the same as the reading order, and offer a "Move to…" button as an alternative to drag-and-drop.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Phone layout designed first
-- [ ] Each tool chosen for 1D vs 2D reasons
-- [ ] Component-level adaptation considered
-- [ ] Accessibility of reordering/scrolling considered
+- [ ] The phone layout was planned first
+- [ ] Flexbox for one direction, Grid for rows and columns
+- [ ] Cards adapt to their column (container query)
+- [ ] Scrolling and reordering still work for keyboard users
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w1/03-layout-responsive" ai="no-ai" title="Mobile-first jobs page"}
-Replace a fixed 1200 px layout with a mobile-first stylesheet: a centered container, a wrapping flex header, a one-column page grid that becomes sidebar + content at 48rem, an auto-fill card grid and fluid images. Tests parse your rules and media queries.
+Replace a fixed 1200 px layout with mobile-first CSS: a centered container, a header that wraps with Flexbox, a one-column page that becomes sidebar + content at 48rem, a card grid with `auto-fill`, and images that never overflow. The tests read your rules and media queries.
 :::
 
 :::hints
 - The base `.page` rule must **not** set columns; put `grid-template-columns: 16rem 1fr` inside `@media (min-width: 48rem)`.
 - `repeat(auto-fill, minmax(16rem, 1fr))` needs no media query.
-- `margin-inline: auto` centers a block with a `max-width`.
+- `margin-inline: auto` centers a block that has a `max-width`.
 :::
 
 ## ✅ Quick check
 
 :::quiz
-Flexbox or Grid for a row of tags that should wrap?
+Flexbox or Grid for a row of tags that should wrap to the next line?
 
-Flexbox with `flex-wrap: wrap` and `gap` — it's one-dimensional and content-sized.
+Flexbox with `flex-wrap: wrap` and `gap` — it is one direction, and the tags decide their own size.
 :::
 
 :::quiz
 What does `repeat(auto-fill, minmax(16rem, 1fr))` do?
 
-Creates as many columns as fit, each at least 16rem wide, sharing extra space equally — a responsive grid without media queries.
+It makes as many columns as fit, each at least 16rem wide, and shares the extra space equally. The grid adapts without media queries.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Responsive design | Desain responsif — menyesuaikan ukuran layar |
-| Mobile first | Mulai dari layar ponsel |
-| Breakpoint | Titik ubah tata letak |
-| Media / container query | Kueri media / kueri wadah |
-| Viewport | Area tampilan browser |
-| Layout shift | Pergeseran tata letak |
 
 ## 📚 Keep learning
 
