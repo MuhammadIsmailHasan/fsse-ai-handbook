@@ -1,6 +1,6 @@
 ---
 title: "Interfaces, Type Aliases & Union Types"
-summary: Model real data precisely — object types with interfaces and aliases, optional and readonly fields, discriminated unions that make impossible states unrepresentable, type guards, exhaustive switches and utility types.
+summary: Describe real data precisely — object types, optional and readonly fields, unions where each state has only its own data, type guards, switches that cover every case, and building new types from existing ones.
 type: lesson
 source: core
 sourceRef: "M3 · W2 · L2"
@@ -13,23 +13,36 @@ tags: [typescript, interfaces, unions, discriminated-unions, utility-types]
 
 ## 🎯 What you'll learn
 
-- `interface` vs `type` — and when it matters
-- Optional (`?`), `readonly`, and nested object types
-- **Discriminated unions**: one type per state
-- **Type guards** and exhaustive `switch` with `never`
-- Intersections (`&`) and extending interfaces
-- Utility types: `Partial`, `Required`, `Pick`, `Omit`, `Record`, `ReturnType`
-- Deriving types from other types instead of repeating them
+- Describing objects with `interface` and `type`
+- Optional (`?`) and `readonly` fields
+- **Discriminated unions**: a separate shape for each state
+- Checking every case in a `switch`
+- Type guards: teaching TypeScript your own checks
+- Building new types from existing ones (`Pick`, `Omit`, `Partial`…)
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Interface** | A named description of an object's shape | Bentuk objek |
+| **Type alias** | A name for any type: `type Status = "saved" \| "applied"` | Nama tipe |
+| **Optional field (`?`)** | A field that may be missing | Field opsional |
+| **Discriminated union** | Several shapes, told apart by one field like `status` | Union dengan penanda |
+| **Type guard** | A function that tells TypeScript "if this returns true, the value is type X" | Penjaga tipe |
+| **`never`** | A type with no possible value — used to catch forgotten cases | Tidak mungkin terjadi |
+| **Utility type** | Built-in helpers that create a type from another type (`Partial`, `Pick`…) | Tipe bantuan |
 
 ## 🧠 The big idea
 
-Good types are a **map of what's possible**. A sloppy map says "an application has a status, maybe an interview date, maybe an offer amount" — so the code must check everything everywhere. A precise map says "an **offer** always has an amount, a **saved** application never has an interview date" — so impossible combinations can't even be written.
+Good types are like a **form with the right fields for each situation**. A marriage certificate form has fields for two spouses; a birth certificate has fields for parents. One giant form with every field "optional" would let people fill in nonsense.
 
-## ❓ Why does this exist?
+Same for code: an application with status **offer** always has an amount; a **saved** application never has an interview date. If the types say this, impossible combinations can't even be written.
 
-Front-end bugs often come from **impossible states**: a spinner and an error message shown together, an "offer" with no amount, `interviewAt` read on a rejected application. Modeling states explicitly moves those bugs from runtime to compile time — the same "domain rules" thinking as the State pattern in Architecture Stage D.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T?
+Many frontend bugs are **impossible states**: a spinner and an error shown at the same time, an "offer" with no amount, reading `interviewAt` on a rejected application.
+
+A type where everything is optional allows all of those:
 
 ```ts
 interface Application {
@@ -42,9 +55,9 @@ interface Application {
 }
 ```
 
-Every consumer asks: "is `offerAmount` defined? which statuses exist? can `isLoading` and `error` both be true?" TypeScript can't help because the type allows everything.
+Every place that uses it must guess: "Is `offerAmount` there? Which statuses exist? Can `isLoading` and `error` both be true?" TypeScript can't help, because the type allows everything.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Object types
 
@@ -63,18 +76,22 @@ type JobPosting = {
 };
 ```
 
+- `website?` = the field may be missing.
+- `readonly` = the value can't be changed after it's created.
+
 ### 2. `interface` or `type`?
+
+Both describe objects. The differences are small:
 
 | | `interface` | `type` |
 |---|---|---|
 | Object shapes | ✅ | ✅ |
-| Unions, tuples, primitives, mapped types | ❌ | ✅ |
-| `extends` | ✅ `interface B extends A` | via `&` |
-| Declaration merging (reopening) | ✅ (useful for libraries) | ❌ |
+| Unions, tuples, simple types | ❌ | ✅ |
+| Extend another | ✅ `interface B extends A` | with `&` |
 
-Team convention is what matters. A common one: `interface` for object shapes (props, API models), `type` for unions and computed types.
+A common team habit: `interface` for object shapes (props, API data), `type` for unions. What matters most is being consistent.
 
-### 3. Discriminated unions
+### 3. Discriminated unions: one shape per state
 
 ```ts
 interface ApplicationBase { id: number; job: JobPosting; updatedAt: string }
@@ -87,7 +104,11 @@ type Application =
   | (ApplicationBase & { status: "rejected"; reason?: string });
 ```
 
-The **discriminant** (`status`) is a literal property present in every member. Checking it narrows:
+- `|` means "one of these shapes".
+- `&` means "combine": the shared base fields **plus** the fields for that state.
+- `status` is the **label** that tells the shapes apart — like the color of a ticket at a parking lot that tells the guard which rate applies.
+
+When you check the label, TypeScript knows the exact shape:
 
 ```ts
 if (app.status === "offer") {
@@ -96,7 +117,7 @@ if (app.status === "offer") {
 app.interviewAt;       // ❌ doesn't exist on all members
 ```
 
-The same trick for UI state:
+The same idea works for loading data:
 
 ```ts
 type Remote<T> =
@@ -106,9 +127,9 @@ type Remote<T> =
   | { state: "success"; data: T };
 ```
 
-No more `isLoading && error` contradictions.
+Now "loading **and** error at the same time" is impossible to write.
 
-### 4. Exhaustive switches
+### 4. A `switch` that covers every case
 
 ```ts
 function assertNever(value: never): never {
@@ -127,7 +148,7 @@ function statusSummary(app: Application): string {
 }
 ```
 
-When the backend adds a status, TypeScript lists every place that must handle it.
+`never` means "this can't happen". If all cases are handled, nothing is left for `default`. When someone adds a new status like `"withdrawn"`, TypeScript shows an error **at every switch that forgot it** — like a checklist that won't let you submit until every box is ticked.
 
 ### 5. Type guards
 
@@ -139,9 +160,11 @@ function isRemote(job: JobPosting): job is JobPosting & { location: { kind: "rem
 const remoteJobs = jobs.filter(isRemote);   // typed as remote jobs
 ```
 
-A function returning `value is Type` teaches TypeScript your custom check.
+The return type `job is …` is a promise to TypeScript: "if I return `true`, this job is remote". After `filter(isRemote)`, TypeScript knows every item is remote. Be careful: if your check is wrong, TypeScript will believe the wrong thing.
 
-### 6. Deriving types
+### 6. Building types from other types
+
+Instead of copying fields (and forgetting to update the copy), build new types from the main one — like making different forms from one master template.
 
 ```ts
 type Status = Application["status"];                     // indexed access
@@ -151,63 +174,43 @@ type ById = Record<number, Company>;
 type Loader = ReturnType<typeof createLoader>;
 ```
 
-**Single source of truth**: when `JobPosting` changes, derived types follow.
-
-| Utility | Result |
+| Helper | What it does |
 |---|---|
-| `Partial<T>` | all fields optional (PATCH payloads) |
-| `Required<T>` | all fields required |
-| `Pick<T, K>` / `Omit<T, K>` | select / remove fields |
-| `Record<K, V>` | object with keys K and values V |
-| `Readonly<T>` | all fields readonly |
-| `NonNullable<T>` | remove `null`/`undefined` |
+| `Partial<T>` | makes every field optional (good for PATCH updates) |
+| `Required<T>` | makes every field required |
+| `Pick<T, K>` / `Omit<T, K>` | keep only some fields / remove some fields |
+| `Record<K, V>` | an object with keys of type K and values of type V |
+| `Readonly<T>` | makes every field readonly |
+| `NonNullable<T>` | removes `null` and `undefined` |
 
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Discriminated unions | impossible states unrepresentable, exhaustive checks | more types; API responses must be narrowed/validated |
-| One big optional-fields interface | quick | every consumer re-checks; bugs slip through |
-| Derived types | single source of truth | long type expressions can be hard to read — name them |
-| Type guards | reusable narrowing | a wrong guard lies to the compiler |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Anything with states: statuses, async requests, form steps, payment results.
-- ✅ Derive update/create payload types from the main model.
-- 🚫 Don't model every possible nuance of external data you don't control — validate and convert at the boundary into your precise types.
-
-## 🏆 Best practices
-
-- [ ] Make impossible states unrepresentable with discriminated unions.
-- [ ] Add `assertNever` defaults so new cases fail to compile.
-- [ ] Derive related types with `Pick`/`Omit`/`Partial`/indexed access instead of copying fields.
-- [ ] Use `readonly` for data you shouldn't mutate (props, API data).
-- [ ] Keep guards simple and tested; prefer built-in narrowing when possible.
-- [ ] Keep API DTO types separate from UI view models when they differ.
-
-## 🏭 How it's used in industry
-
-- Redux Toolkit and TanStack Query expose request state as discriminated unions (`status: "pending" | "error" | "success"`).
-- Payment SDKs model results as unions (`succeeded | requires_action | failed`) so integrations handle every case.
-- Code generators (OpenAPI → TypeScript) turn `oneOf` schemas into unions.
+When `JobPosting` changes, every type built from it updates too.
 
 ## ⚠️ Common mistakes
 
-- `status: string` instead of a literal union.
-- Optional fields for data that's required in some states.
-- A `default:` branch that silently returns something instead of `assertNever`.
-- Using `as` to force a union member instead of narrowing.
+- `status: string` instead of a union of the real values.
+- Optional fields for data that is always there in some states.
+- A `default:` that quietly returns something instead of `assertNever`.
+- Using `as` to force a shape instead of checking the label.
+- Copying fields into a second type instead of using `Pick` / `Omit`.
+
+## 🏆 Best practices
+
+- [ ] Use discriminated unions so impossible states can't be written.
+- [ ] End switches with `assertNever`, so new cases cause compile errors.
+- [ ] Build related types with `Pick`, `Omit`, `Partial` and `Type["field"]`.
+- [ ] Use `readonly` for data that shouldn't change (props, API data).
+- [ ] Keep type guards small and tested.
+- [ ] Check outside data at the boundary, then convert it into your precise types.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain to a teammate what "make impossible states unrepresentable" means, using a loading spinner + error message example.
+Explain to a teammate what "make impossible states impossible to write" means, using the example of a loading spinner and an error message shown together.
 
 ## 📐 Design it
 
-Design the types for CareerPilot's **CV match feature** (Phase 3 AI service): a request can be idle, uploading a CV, analyzing, done (score 0–100, matched skills, missing skills, advice), or failed (reason: file too large, unsupported type, AI unavailable — with a retry allowed only for the last). Write the union types and a function signature that renders a message.
+Design the types for CareerPilot's **CV match feature**. A request can be: idle, uploading a CV, analyzing, done (score 0–100, matched skills, missing skills, advice), or failed (file too large, unsupported file type, or AI unavailable — retry is allowed only for the last one). Write the union types and a function that returns a message for each state.
 
 :::quiz
 Show a possible design
@@ -254,26 +257,28 @@ function statusMessage(state: CvMatchState): string {
 }
 ```
 
-Retry being allowed only for `ai_unavailable` is encoded once (`canRetry`); the UI can't show a result during upload because `result` only exists in `done`.
+- `result` only exists in the `done` state, so the page can't show a score while uploading.
+- The failure reasons are their own union, each with its own extra data.
+- The retry rule lives in one place: `canRetry`.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Each phase carries only its own data
-- [ ] Nested unions for failure reasons
-- [ ] Exhaustive switches
+- [ ] Each state carries only its own data
+- [ ] Failure reasons are a union too
+- [ ] Every switch covers every case
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w2/02-interfaces-unions" ai="no-ai" title="Model applications so impossible states can't compile"}
-Write interfaces, a location union and an application union keyed by status, a derived `Status` type, a `Partial<Pick<…>>` update type, a type guard, and exhaustive switch functions. Type-level tests check that invalid objects (an offer without an amount, a remote job with a city) fail to compile.
+Write interfaces, a location union, an application union labeled by `status`, a `Status` type built from it, a `Partial<Pick<…>>` update type, a type guard and switch functions that cover every case. Type tests check that wrong objects (an offer without an amount, a remote job with a city) fail to compile.
 :::
 
 :::hints
-- Put shared fields in a base interface and intersect it with each status member.
-- `type Status = Application["status"]` — derived automatically.
+- Put the shared fields in a base interface and combine it (`&`) with each status shape.
+- `type Status = Application["status"]` — built automatically.
 - `function assertNever(value: never): never` in the `default` branch.
 :::
 
@@ -282,25 +287,14 @@ Write interfaces, a location union and an application union keyed by status, a d
 :::quiz
 What makes a union "discriminated"?
 
-Every member has a common property with a distinct literal type (e.g. `status: "offer"`), so checking it narrows to one member.
+Every shape has the same field (like `status`) with a different fixed value, so checking that field tells TypeScript which shape it is.
 :::
 
 :::quiz
-Why call `assertNever` in a switch's default branch?
+Why call `assertNever` in the `default` branch?
 
-If a new member is added to the union and not handled, the value isn't `never` anymore, so the code fails to compile at that spot.
+If someone adds a new case and forgets to handle it, the value is no longer `never`, so the code fails to compile right there.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Interface | Antarmuka (bentuk objek) |
-| Type alias | Nama alias tipe |
-| Discriminated union | Union bertanda (dibedakan oleh satu properti) |
-| Type guard | Penjaga tipe |
-| Exhaustive check | Pemeriksaan menyeluruh semua kasus |
-| Utility type | Tipe utilitas (Partial, Pick, Omit…) |
 
 ## 📚 Keep learning
 
