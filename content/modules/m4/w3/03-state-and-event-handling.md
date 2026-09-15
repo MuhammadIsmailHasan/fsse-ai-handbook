@@ -1,6 +1,6 @@
 ---
 title: "State Management & Event Handling"
-summary: Make components remember and respond — useState, events in React, why state must be replaced not mutated, updater functions and batching, lifting state up, and deciding where state should live.
+summary: Make components remember and respond — useState, events in React, why state must be replaced instead of changed, updater functions, sharing state between components, and deciding where state lives.
 type: lesson
 source: core
 sourceRef: "M3 · W3 · L3"
@@ -13,23 +13,39 @@ tags: [react, state, usestate, events, lifting-state]
 
 ## 🎯 What you'll learn
 
-- `useState`: what "state" means in React and how re-rendering works
-- Event handlers in JSX (`onClick`, `onChange`, `onSubmit`) and the synthetic event object
-- **Immutability**: updating arrays, objects and Sets correctly
-- Updater functions and **batching** (`setCount(c => c + 1)`)
-- **Lifting state up** and controlled components
-- Choosing the minimal state; derived values computed during render
-- The Rules of Hooks
+- `useState`: how a component remembers things
+- Handling clicks, typing and form submits in React
+- Why you must **replace** state instead of changing it
+- Updater functions: `setCount(c => c + 1)`
+- **Lifting state up**: sharing state between components
+- Keeping state small, and the Rules of Hooks
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **State** | Data a component remembers between renders (saved jobs, open menu) | Data yang diingat komponen |
+| **`useState`** | The hook that creates state: `const [value, setValue] = useState(0)` | Pembuat state |
+| **Setter** | The function that changes state and asks React to redraw | Pengubah state |
+| **Re-render** | React runs your component again to draw the new screen | Menggambar ulang |
+| **Immutable update** | Make a new array/object instead of changing the old one | Ganti, bukan ubah |
+| **Lifting state up** | Moving state to a parent so several children can share it | Menaikkan state |
+| **Derived value** | A value you calculate from state instead of storing it | Nilai turunan |
+| **Hook** | A special React function whose name starts with `use` | Hook |
 
 ## 🧠 The big idea
 
-A React component is like a **snapshot camera**. Each render takes a photo of the UI for the current props and state. Calling a setter doesn't edit the old photo — it asks React to take a **new photo** with new state. That's why you must give React **new** values (not modify the old ones), and why a variable you read in a handler is the value from **that** snapshot.
+A React component works like a **photo booth**. Each render takes a photo of the screen with the current state. Calling a setter doesn't edit the old photo — it asks React to take a **new photo** with the new state.
 
-## ❓ Why does this exist?
+Two things follow:
+- You must give React **new** values (not scribble on the old photo).
+- Inside a click handler, variables hold the values from **that** photo, even after you call the setter.
 
-UIs change: saved jobs, open menus, form inputs, selected tabs. Week 1 stored that in variables and redrew by hand. React's state + re-render loop makes the UI a function of state, consistently — as long as you follow its rules.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T follow the rules?
+Screens change all the time: saved jobs, open menus, typed text, selected tabs. In Week 1 you stored this in variables and redrew by hand. React's state makes the screen always match the data — **if** you follow its rules.
+
+Breaking the rules causes confusing bugs:
 
 ```tsx
 const [saved, setSaved] = useState<string[]>([]);
@@ -43,7 +59,7 @@ setCount(count + 1);        // still +1: both read the same snapshot's count
 let clicks = 0;             // a normal variable resets on every render
 ```
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. `useState`
 
@@ -61,7 +77,7 @@ export function SaveButton() {
 }
 ```
 
-Render cycle: **trigger** (setter called) → **render** (React calls your component again with new state) → **commit** (React updates only the changed DOM).
+`useState(false)` gives two things: the current value (`saved`) and a function to change it (`setSaved`). What happens on a click:
 
 ```mermaid
 sequenceDiagram
@@ -83,11 +99,10 @@ sequenceDiagram
 <form onSubmit={(event) => { event.preventDefault(); submit(); }}>
 ```
 
-- `onClick={handleSave}` ✅ vs `onClick={handleSave()}` ❌ (calls it during render).
-- Types: `React.MouseEvent<HTMLButtonElement>`, `React.ChangeEvent<HTMLInputElement>`, `React.FormEvent<HTMLFormElement>`.
-- React attaches listeners at the root (**event delegation**, like Week 1) — you just write `onX` props.
+- `onClick={handleSave}` ✅ gives React the function to call later. `onClick={handleSave()}` ❌ calls it immediately while drawing — like pressing the doorbell while installing it.
+- Event types for TypeScript: `React.MouseEvent<HTMLButtonElement>`, `React.ChangeEvent<HTMLInputElement>`, `React.FormEvent<HTMLFormElement>`.
 
-### 3. Immutability
+### 3. Replace, don't change
 
 ```tsx
 setJobs([...jobs, newJob]);                                   // add
@@ -97,9 +112,9 @@ setFilters({ ...filters, remote: true });                     // object field
 setSavedIds((prev) => { const next = new Set(prev); next.add(id); return next; });   // Set
 ```
 
-React compares references (`Object.is`). A new reference = "something changed" = re-render. Mutation also breaks features like time-travel debugging and memoization.
+React checks "is this the **same** array as before?" — like a security guard checking the ID card number, not reading every page. If you `push` into the old array, it's still the same card, so React may think nothing changed. A **new** array = a new card = React redraws.
 
-### 4. Updater functions and batching
+### 4. Updater functions
 
 ```tsx
 function addThree() {
@@ -109,11 +124,13 @@ function addThree() {
 }
 ```
 
-React **batches** state updates inside an event handler into one re-render. Use the updater form whenever the next state depends on the previous one.
+React **batches** updates from one click into one redraw. `setCount(count + 1)` three times reads the same old photo three times → +1. `setCount(c => c + 1)` is like passing a note down a line: each person adds 1 to the number they received → +3.
+
+Use the updater form whenever the new state depends on the old state.
 
 ### 5. Lifting state up
 
-When two components need the same data, move the state to their closest common parent and pass it down:
+When two components need the same data, move the state to their closest shared parent and pass it down:
 
 ```tsx
 function SavedJobsBoard({ jobs }: { jobs: Job[] }) {
@@ -136,9 +153,13 @@ function SavedJobsBoard({ jobs }: { jobs: Job[] }) {
 }
 ```
 
-`SaveButton` is now **controlled**: it displays `saved` and reports clicks. Data flows **down** via props; events flow **up** via callbacks.
+Like a family with one shared **calendar on the fridge** instead of everyone keeping their own diary: one place holds the truth, and everyone reads from it.
 
-### 6. Minimal state, derived values
+- Data goes **down** as props (`saved`).
+- Events go **up** as callbacks (`onToggle`).
+- `SaveButton` is now **controlled**: it shows what it's told and reports clicks.
+
+### 6. Keep state small
 
 ```tsx
 const [jobs, setJobs] = useState<Job[]>(initialJobs);
@@ -146,74 +167,54 @@ const [query, setQuery] = useState("");
 const visible = jobs.filter((job) => job.title.toLowerCase().includes(query.toLowerCase()));   // derived: no state!
 ```
 
-Don't store what you can compute (`visibleJobs`, `count`, `fullName`). Duplicated state goes out of sync.
+Don't store what you can calculate (`visibleJobs`, counts, full names). Two copies of the same information get out of sync — like two clocks in a house that never show the same time.
 
-### 7. Lazy initial state
+### 7. Expensive starting values
 
 ```tsx
 const [savedIds] = useState(() => new Set(readFromStorage()));   // runs once, not on every render
 ```
 
+Passing a function means it runs only the first time.
+
 ### 8. Rules of Hooks
 
-1. Call hooks only at the **top level** of a component or custom hook — not inside `if`, loops or nested functions.
-2. Call hooks only from React functions.
+1. Call hooks only at the **top** of a component or custom hook — never inside `if`, loops or nested functions.
+2. Call hooks only from React components or custom hooks.
 
-React identifies hooks by **call order**; a conditional hook shifts the order and state gets mixed up or crashes (lesson 06). The ESLint plugin `react-hooks` enforces this — `create-next-app` includes it.
+React remembers hooks by their **order**, like seat numbers in a cinema. If a hook is skipped sometimes (inside an `if`), everyone shifts seats and state gets mixed up. The `react-hooks` ESLint rules catch this.
 
 :::note[React Compiler]
-The React Compiler (offered by `create-next-app`) automatically memoizes components and values, so you rarely need `useMemo`/`useCallback` for performance. It relies on your code following these rules — pure renders and no mutation.
+The React Compiler (offered by `create-next-app`) automatically optimizes your components, so you rarely need `useMemo` or `useCallback`. It depends on you following these rules: no changing state directly, and no side effects while rendering.
 :::
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Local state | simple, encapsulated | hard to share |
-| Lifted state | single source of truth | prop passing through layers ("prop drilling") → Context/Zustand in Week 5 |
-| Controlled children | predictable, testable | parent code grows |
-| Derived values | always consistent | recomputed each render (usually cheap) |
-| Updater functions | correct with batching | slightly more verbose |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ `useState` for UI state owned by one component or a small subtree.
-- ✅ Lift state when siblings need it; keep it as low as possible otherwise.
-- 🚫 Don't put server data you fetched into many independent `useState`s — use a data library (TanStack Query, Week 4).
-- 🚫 Don't store derived data or props copies in state.
-
-## 🏆 Best practices
-
-- [ ] Never mutate state; create new arrays/objects/Sets.
-- [ ] Use updater functions when the new state depends on the old.
-- [ ] Keep state minimal; compute derived values during render.
-- [ ] Put state in the lowest common owner; lift only when needed.
-- [ ] Controlled components for reusable inputs/buttons (`value`/`onChange`, `saved`/`onToggle`).
-- [ ] Follow the Rules of Hooks and keep the `react-hooks` ESLint rules on.
-- [ ] Group related state into one object only when fields change together.
-
-## 🏭 How it's used in industry
-
-- Every interactive React component uses `useState`; code reviews routinely catch mutation and duplicated state.
-- Libraries follow the controlled pattern (`value`/`onChange`, `open`/`onOpenChange`) so apps can own state.
-- State location decisions (local vs lifted vs global vs server cache) are a common frontend interview topic.
 
 ## ⚠️ Common mistakes
 
 - `onClick={handle()}` instead of `onClick={handle}`.
-- Mutating arrays/objects before setting state.
-- Expecting state to change immediately after calling the setter (`console.log(count)` shows the old snapshot).
-- Copying props into state and wondering why updates don't show.
+- Changing an array or object, then passing the same one to the setter.
+- Expecting the value to change right after calling the setter (`console.log(count)` still shows the old photo).
+- Copying props into state, then wondering why updates don't show.
+- Storing calculated values (like a filtered list) in state.
+- Keeping server data in many separate `useState`s — use a data library (TanStack Query, Week 4).
+
+## 🏆 Best practices
+
+- [ ] Never change state directly; create new arrays, objects and Sets.
+- [ ] Use updater functions when the new state depends on the old.
+- [ ] Keep state minimal; calculate derived values during render.
+- [ ] Put state in the lowest shared parent; lift only when needed.
+- [ ] Make reusable inputs and buttons controlled (`value`/`onChange`, `saved`/`onToggle`).
+- [ ] Follow the Rules of Hooks and keep the `react-hooks` ESLint rules on.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain the snapshot analogy to a teammate who wrote `setCount(count + 1)` three times and got +1.
+Explain the photo booth idea to a teammate who wrote `setCount(count + 1)` three times and only got +1.
 
 ## 📐 Design it
 
-Design the state for CareerPilot's **job search page** (client-side for now): search text, remote-only toggle, selected skills (multi-select), sort option, saved job ids, and a "compare" tray that holds up to 3 jobs. Decide what's state, what's derived, where each piece lives, and write the update functions for toggling a skill and adding to compare.
+Plan the state for CareerPilot's **job search page** (in the browser for now): search text, a remote-only toggle, selected skills (several), a sort option, saved job ids, and a "compare" tray that holds up to 3 jobs. Decide what is state, what is calculated, where it lives, and write the update functions for toggling a skill and adding a job to compare.
 
 :::quiz
 Show a possible design
@@ -228,7 +229,7 @@ const [savedIds, setSavedIds] = useState<ReadonlySet<number>>(() => new Set());
 const [compareIds, setCompareIds] = useState<readonly number[]>([]);   // ordered, max 3
 ```
 
-**Derived (computed during render)**
+**Calculated during render**
 ```ts
 const visibleJobs = jobs
   .filter((j) => j.title.toLowerCase().includes(query.trim().toLowerCase()))
@@ -252,25 +253,25 @@ const addToCompare = (id: number) =>
   setCompareIds((prev) => (prev.includes(id) || prev.length >= 3 ? prev : [...prev, id]));
 ```
 
-**Where it lives**: all in the page because the filter bar, results and compare tray are siblings. Later: `query`/`remoteOnly`/`skills`/`sort` move to the **URL** (shareable links, Week 4), and `savedIds` becomes **server data** (saved in the Flask API).
+**Where it lives**: all in the page, because the filter bar, the results and the compare tray are siblings. Later, the filters move to the **URL** so links can be shared (Week 4), and `savedIds` becomes **server data** saved by the Flask API.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] No derived data stored in state
-- [ ] Immutable updates, updater functions
-- [ ] State location justified; future URL/server state noted
+- [ ] No calculated data stored in state
+- [ ] New arrays/Sets and updater functions
+- [ ] A clear reason for where state lives
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w3/03-state-events" ai="no-ai" title="A saved-jobs board with lifted state"}
-Build a controlled `SaveButton`, a `SavedJobsBoard` that owns saved ids in an immutable `Set` and shows a live count and a clear button, and a counter whose `+3` works thanks to updater functions. Tests click through it like a user and check you don't mutate state.
+Build a controlled `SaveButton`, a `SavedJobsBoard` that keeps saved ids in a `Set` (replaced, never changed) with a live count and a clear button, and a counter whose `+3` button works thanks to updater functions. The tests click through it like a user and check that you don't change state directly.
 :::
 
 :::hints
-- `useState<ReadonlySet<number>>(() => new Set())` — `ReadonlySet` makes TypeScript stop you from calling `.add` on state.
+- `useState<ReadonlySet<number>>(() => new Set())` — `ReadonlySet` makes TypeScript stop you from calling `.add` on the state itself.
 - In `toggle`, copy first: `const next = new Set(previous)`.
 - `disabled={savedIds.size === 0}` for the clear button.
 :::
@@ -278,27 +279,16 @@ Build a controlled `SaveButton`, a `SavedJobsBoard` that owns saved ids in an im
 ## ✅ Quick check
 
 :::quiz
-Why does React need a new array reference to re-render reliably?
+Why does React need a new array to redraw reliably?
 
-React decides whether state changed by comparing references with `Object.is`; mutating keeps the same reference, so React may skip the update.
+React checks whether state changed by comparing references (`Object.is`). Changing the old array keeps the same reference, so React may skip the update.
 :::
 
 :::quiz
 What is "lifting state up"?
 
-Moving shared state to the closest common parent, passing values down as props and changes up via callbacks, so siblings stay in sync.
+Moving shared state to the closest common parent, sending values down as props and changes up with callbacks, so sibling components stay in sync.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| State | Status/keadaan yang disimpan komponen |
-| Re-render | Render ulang |
-| Immutability | Kekekalan data — tidak mengubah objek lama |
-| Batching | Menggabungkan beberapa pembaruan jadi satu render |
-| Lifting state up | Menaikkan state ke komponen induk |
-| Derived state | Nilai turunan yang dihitung saat render |
 
 ## 📚 Keep learning
 
