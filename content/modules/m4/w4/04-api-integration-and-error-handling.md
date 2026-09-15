@@ -1,6 +1,6 @@
 ---
 title: "API Integration & Error Handling"
-summary: Connect the Next.js frontend to the Flask API — a typed API client, where requests should run, auth tokens, mapping API errors, expected vs unexpected errors, redirects, not-found, and error boundaries with retry.
+summary: Connect the Next.js frontend to your Flask API — a typed API client, where requests should run, tokens, turning API errors into good screens, expected vs unexpected errors, redirects, 404s and error screens with a retry button.
 type: lesson
 source: core
 sourceRef: "M3 · W4 · L4"
@@ -13,23 +13,35 @@ tags: [nextjs, api, fetch, error-handling, error-boundary, bff]
 
 ## 🎯 What you'll learn
 
-- Three places to call your API: Server Components, Route Handlers (BFF), Client Components
-- A typed API client for the Phase 2 contract (`{ data, meta }`, `{ error: { code, fields } }`)
-- `ApiError` with status, code and field errors
-- **Expected** errors (return and render) vs **unexpected** errors (throw → `error.tsx`)
-- `redirect()` on 401, `notFound()` on 404, `error.tsx` with `retry()`, `global-error.tsx`
-- CORS vs same-origin calls, and why BFF often avoids it
-- Timeouts and not caching personal data
+- Three places to call your API: Server Components, Route Handlers, Client Components
+- One typed API client for your Flask API
+- `ApiError` with the status, error code and field errors
+- **Expected** errors (show a friendly screen) vs **unexpected** errors (safety net)
+- `redirect()` for 401, `notFound()` for 404, `error.tsx` with a retry button
+- When CORS matters
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **API client** | One file that knows how to talk to your API | Pemanggil API |
+| **Route Handler** | A small API endpoint inside Next.js (`app/api/.../route.ts`) | Endpoint di Next.js |
+| **BFF** | Your Next.js server calls Flask for the browser and adds the token | Server perantara |
+| **Expected error** | An error you plan for: wrong password, not found, invalid form | Error yang diperkirakan |
+| **Unexpected error** | A surprise: server crashed, network down, a bug | Error tak terduga |
+| **Error boundary** | A safety net that catches crashes and shows a fallback screen (`error.tsx`) | Jaring pengaman error |
+| **CORS** | A browser rule for calling an API on a different address | Izin lintas situs |
+| **httpOnly cookie** | A cookie JavaScript can't read — safer for session tokens | Cookie aman |
 
 ## 🧠 The big idea
 
-Your Flask API and your Next.js app speak through a **translator** — the API client. One translator who knows the dictionary (URLs, headers, error codes) is far better than every component improvising its own phrasebook. And like any conversation, some misunderstandings are **expected** ("wrong password", "not found") and deserve a polite reply, while others are **surprises** ("server crashed") that need a safety net.
+Your Flask API and your Next.js app talk through a **translator** — the API client. One translator who knows the dictionary (URLs, headers, error codes) is much better than every component making up its own phrases.
 
-## ❓ Why does this exist?
+And like any conversation, some problems are **expected** ("wrong password", "not found") and deserve a polite answer. Others are **surprises** ("the server crashed") and need a safety net — like a circus act that plans the tricks, but still has a net underneath.
 
-Real APIs fail: tokens expire, validation rejects input, servers restart, networks drop. If each component calls `fetch` differently, error handling becomes inconsistent: some pages crash, some show raw JSON, some redirect, some spin forever. Centralizing the client and choosing an error strategy per error type makes the app predictable.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T?
+Real APIs fail: tokens expire, validation rejects input, servers restart, networks drop. If each component calls `fetch` its own way, some pages crash, some show raw JSON, some spin forever.
 
 ```tsx
 export default async function Page() {
@@ -39,7 +51,9 @@ export default async function Page() {
 }
 ```
 
-## 📖 How it works, step by step
+No token, no error check: a 401 response makes `data` undefined and the page crashes.
+
+## 📖 Step by step
 
 ### 1. Where should the request run?
 
@@ -63,14 +77,14 @@ flowchart LR
 
 | Where | Use for | Notes |
 |---|---|---|
-| **Server Component** | reading data for a page | token from cookies stays on the server; no loading waterfall in the browser |
-| **Server Action** | mutations from forms/buttons | Week 5; check auth inside |
-| **Route Handler (BFF)** | browser-initiated reads, webhooks, proxies | same origin → no CORS; add auth server-side |
-| **Client Component → API directly** | public, non-sensitive data | requires CORS on Flask; exposes API URL and any token in the browser |
+| **Server Component** | reading data for a page | the token stays on the server |
+| **Server Action** | saving data from forms and buttons | Week 5; check the user's login inside |
+| **Route Handler (BFF)** | browser requests, webhooks | same address as the site → no CORS |
+| **Client Component → Flask directly** | public, non-sensitive data only | needs CORS; the token would be in the browser |
 
-For CareerPilot: pages read in Server Components, mutations use Server Actions or Route Handlers, and the browser never holds the Flask JWT if you store the session in an **httpOnly cookie** (Week 5).
+For CareerPilot: pages **read** in Server Components, **changes** go through Server Actions or Route Handlers, and the browser never holds the Flask token if the session is in an **httpOnly cookie** (Week 5). Like a restaurant: customers order at the counter (Next.js), and only the staff go into the kitchen (Flask).
 
-### 2. A typed client
+### 2. A typed API client
 
 ```ts
 export class ApiError extends Error {
@@ -109,17 +123,20 @@ export function createApiClient({ baseUrl, getToken, fetchImpl = fetch }: Client
 }
 ```
 
-The client knows the **contract** from Module 2: JSON envelopes, error codes, field errors. Components know only `listApplications()`. Consider generating types from the Flask OpenAPI spec so drift becomes a compile error.
+- The client knows your API's **contract** from Module 2: the `{ data, meta }` shape, error codes and field errors.
+- Network failure → `ApiError` with status `0` and code `network_error`.
+- Components only call simple functions like `listApplications()`.
+- `cache: "no-store"` — don't cache personal data.
 
 ### 3. Expected vs unexpected errors
 
-| Situation | Type | Handling |
+| Situation | Type | What to do |
 |---|---|---|
-| 401 unauthorized (expired session) | expected | `redirect("/login?next=…")` |
+| 401 (session expired) | expected | `redirect("/login?next=…")` |
 | 404 not found | expected | `notFound()` → `not-found.tsx` |
-| 422 validation failed | expected | return field errors to the form (Week 5) |
-| 409 invalid transition | expected | show a message near the control |
-| 500, network down, bug in rendering | unexpected | throw → nearest `error.tsx` |
+| 422 invalid form data | expected | show field errors in the form (Week 5) |
+| 409 action not allowed | expected | show a message next to the button |
+| 500, network down, a bug | unexpected | throw → the nearest `error.tsx` |
 
 ```tsx
 export default async function ApplicationsPage({ searchParams }: PageProps<"/applications">) {
@@ -134,9 +151,9 @@ export default async function ApplicationsPage({ searchParams }: PageProps<"/app
 }
 ```
 
-(`redirect` and `notFound` work by throwing special errors — don't swallow them in a broad `catch`; rethrow anything you don't handle.)
+Important: `redirect()` and `notFound()` work by **throwing** special signals. If your `catch` swallows everything, they stop working. Handle what you expect, then `throw error` again for everything else.
 
-### 4. Error boundaries
+### 4. Error screens (`error.tsx`)
 
 ```tsx
 // app/applications/error.tsx
@@ -158,83 +175,63 @@ export default function ApplicationsError({ error, retry }: { error: Error & { d
 }
 ```
 
-- Catches errors thrown while rendering its segment (and children), keeps the layout above it working.
-- `retry()` re-fetches and re-renders the segment (in Next.js 16.3, `retry` became the recommended prop; `reset` only clears the error state).
-- In production, server error messages are hidden from the browser; the `digest` links the client error to server logs.
-- `global-error.tsx` catches errors in the root layout itself and must render its own `<html>` and `<body>`.
+- It catches crashes in its part of the app, while the layout above keeps working — like a **circuit breaker** that turns off one room, not the whole house.
+- `retry()` loads and draws that part again.
+- It must be a Client Component (`"use client"`).
+- In production, server error details are hidden from users; the `digest` connects the error to the server logs.
+- `global-error.tsx` catches errors in the root layout itself and must include its own `<html>` and `<body>`.
 
 ### 5. Loading and partial failure
 
-Pair every data route with `loading.tsx` or `<Suspense>`. For dashboards with independent widgets, give each widget its own Suspense + error handling so one failing API call doesn't blank the whole page.
+Give every data page a `loading.tsx` or `<Suspense>`. For a dashboard with independent widgets, give each widget its own loading and error handling, so one failing API call doesn't blank the whole page.
 
-### 6. CORS in one minute (again)
+### 6. CORS in one minute
 
-If a Client Component on `http://localhost:3091` calls `http://localhost:5091` directly, Flask must allow that origin (`flask-cors` with an explicit list, credentials only if needed). Calls from Server Components, Server Actions and Route Handlers are server-to-server and don't involve CORS at all.
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Fetch in Server Components | secure tokens, fast first render, less client JS | server must reach the API; every navigation hits the server |
-| BFF Route Handlers | same origin, hide API details, add caching/auth | extra layer to maintain |
-| Direct browser → API | simple for public APIs | CORS, token exposure, more client code |
-| Throwing unexpected errors | boundaries catch consistently | must not throw for expected cases |
-| Returning expected errors | precise UX | more branching code |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ One API client module per backend; typed resource functions.
-- ✅ `redirect` for auth, `notFound` for missing resources, `error.tsx` for surprises.
-- 🚫 Don't show raw error messages or stack traces to users.
-- 🚫 Don't cache responses that contain personal data.
-
-## 🏆 Best practices
-
-- [ ] Centralize base URL, headers, JSON parsing and error mapping in one client.
-- [ ] Map API error codes to user-friendly messages in one place.
-- [ ] Handle expected errors explicitly; let unexpected ones reach `error.tsx`.
-- [ ] Add `error.tsx` + `loading.tsx` to data routes; add `global-error.tsx`.
-- [ ] Log errors (with request ids from the Flask API) to monitoring.
-- [ ] Keep tokens server-side; use `cache: "no-store"` (or no caching) for personal data.
-- [ ] Validate URL params before sending them to the API.
-- [ ] Add timeouts (`AbortSignal.timeout`) for slow upstreams.
-
-## 🏭 How it's used in industry
-
-- BFF layers are common in larger companies: the web app has its own server that aggregates internal microservices (Module 5).
-- Error monitoring (Sentry, Datadog) is wired into `error.tsx`/`global-error.tsx` and server instrumentation.
-- API clients are generated from OpenAPI (Orval, openapi-fetch) so frontend and Flask/FastAPI contracts stay in sync.
+If a Client Component on `http://localhost:3091` calls `http://localhost:5091` directly, Flask must allow that address (`flask-cors` with an explicit list). Calls from Server Components, Server Actions and Route Handlers are server-to-server, so CORS doesn't apply at all.
 
 ## ⚠️ Common mistakes
 
-- Catching everything, including Next.js `redirect()`/`notFound()` errors.
-- Assuming `fetch` rejects on 4xx/5xx.
+- A `catch` that swallows everything, including `redirect()` and `notFound()`.
+- Thinking `fetch` throws on 404 or 500 (it doesn't — check `response.ok`).
 - `error.tsx` without `"use client"`.
-- Hardcoding `http://localhost:5091` in components.
+- Hardcoding `http://localhost:5091` inside components.
+- Showing raw error messages or stack traces to users.
+- Caching responses that contain personal data.
+
+## 🏆 Best practices
+
+- [ ] One API client: base URL, headers, JSON parsing and error mapping in one place.
+- [ ] Turn API error codes into friendly messages in one place.
+- [ ] Handle expected errors on purpose; let unexpected ones reach `error.tsx`.
+- [ ] Add `error.tsx` and `loading.tsx` to data pages, and a `global-error.tsx`.
+- [ ] Log errors (with request ids from Flask) to monitoring.
+- [ ] Keep tokens on the server; don't cache personal data.
+- [ ] Check URL params before sending them to the API.
+- [ ] Add timeouts (`AbortSignal.timeout`) for slow APIs.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain to a teammate the difference between an expected error and an unexpected error in the applications page, with one example of each and where it's handled.
+Using the circus-net idea, explain to a teammate the difference between an expected and an unexpected error on the applications page, with one example of each and where it's handled.
 
 ## 📐 Design it
 
-Design the error handling matrix for CareerPilot's **application detail page** (`/applications/[id]`) that loads the application, its notes and a company summary from three API calls. Cover invalid id, 401, 403, 404, one widget failing, the API down, and a slow company endpoint.
+Plan the error handling for CareerPilot's **application detail page** (`/applications/[id]`). It loads the application, its notes and a company summary with three API calls. Cover: an invalid id, 401, 403, 404, one widget failing, the API being down, and a slow company endpoint.
 
 :::quiz
-Show a possible matrix
+Show a possible plan
 
-| Case | Where detected | UX |
+| Case | Where it's caught | What the user sees |
 |---|---|---|
-| id isn't a positive integer | page (params validation) | `notFound()` → "Application not found" + link to list |
+| id isn't a positive whole number | page (params check) | `notFound()` → "Application not found" + link to the list |
 | 401 on any call | API client → page | `redirect("/login?next=/applications/12")` |
-| 403 (another user's application) | API returns 404 by design (Module 2) | same as not found — don't reveal existence |
+| 403 (someone else's application) | the API returns 404 on purpose (Module 2) | same as not found — don't reveal it exists |
 | 404 application | page | `notFound()` |
-| Notes call fails (500) | `<Suspense>` + small error boundary around `<NotesSection>` | "Notes couldn't load" + Retry; rest of page works |
-| Company summary slow (3 s) | `<Suspense fallback={<CompanySkeleton />}>` | page shows immediately; company streams in; `AbortSignal.timeout(5000)` → inline "Company info unavailable" |
-| API completely down | application call throws `network_error` | `app/applications/[id]/error.tsx`: "We can't reach CareerPilot right now" + Retry; error reported with digest |
-| Rendering bug | error boundary | same boundary; alert in monitoring |
+| Notes call fails (500) | `<Suspense>` + a small error boundary around `<NotesSection>` | "Notes couldn't load" + Retry; the rest works |
+| Company summary is slow (3 s) | `<Suspense fallback={<CompanySkeleton />}>` | the page shows immediately; company info appears later; after `AbortSignal.timeout(5000)` → "Company info unavailable" |
+| API completely down | the application call throws `network_error` | `app/applications/[id]/error.tsx`: "We can't reach CareerPilot right now" + Retry; error reported |
+| A rendering bug | error boundary | same boundary; alert in monitoring |
 
 Structure:
 
@@ -255,47 +252,37 @@ export default async function Page(props: PageProps<"/applications/[id]">) {
 
 ### 📝 Self-review checklist
 
-- [ ] Each error has an owner and a UX
-- [ ] Partial failures don't blank the page
-- [ ] Authorization failures don't leak existence
+- [ ] Every error has an owner and a screen
+- [ ] One failing part doesn't blank the page
+- [ ] "No permission" doesn't reveal that the item exists
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w4/04-api-integration" ai="no-ai" title="Typed API client, redirects and error boundaries"}
-Write an API client for the Phase 2 Flask contract that maps error bodies and network failures to `ApiError`, a Server Component page that validates search params, redirects on 401 and lets other errors reach the boundary, plus `error.tsx` with `retry()` and `loading.tsx`.
+Write an API client for the Phase 2 Flask API that turns error responses and network failures into `ApiError`, a Server Component page that checks search params, redirects on 401 and lets other errors reach the error boundary, plus `error.tsx` with `retry()` and `loading.tsx`.
 :::
 
 :::hints
 - `new URL(path, baseUrl)` + `url.searchParams.set` builds the query safely.
-- `await response.json().catch(() => null)` handles non-JSON error pages.
-- In the page, `catch (error) { if (error instanceof ApiError && error.status === 401) redirect(...); throw error; }`.
+- `await response.json().catch(() => null)` handles error pages that aren't JSON.
+- In the page: `catch (error) { if (error instanceof ApiError && error.status === 401) redirect(...); throw error; }`.
 :::
 
 ## ✅ Quick check
 
 :::quiz
-Why must you rethrow errors you don't handle in a Server Component `catch`?
+Why must you throw again the errors you don't handle in a Server Component `catch`?
 
-Next.js uses thrown errors for `redirect()` and `notFound()`, and unexpected errors must reach `error.tsx`; swallowing them breaks navigation and hides failures.
+Next.js uses thrown signals for `redirect()` and `notFound()`, and unexpected errors must reach `error.tsx`. Swallowing them breaks navigation and hides failures.
 :::
 
 :::quiz
-When does calling the Flask API require CORS?
+When does calling the Flask API need CORS?
 
-When browser code calls it directly from a different origin; server-side calls from Server Components, Server Actions or Route Handlers don't use CORS.
+When browser code calls it directly from a different address. Server calls from Server Components, Server Actions or Route Handlers don't use CORS.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| API client | Klien API — modul pemanggil API |
-| Error boundary | Batas penangkap error |
-| Expected / unexpected error | Error yang diperkirakan / tak terduga |
-| BFF (Backend for Frontend) | Server khusus untuk kebutuhan frontend |
-| Redirect | Pengalihan halaman |
 
 ## 📚 Keep learning
 
