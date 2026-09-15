@@ -1,6 +1,6 @@
 ---
 title: "Build Optimization"
-summary: Make the Next.js production build fast and small — reading next build output, the bundle analyzer, Server Components vs client bundles, next/dynamic, next/image, next/font, third-party scripts, caching and a performance budget.
+summary: Make the Next.js production build fast and small — reading next build output, the bundle analyzer, Server Components vs browser code, next/dynamic, next/image, next/font, outside scripts, caching and a performance budget.
 type: lesson
 source: core
 sourceRef: "M3 · W6 · L4"
@@ -13,31 +13,48 @@ tags: [performance, nextjs, bundling, images, fonts, lazy-loading]
 
 ## 🎯 What you'll learn
 
-- What `next build` does and how to read its route output
+- What `next build` does and how to read its route list
 - Finding heavy code with `next experimental-analyze` (Turbopack) or `@next/bundle-analyzer`
-- The biggest lever: keeping work in **Server Components**
+- The biggest win: keeping work in **Server Components**
 - **Lazy loading** with `next/dynamic` (and `ssr: false` in Client Components)
-- **`next/image`**: sizing, `sizes`, `preload` for the LCP image, formats, `remotePatterns`
-- **`next/font`**: self-hosted fonts with no layout shift
-- `next/script` strategies for third-party scripts
-- Static vs dynamic rendering, caching, and a **performance budget**
+- **`next/image`**: sizes, `preload` for the main image, formats, `remotePatterns`
+- **`next/font`**: fonts served from your own domain, with no layout jumps
+- `next/script` for outside scripts
+- Static vs dynamic pages, caching, and a **performance budget**
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Bundle** | The JavaScript files the build creates and the browser downloads | Paket kode |
+| **Code splitting** | Each page downloads only its own code | Pemecahan kode |
+| **Lazy loading** | Download something only when it's needed | Muat belakangan |
+| **Static / dynamic route** | Built once ahead of time / built again for each request | Statis / dinamis |
+| **LCP element** | The biggest thing visible when the page loads (often a banner or heading) | Elemen utama |
+| **Layout shift** | Content jumping around while the page loads | Pergeseran tata letak |
+| **Third-party script** | Code from another company (analytics, chat widget) on your page | Script pihak ketiga |
+| **Performance budget** | A limit you agree on, like "≤ 150 KB of JavaScript" | Anggaran performa |
 
 ## 🧠 The big idea
 
-Every visitor downloads your page like **luggage for a trip**. The build is your packing step. Don't pack the whole wardrobe (a 200 KB chart library) when the trip is a day visit to one page. Leave heavy things at the hotel (the server), pack only what you'll use today (per-route code splitting), and have the rest delivered later if needed (lazy loading).
+Every visitor downloads your page like **luggage for a trip**. The build is packing. Don't pack the whole wardrobe (a 200 KB chart library) for a day trip to one page:
 
-## ❓ Why does this exist?
+- Leave heavy things at the hotel → the **server**.
+- Pack only today's clothes → **per-page code splitting**.
+- Have the rest delivered if you need it → **lazy loading**.
 
-On a mid-range Android phone on 4G, every 100 KB of JavaScript costs noticeable parse/execute time. Slow pages lose users and rank lower in search. Indonesia's users are mobile-first — CareerPilot's job pages must be fast on cheap phones, not just your laptop.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T?
+On a mid-range Android phone on 4G, every 100 KB of JavaScript costs noticeable time to read and run. Slow pages lose users and rank lower on Google. Many users — in Indonesia and in most markets — browse mainly on phones, so CareerPilot's job pages must be fast on cheap phones, not just on your laptop.
+
+Common problems:
 
 - A job page imports a markdown parser, a date library and a chart library into a Client Component → hundreds of KB for text that never changes.
-- `<img src="banner.jpg">` ships a 2 MB JPEG to phones and causes layout shift.
-- A Google Fonts `<link>` blocks rendering and pings Google from the user's browser.
-- An analytics snippet loads synchronously in `<head>` and delays everything.
+- `<img src="banner.jpg">` sends a 2 MB JPEG to phones and makes the layout jump.
+- A Google Fonts `<link>` blocks the page from showing and pings Google from the user's browser.
+- An analytics snippet loads first in `<head>` and delays everything.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Build and read the output
 
@@ -46,7 +63,7 @@ npm run build          # next build (Turbopack by default in Next.js 16)
 npm run start          # production server — measure THIS, never next dev
 ```
 
-The build output lists each route and whether it's **static** (prerendered at build time) or **dynamic** (rendered per request), and shows bundle information. Watch for routes that became dynamic unexpectedly (e.g. reading `cookies()` in a shared layout).
+The build lists each route and whether it's **static** (built ahead of time, like pre-cooked meals) or **dynamic** (cooked per order). Watch for pages that became dynamic by accident (for example, reading `cookies()` in a shared layout).
 
 ### 2. Find the heavy stuff
 
@@ -55,7 +72,11 @@ npx next experimental-analyze            # Turbopack bundle analyzer (Next.js 16
 npx next experimental-analyze --output   # save to .next/diagnostics/analyze to compare before/after
 ```
 
-Webpack builds use `@next/bundle-analyzer` with `ANALYZE=true npm run build`. Look for: big libraries in **client** bundles, the same library twice, and code only one page needs appearing in shared chunks.
+The analyzer draws your bundle as a **treemap**: bigger boxes = bigger code — like a luggage X-ray. (Webpack builds use `@next/bundle-analyzer` with `ANALYZE=true npm run build`.) Look for:
+
+- big libraries in **browser** bundles,
+- the same library included twice,
+- code only one page needs showing up in shared files.
 
 ### 3. Server Components first
 
@@ -71,9 +92,13 @@ export function JobDescription({ markdown }: { markdown: string }) {
 }
 ```
 
-Syntax highlighting, markdown, date formatting and data transformation usually don't need the browser. Add `import "server-only"` to heavy server modules so they can't be pulled into client code by accident. (Always **sanitize** HTML you didn't write before `dangerouslySetInnerHTML`.)
+The parser still runs — but on the server. The visitor gets the finished HTML, like buying a cooked meal instead of carrying home the whole kitchen.
 
-### 4. Lazy-load client-only heavy widgets
+- Code highlighting, markdown, date formatting and data transformation usually don't need the browser.
+- Add `import "server-only"` to heavy server files so they can't be pulled into browser code by accident.
+- Always **sanitize** HTML you didn't write before using `dangerouslySetInnerHTML`.
+
+### 4. Lazy-load heavy browser-only widgets
 
 ```tsx
 // components/salary-chart-lazy.tsx
@@ -86,7 +111,9 @@ export const SalaryChartLazy = dynamic(() => import("./salary-chart"), {
 });
 ```
 
-Good candidates: charts, rich text editors, maps, emoji pickers, modals opened rarely. Reserve space for the widget (fixed height) so it doesn't shift the layout when it arrives. You can also load a library on interaction: `const { default: confetti } = await import("canvas-confetti")` inside a click handler.
+- Good candidates: charts, rich text editors, maps, emoji pickers, rarely opened modals.
+- Reserve space for the widget (fixed height) so the layout doesn't jump when it arrives.
+- You can also load a library on click: `const { default: confetti } = await import("canvas-confetti")` inside the click handler.
 
 ### 5. `next/image`
 
@@ -97,10 +124,10 @@ import Image from "next/image";
 <Image src={job.logoUrl} alt={`${job.company} logo`} width={64} height={64} />
 ```
 
-- Resizes per device (`srcset`), serves **AVIF/WebP**, lazy-loads by default, and reserves space (no layout shift).
-- `sizes` tells the browser how wide the image renders so it downloads the right size.
-- For the **LCP image** (usually the hero/banner above the fold): `preload` (Next.js 16 deprecated `priority`), or `loading="eager"` / `fetchPriority="high"`.
-- Remote images must be allow-listed:
+- Makes several sizes (`srcset`), serves **AVIF/WebP**, lazy-loads by default, and reserves space (no jumping).
+- `sizes` tells the browser how wide the image will be, so a phone downloads a phone-sized file — like ordering a small drink instead of the family bottle.
+- For the **LCP image** (usually the banner at the top): use `preload` (Next.js 16 replaced `priority`), or `loading="eager"` / `fetchPriority="high"`.
+- Images from other domains must be allowed:
 
 ```ts
 // next.config.ts
@@ -110,7 +137,7 @@ images: {
 },
 ```
 
-Never allow `hostname: "**"` — your server would optimize (and pay for) any image on the internet.
+Never allow `hostname: "**"` — your server would process (and pay for) any image on the internet.
 
 ### 6. `next/font`
 
@@ -122,7 +149,9 @@ const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-san
 <html lang="en" className={inter.variable}>
 ```
 
-Fonts are downloaded **at build time** and served from your domain, with a size-adjusted fallback to avoid layout shift. Use `next/font/local` for custom fonts. Load only the weights and subsets you use.
+- Fonts are downloaded **at build time** and served from your domain — no request to Google from the user's browser.
+- A size-matched fallback font avoids text jumping when the real font arrives.
+- Use `next/font/local` for custom fonts. Load only the weights and character sets you use.
 
 ### 7. Third-party scripts
 
@@ -132,13 +161,13 @@ import Script from "next/script";
 <Script src="https://widget.example.com/chat.js" strategy="lazyOnload" />               // when the browser is idle
 ```
 
-Each third-party script is someone else's code on your page: check its size and privacy impact, prefer server-side analytics or lightweight options, and load it after the page is usable.
+Every outside script is someone else's code on your page — like letting a stranger's stall inside your shop. Check its size and privacy impact, prefer lighter or server-side options, and load it after the page is usable.
 
 ### 8. Rendering and caching
 
-- Public pages that change rarely (job listings) → cache with `"use cache"` + `cacheLife` (W4 L6), or prerender.
-- Personal pages → dynamic, but stream slow parts with `<Suspense>` so the shell appears fast.
-- Static assets in `.next/static` are content-hashed → serve them with long `Cache-Control` from a CDN.
+- Public pages that rarely change (job listings) → cache with `"use cache"` + `cacheLife` (W4 L6), or build them ahead of time.
+- Personal pages → dynamic, but stream slow parts with `<Suspense>` so the page frame appears fast.
+- Files in `.next/static` have a content hash in their name → serve them from a CDN with a long `Cache-Control`.
 
 ### 9. Set a budget
 
@@ -149,7 +178,7 @@ Each third-party script is someone else's code on your page: check its size and 
 | Images | AVIF/WebP, correctly sized |
 | Third-party scripts | ≤ 2, none render-blocking |
 
-Check it in CI (Lighthouse CI, bundle size checks) so regressions fail a pull request instead of reaching users.
+A budget is like an airline's baggage limit: check it in CI (Lighthouse CI, bundle size checks), so a pull request that goes over **fails** instead of reaching users.
 
 ```mermaid
 flowchart LR
@@ -160,48 +189,34 @@ flowchart LR
     Budget --> Measure
 ```
 
-## ⚖️ Trade-offs
-
-| Technique | ✅ | ❌ |
-|---|---|---|
-| Server Components | zero client JS for that part | no interactivity; server cost per request if dynamic |
-| `next/dynamic` | smaller initial bundle | extra request later; loading state; possible layout shift |
-| `next/image` optimization | smaller images, no CLS | server CPU/cost for optimization (or a paid image CDN) |
-| Aggressive caching | fast, cheap | stale data; invalidation complexity |
-| React Compiler (`reactCompiler: true`) | automatic memoization | slightly slower builds; still new for some codebases |
-
-## ✅ When to use it / 🚫 When NOT to use it
+### When to use what
 
 - ✅ Measure first, then fix the biggest item.
-- ✅ Lazy-load below-the-fold or on-interaction widgets.
-- 🚫 Don't lazy-load the LCP element or tiny components (the extra request costs more).
-- 🚫 Don't micro-optimize with `useMemo` everywhere before checking the bundle and network.
+- ✅ Lazy-load widgets below the fold or opened by a click.
+- 🚫 Don't lazy-load the LCP element or tiny components (the extra request costs more than it saves).
+- 🚫 Don't sprinkle `useMemo` everywhere before checking the bundle and network.
+
+Every technique has a cost: Server Components can't be interactive, `next/dynamic` adds a later request and a loading state, image optimization uses server CPU, and heavy caching can show old data.
+
+## ⚠️ Common mistakes
+
+- Measuring in `next dev` (not optimized, huge bundles).
+- `ssr: false` inside a Server Component → build error.
+- No `sizes` on responsive images → phones download desktop-size files.
+- `preload` on every image → nothing is really first.
+- Importing a whole utility library for one function.
 
 ## 🏆 Best practices
 
 - [ ] Always measure a **production** build (`next build && next start`).
-- [ ] Keep `"use client"` at the leaves; heavy server-only modules marked `server-only`.
+- [ ] Keep `"use client"` on small leaf components; mark heavy server files `server-only`.
 - [ ] Analyze bundles before and after big dependency changes.
-- [ ] `next/dynamic` for heavy client-only widgets, with a sized loading placeholder.
+- [ ] `next/dynamic` for heavy browser-only widgets, with a fixed-size loading placeholder.
 - [ ] `next/image` with correct `width`/`height`/`sizes`; `preload` only for the LCP image; strict `remotePatterns`.
-- [ ] `next/font` with limited weights and subsets.
-- [ ] Third-party scripts via `next/script` with a deferred strategy.
+- [ ] `next/font` with few weights and subsets.
+- [ ] Outside scripts through `next/script` with a delayed strategy.
 - [ ] `poweredByHeader: false`; compression on (default) or at the CDN.
 - [ ] A performance budget checked in CI.
-
-## 🏭 How it's used in industry
-
-- Performance teams track bundle size per pull request (bundle-size bots, Lighthouse CI) and block regressions.
-- E-commerce and job portals invest heavily in LCP because it correlates with conversion; Google uses Core Web Vitals as a ranking signal.
-- Moving from client-rendered pages to Server Components has been a major source of JavaScript reduction for teams migrating to the App Router.
-
-## ⚠️ Common mistakes
-
-- Measuring in `next dev` (unoptimized, huge bundles).
-- `ssr: false` in a Server Component → build error.
-- Missing `sizes` on responsive images → phones download desktop-size files.
-- `preload` on every image → nothing is prioritized.
-- Importing a whole utility library for one function.
 
 ::part[Explain & Design]{n="2"}
 
@@ -216,20 +231,20 @@ The CareerPilot **dashboard** has: a header with avatar, 4 stat cards, a pipelin
 :::quiz
 Show a possible plan
 
-1. **Stream the slow AI tip** (`<Suspense fallback={<TipSkeleton/>}>` around an async Server Component, cached per user for a day) — the page shell and stats no longer wait for the LLM (often the biggest LCP win).
-2. **Stats and activity as Server Components**; format relative dates on the server (`Intl.RelativeTimeFormat`) → drop the date library from the client bundle.
-3. **Lazy-load the chart** with `next/dynamic` (`ssr: false`, fixed-height skeleton) → large reduction in first-load JS; no CLS.
-4. **Onboarding video**: don't autoload — show a poster `next/image` + play button that loads the player on click; only for new users (server decides).
-5. **Avatar** via `next/image` 40×40 with `sizes="40px"`; LCP element (probably the stats cards or heading) is text → ensure fonts use `next/font` with `display: swap`.
-6. **Caching**: aggregate stats cached per user with a short `cacheLife` and `updateTag` after mutations.
-7. **Verify** with `next experimental-analyze --output` before/after and field LCP p75 over a week; add a budget (dashboard client JS ≤ 180 KB) to CI.
+1. **Stream the slow AI tip** (`<Suspense fallback={<TipSkeleton/>}>` around an async Server Component, cached per user for a day) — the page frame and stats no longer wait for the LLM (often the biggest LCP win).
+2. **Stats and activity as Server Components**; format relative dates on the server (`Intl.RelativeTimeFormat`) → the date library leaves the browser bundle.
+3. **Lazy-load the chart** with `next/dynamic` (`ssr: false`, fixed-height skeleton) → much less JavaScript on first load; no layout shift.
+4. **Onboarding video**: don't load it right away — show a poster `next/image` + play button that loads the player on click; only for new users (the server decides).
+5. **Avatar** with `next/image` 40×40 and `sizes="40px"`; the LCP element (probably the stat cards or heading) is text → make sure fonts use `next/font` with `display: swap`.
+6. **Caching**: stats cached per user with a short `cacheLife` and `updateTag` after changes.
+7. **Verify** with `next experimental-analyze --output` before/after and real-user LCP (75th percentile) over a week; add a budget (dashboard client JS ≤ 180 KB) to CI.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Plan starts from measurement
+- [ ] The plan starts from measurement
 - [ ] LCP element identified
-- [ ] No lazy-loading of above-the-fold content
+- [ ] Nothing at the top of the page is lazy-loaded
 
 ::ai-review{task="design"}
 
@@ -241,7 +256,7 @@ Refactor a job page: allow-list remote images and modern formats, replace a rend
 
 :::hints
 - `ssr: false` must live in a `"use client"` file — that's why `salary-chart-lazy.tsx` exists.
-- Next.js 16 uses `preload` instead of the deprecated `priority` prop.
+- Next.js 16 uses `preload` instead of the old `priority` prop.
 - The grader scans every `"use client"` file for static imports of the heavy modules.
 :::
 
@@ -250,25 +265,14 @@ Refactor a job page: allow-list remote images and modern formats, replace a rend
 :::quiz
 Why should the hero banner use `preload` but the company logos in a list shouldn't?
 
-The banner is the likely LCP element above the fold, so fetching it early speeds up LCP. Preloading many images competes for bandwidth and delays the important one; below-the-fold images should lazy-load.
+The banner is probably the LCP element at the top, so fetching it early speeds up LCP. Preloading many images makes them fight for bandwidth and delays the important one; images further down should lazy-load.
 :::
 
 :::quiz
 `next build` shows `/jobs` as dynamic, but it should be static. What's a likely cause?
 
-Something in its tree reads request-time data — `cookies()`, `headers()`, `searchParams`, or an uncached fetch — often in a shared layout or a component like a user menu. Move that into a Suspense-wrapped leaf or a client component, or cache the data.
+Something in its tree reads request-time data — `cookies()`, `headers()`, `searchParams`, or an uncached fetch — often in a shared layout or a component like a user menu. Move that into a small Suspense-wrapped part or a client component, or cache the data.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Bundle | Paket kode JavaScript hasil build |
-| Code splitting | Pemecahan kode per halaman/fitur |
-| Lazy loading | Memuat belakangan saat dibutuhkan |
-| Tree shaking | Membuang kode yang tidak dipakai |
-| Performance budget | Batas anggaran performa |
-| Layout shift | Pergeseran tata letak saat memuat |
 
 ## 📚 Keep learning
 
