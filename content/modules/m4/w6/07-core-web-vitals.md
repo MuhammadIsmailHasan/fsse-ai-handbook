@@ -1,6 +1,6 @@
 ---
 title: "🔥 Core Web Vitals"
-summary: Measure what users actually experience — LCP, INP and CLS thresholds, lab vs field data, the 75th percentile, diagnosing each metric in DevTools, reporting real-user metrics from Next.js, and performance budgets.
+summary: Measure what users really experience — LCP, INP and CLS limits, lab vs field data, the 75th percentile, finding the cause of each metric in DevTools, reporting real-user metrics from Next.js, and performance budgets.
 type: lesson
 source: original
 roles: { be: none, fe: recommended, fs: recommended, ai: none, ops: optional }
@@ -13,33 +13,46 @@ tags: [web-vitals, performance, lcp, inp, cls, monitoring, nextjs]
 ## 🎯 What you'll learn
 
 - The three **Core Web Vitals**: **LCP** (loading), **INP** (responsiveness), **CLS** (visual stability) — plus FCP and TTFB
-- "Good" thresholds and why Google uses the **75th percentile**
+- "Good" limits and why Google uses the **75th percentile**
 - **Lab data** (Lighthouse, DevTools) vs **field data** (real users, CrUX)
-- Diagnosing each metric and the usual fixes in a Next.js app
+- Finding the cause of each metric and the usual fixes in a Next.js app
 - Reporting real-user metrics with `useReportWebVitals` and a collector endpoint
 - Performance budgets and alerts
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Core Web Vitals** | Google's three main numbers for how a page feels to users | Metrik inti pengalaman web |
+| **LCP** | How long until the biggest thing on screen appears | Waktu konten utama tampil |
+| **INP** | How long the page takes to react after a click, tap or key press | Kecepatan respons interaksi |
+| **CLS** | How much things jump around on the page | Pergeseran tata letak |
+| **Lab data** | Measured in a test run on one simulated device | Data uji simulasi |
+| **Field data** | Measured from real users on their real devices | Data pengguna nyata |
+| **p75 (75th percentile)** | The value that 3 out of 4 visits are at or better than | Persentil ke-75 |
+| **RUM** | Real User Monitoring: collecting metrics from real visits | Pemantauan pengguna nyata |
+
 ## 🧠 The big idea
 
-Imagine rating a **delivery service**:
+Imagine rating a **delivery service** (like an online food order):
 
 - **LCP** — how long until the main package arrives (the biggest thing on screen)
-- **INP** — when you ring the bell, how long until someone answers (every interaction, worst ones count)
+- **INP** — when you ring the bell, how long until someone answers (every interaction; the slow ones count)
 - **CLS** — whether the driver keeps moving the package while you reach for it (layout jumps)
 
 And you don't judge by one delivery on a sunny day (your laptop in Lighthouse). You look at **most deliveries** to real customers — 3 out of 4 must be good (p75).
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-"The site feels slow" isn't actionable. Core Web Vitals give standard, user-centered numbers that correlate with engagement and conversion, and Google uses them in search ranking. Field data reveals problems your fast laptop never shows: cheap Android phones, slow 4G in smaller cities, big DOMs after scrolling.
+"The site feels slow" isn't something you can act on. Core Web Vitals give standard numbers based on what users feel. They're linked to engagement and sales, and Google uses them in search ranking. Field data shows problems your fast laptop never shows: cheap Android phones, slow 4G outside big cities, huge pages after scrolling.
 
-## 💥 What happens if we DON'T?
+What happens if you ignore them:
 
 - Lighthouse says 98 on your MacBook; real users on mid-range phones wait 5 s for the job page.
-- A cookie banner or a late-loading ad pushes the "Apply" button down as users tap → wrong clicks (CLS).
+- A cookie banner or a late ad pushes the "Apply" button down just as users tap → wrong clicks (CLS).
 - A filter dropdown takes 600 ms to respond because every keystroke re-renders 500 cards (INP) — nobody notices until reviews complain.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The metrics
 
@@ -58,11 +71,11 @@ INP replaced First Input Delay (FID) as a Core Web Vital in 2024. A page "passes
 | | Lab (Lighthouse, DevTools Performance, WebPageTest) | Field (RUM, Chrome UX Report, PageSpeed Insights "real users") |
 |---|---|---|
 | Who | simulated device/network | real users |
-| Good for | debugging, before release, CI budgets | truth, trends, regressions after release |
-| INP | not measured directly (Total Blocking Time is a proxy) | measured |
-| Variance | low | high (devices, networks) |
+| Good for | debugging, before release, CI budgets | the truth, trends, problems after release |
+| INP | not measured directly (Total Blocking Time is a stand-in) | measured |
+| Variation | low | high (devices, networks) |
 
-Use lab data to **find and fix**, field data to **decide and verify**.
+Lab is a **test drive** on an empty road; field is **real traffic** in rush hour. Use lab data to **find and fix**, field data to **decide and confirm**.
 
 ### 3. p75
 
@@ -74,26 +87,29 @@ export function p75(values: number[]) {
 }
 ```
 
-Averages hide pain: nine 1-second loads and one 20-second load average 2.9 s but the p75 is 1 s — while p95 shows the 20 s outlier. Track p75 for pass/fail and p95 to understand the worst experiences.
+Sort all the values from fastest to slowest and take the one 75% of the way along. Averages hide pain: nine 1-second loads and one 20-second load average 2.9 s, but the p75 is 1 s — and p95 shows the 20 s outlier. Use p75 for pass/fail, and p95 to understand the worst experiences.
 
-### 4. Diagnosing and fixing
+### 4. Finding the cause and fixing it
 
-**LCP** (break it into: TTFB → resource load delay → load time → render delay)
-- Slow TTFB: cache public pages, stream with `<Suspense>`, avoid waterfalls in Server Components (`Promise.all`), put the app near users (CDN/region — Jakarta/Singapore for Indonesian users).
+**LCP** — split it into parts: server response (TTFB) → waiting to start loading → loading time → drawing it on screen.
+
+- Slow TTFB: cache public pages, stream with `<Suspense>`, avoid one-after-another fetches in Server Components (`Promise.all`), host the app near users (CDN/region — Jakarta/Singapore for Indonesian users, US regions for US users).
 - LCP image: `next/image` with `preload`/`fetchPriority="high"`, correct `sizes`, AVIF/WebP; never lazy-load it.
-- Render-blocking fonts/CSS: `next/font`; avoid huge CSS; no blocking third-party scripts.
+- Fonts/CSS blocking the page: `next/font`; avoid huge CSS; no blocking third-party scripts.
 
-**INP**
-- Long tasks on the main thread: reduce client JS (Server Components, lazy load), split heavy work.
-- Expensive re-renders: memoize (or the React Compiler), narrow state (Zustand selectors), virtualize long lists (TanStack Virtual).
-- Keep interactions responsive: `useTransition`/`useDeferredValue` for filtering big lists, debounce expensive work, show immediate feedback.
+**INP** — the browser's main thread is like a **single cashier**: if they're busy with a long task, your click waits in line.
+
+- Long tasks: send less client JS (Server Components, lazy load), split heavy work.
+- Expensive re-renders: memoize (or use the React Compiler), subscribe narrowly (Zustand selectors), virtualize long lists (TanStack Virtual).
+- Stay responsive: `useTransition`/`useDeferredValue` for filtering big lists, debounce expensive work, show feedback right away.
 
 **CLS**
-- Always reserve space: `width`/`height` on images (`next/image` does it), `aspect-ratio` for embeds, skeletons with fixed height for lazy components.
-- Fonts: `next/font` fallback metrics.
-- Don't insert banners/ads above existing content; use transforms for animations instead of changing layout properties.
 
-DevTools → **Performance** panel shows LCP element, layout shift clusters and long interactions; the **Web Vitals** overlay in the Performance panel shows live values while you use the page.
+- Always reserve space: `width`/`height` on images (`next/image` does it), `aspect-ratio` for embeds, fixed-height skeletons for lazy components. Like saving a seat with your bag — nobody has to move later.
+- Fonts: `next/font` fallback sizes.
+- Don't insert banners or ads above existing content; animate with transforms instead of changing layout properties.
+
+DevTools → **Performance** panel shows the LCP element, layout shift clusters and slow interactions; its live Web Vitals view updates while you use the page.
 
 ### 5. Reporting real-user metrics in Next.js
 
@@ -130,7 +146,11 @@ export async function POST(request: Request) {
 }
 ```
 
-Send the **route pattern** (`/jobs/[id]`) rather than full paths when possible, so data groups by page type and doesn't collect IDs. Sample if traffic is large. Vercel Speed Insights, Sentry, Datadog RUM and Grafana Faro do this as products.
+- `sendBeacon` is like dropping a postcard in a mailbox as you leave: it still gets sent even if the user closes the tab.
+- The reporter is defined **outside** the component, so the hook gets the same function every render (no duplicate reports).
+- The endpoint is public, so anyone can send junk: limit size, validate with a schema.
+- Send the **route pattern** (`/jobs/[id]`) instead of full paths when possible, so data groups by page type and doesn't collect IDs. Sample if traffic is large.
+- Products like Vercel Speed Insights, Sentry, Datadog RUM and Grafana Faro do all this for you.
 
 ### 6. Budgets and alerts
 
@@ -144,45 +164,30 @@ flowchart LR
     Alert -->|yes| Issue[alert + investigate release]
 ```
 
-## ⚖️ Trade-offs
+### When to focus on it
 
-| | ✅ | ❌ |
-|---|---|---|
-| Lighthouse / lab | reproducible, runs in CI | not real users; no true INP |
-| CrUX / PageSpeed Insights | free field data from Chrome users | needs enough traffic; 28-day window; Chrome only |
-| Own RUM endpoint | full control, per-route, cheap | you build dashboards, sampling, privacy handling |
-| RUM products | dashboards, attribution, alerts | cost; another third-party script |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Public, SEO-relevant pages (job listings) and core logged-in flows on mobile.
+- ✅ Public pages that need search traffic (job listings) and the main logged-in flows on mobile.
 - ✅ Field monitoring after every release.
 - 🚫 Don't chase a Lighthouse score of 100 at the cost of features; fix what users feel.
 - 🚫 Don't collect personal data (full URLs with IDs, emails) with vitals.
+
+## ⚠️ Common mistakes
+
+- Optimizing Lighthouse on desktop while users are on mobile.
+- Lazy-loading the hero image.
+- Skeletons with a different height than the real content (the jump just happens later).
+- Passing a new inline function to `useReportWebVitals` → duplicate reports.
+- Looking at averages instead of percentiles.
 
 ## 🏆 Best practices
 
 - [ ] Know each page's LCP element and make it fast (preload, sizes, no lazy-loading).
 - [ ] Reserve space for everything that loads late → CLS ≤ 0.1.
-- [ ] Reduce and split client JS; virtualize long lists; defer non-urgent updates → INP ≤ 200 ms.
-- [ ] Measure on a mid-range phone profile and slow network, not only your laptop.
+- [ ] Send and split less client JS; virtualize long lists; delay non-urgent updates → INP ≤ 200 ms.
+- [ ] Test on a mid-range phone profile and slow network, not only your laptop.
 - [ ] Collect field data (p75, by route and device) and compare releases.
-- [ ] Budgets in CI for lab metrics and bundle size; alerts for field regressions.
+- [ ] Budgets in CI for lab metrics and bundle size; alerts for field problems.
 - [ ] Keep the vitals endpoint strict, small and free of personal data.
-
-## 🏭 How it's used in industry
-
-- Google Search uses Core Web Vitals as part of its page experience signals; SEO-driven businesses (job boards, marketplaces, media) track them closely.
-- Case studies from large sites have linked LCP and CLS improvements to better conversion and lower bounce rates.
-- RUM tooling (Vercel Speed Insights, Sentry, Datadog, New Relic) makes Web Vitals a standard dashboard next to error rates.
-
-## ⚠️ Common mistakes
-
-- Optimizing for Lighthouse on desktop while users are on mobile.
-- Lazy-loading the hero image.
-- Skeletons with a different height than the real content (CLS moves to later).
-- Passing a new inline function to `useReportWebVitals` → duplicate reports.
-- Measuring averages instead of percentiles.
 
 ::part[Explain & Design]{n="2"}
 
@@ -197,20 +202,20 @@ CareerPilot's field data for `/jobs/[id]` on mobile: LCP p75 3.9 s (LCP element:
 :::quiz
 Show a possible plan
 
-**LCP 3.9 s (banner):** check TTFB in field data by route; if high → cache the public job page (`"use cache"` + `cacheLife("hours")`, `updateTag` on edit) and stream personalized parts. Banner: `next/image` with `preload`, `sizes="100vw"`, AVIF, served from a CDN near Indonesia; make sure it isn't lazy or hidden behind client JS. Remove render-blocking fonts/scripts. **Confirm:** Lighthouse mobile lab LCP ≤ 2.5 s, then field p75 over 7 days.
+**LCP 3.9 s (banner):** check TTFB in field data by route; if high → cache the public job page (`"use cache"` + `cacheLife("hours")`, `updateTag` on edit) and stream the personalized parts. Banner: `next/image` with `preload`, `sizes="100vw"`, AVIF, served from a CDN near the users; make sure it isn't lazy or hidden behind client JS. Remove render-blocking fonts/scripts. **Confirm:** Lighthouse mobile lab LCP ≤ 2.5 s, then field p75 over 7 days.
 
-**INP 340 ms (filter chips):** record the interaction in DevTools Performance → long task from re-rendering 300 job cards + filtering on the main thread. Fixes: filter on the server or memoize filtering; `useTransition` so chips update instantly and the list updates as non-urgent; virtualize the list; narrow re-renders (memoized cards / React Compiler). **Confirm:** interaction under 100 ms in lab with 4× CPU throttling; field INP p75 ≤ 200 ms.
+**INP 340 ms (filter chips):** record the interaction in DevTools Performance → a long task from re-rendering 300 job cards + filtering on the main thread. Fixes: filter on the server or memoize the filtering; `useTransition` so chips update instantly and the list updates as non-urgent; virtualize the list; fewer re-renders (memoized cards / React Compiler). **Confirm:** interaction under 100 ms in lab with 4× CPU slowdown; field INP p75 ≤ 200 ms.
 
-**CLS 0.21 (salary card):** reserve its height with a skeleton of the same size (`min-h-[180px]`), or render it on the server; ensure images/embeds have dimensions and fonts use `next/font`. **Confirm:** DevTools layout shift regions empty; field CLS p75 ≤ 0.1.
+**CLS 0.21 (salary card):** reserve its height with a same-size skeleton (`min-h-[180px]`), or render it on the server; make sure images/embeds have dimensions and fonts use `next/font`. **Confirm:** no layout shift regions in DevTools; field CLS p75 ≤ 0.1.
 
-**Guard:** add route-level budgets to Lighthouse CI and an alert when any p75 crosses "needs improvement" for 24 h.
+**Guard:** add per-route budgets to Lighthouse CI and an alert when any p75 crosses "needs improvement" for 24 h.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Each fix targets the diagnosed cause
+- [ ] Each fix targets the cause you found
 - [ ] Lab used for debugging, field for confirmation
-- [ ] Regression guard defined
+- [ ] A guard against future regressions
 
 ::ai-review{task="design"}
 
@@ -231,18 +236,26 @@ Implement threshold ratings, p75 summaries, a stable `useReportWebVitals` report
 :::quiz
 Why can't Lighthouse report INP?
 
-INP needs real interactions across a visit. Lighthouse loads a page without user input; it reports Total Blocking Time as a lab proxy for responsiveness.
+INP needs real interactions during a visit. Lighthouse loads a page without anyone clicking; it reports Total Blocking Time as a lab stand-in for responsiveness.
 :::
 
 :::quiz
 Your CLS is 0.02 in Lighthouse but 0.19 in field data. What could explain it?
 
-Shifts that happen after load or during scrolling/interaction (late banners, lazy content without reserved space, ads), different viewports/devices, or personalized content — none of which a single lab page load captures.
+Shifts that happen after load or while scrolling/interacting (late banners, lazy content without reserved space, ads), different screen sizes/devices, or personalized content — a single lab page load captures none of these.
 :::
 
 ## 🔗 CareerPilot Phase 4
 
 This week finishes **CareerPilot Phase 4**: the Next.js frontend for your Flask API, tested with Vitest and Playwright and deployable with Docker. Finish checkpoints C6–C8 in the [Phase 4 brief](/projects/careerpilot/04-phase-4-web-app).
+
+## 📚 Keep learning
+
+- [web.dev: Web Vitals](https://web.dev/articles/vitals) · [Optimize INP](https://web.dev/articles/optimize-inp) · [Optimize CLS](https://web.dev/articles/optimize-cls)
+- Next.js docs (bundled): `useReportWebVitals`; Analytics guide
+- [PageSpeed Insights](https://pagespeed.web.dev/)
+
+## 📣 End of Week 6 — share your progress
 
 :::linkedin{type="weekly"}
 🚀 Week 6: testing and shipping the Next.js frontend.
@@ -259,20 +272,3 @@ Module 4 done — next up: cloud & DevOps. ☁️
 
 #NextJS #Playwright #WebPerformance #LearningInPublic
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Core Web Vitals | Metrik inti pengalaman pengguna web |
-| Field data | Data dari pengguna nyata |
-| Lab data | Data dari pengujian simulasi |
-| Percentile (p75) | Persentil ke-75 |
-| Layout shift | Pergeseran tata letak |
-| Real User Monitoring | Pemantauan pengguna nyata |
-
-## 📚 Keep learning
-
-- [web.dev: Web Vitals](https://web.dev/articles/vitals) · [Optimize INP](https://web.dev/articles/optimize-inp) · [Optimize CLS](https://web.dev/articles/optimize-cls)
-- Next.js docs (bundled): `useReportWebVitals`; Analytics guide
-- [PageSpeed Insights](https://pagespeed.web.dev/)
