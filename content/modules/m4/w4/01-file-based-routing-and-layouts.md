@@ -1,6 +1,6 @@
 ---
 title: "File-based Routing, Pages & Layouts"
-summary: How the Next.js App Router turns folders into URLs — pages, nested layouts, dynamic segments with async params, route groups, private folders, loading and not-found UI, and colocating code.
+summary: How the Next.js App Router turns folders into URLs — pages, shared layouts, dynamic URLs like /jobs/42, route groups, private folders, loading and not-found screens, and where to keep code.
 type: lesson
 source: core
 sourceRef: "M3 · W4 · L1"
@@ -13,29 +13,41 @@ tags: [nextjs, app-router, routing, layouts, dynamic-routes]
 
 ## 🎯 What you'll learn
 
-- Folders = route segments, `page.tsx` = a public URL
-- Root and nested **layouts** that persist across navigation
-- **Dynamic segments** (`[id]`), catch-all (`[...slug]`), and `params` as a Promise
-- `searchParams` in pages, and the `PageProps`/`LayoutProps` type helpers
+- Folders become URLs; `page.tsx` makes a page visitors can open
+- **Layouts** that wrap pages and stay on screen while you navigate
+- **Dynamic** URLs like `/jobs/42` with `[id]`
+- Reading `?status=…` from the URL
 - **Route groups** `(auth)` and **private folders** `_components`
-- Special files: `loading.tsx`, `not-found.tsx`, `error.tsx` (lesson 04), `route.ts` (Route Handlers)
-- Colocation and project organization
+- Special files: `loading.tsx`, `not-found.tsx`
+- Where to put components
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Route** | A URL your app responds to, like `/jobs` | Rute / alamat halaman |
+| **Segment** | One part of a URL between slashes: `jobs` in `/jobs/42` | Bagian URL |
+| **Layout** | A frame (header, sidebar) shared by several pages | Bingkai halaman |
+| **Dynamic segment** | A folder like `[id]` that matches any value | Bagian URL dinamis |
+| **`params`** | The values from dynamic segments: `{ id: "42" }` | Nilai dari URL |
+| **`searchParams`** | The `?key=value` part of a URL | Parameter query |
+| **Route group** | A folder in `( )` that organizes routes without changing the URL | Grup rute |
+| **Private folder** | A folder starting with `_` that never becomes a URL | Folder privat |
 
 ## 🧠 The big idea
 
-The `app/` folder is a **building floor plan**: each folder is a hallway (URL segment), a `page.tsx` is a door visitors can enter, and a `layout.tsx` is the hallway decoration everyone walking through that section sees. Walking deeper into the building keeps the outer decorations — layouts nest and stay put while pages change.
+The `app/` folder is like a **shopping mall floor plan**: each folder is a corridor (a URL segment), `page.tsx` is a shop door visitors can enter, and `layout.tsx` is the corridor decoration everyone in that section sees. Walking deeper keeps the outer decorations — layouts stay on screen while the pages inside change.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Hand-configuring routes (like Flask's `@app.route` or a React Router config) spreads URL structure away from the code. File-based routing makes the URL structure **visible in the file tree**, enables per-route code splitting automatically, and lets Next.js prerender, stream and cache per segment.
+- In Flask you write `@app.route("/jobs")`. In Next.js the **file tree is the list of URLs**, so you can see the whole app structure at a glance.
+- Each page is split into its own JavaScript automatically, so pages load faster.
+- Doing it badly causes problems:
+  - Everything in one `page.tsx` with `?tab=` switches → no shareable links, huge bundles.
+  - Copying the header and sidebar into every page → they reset on every navigation.
+  - A helper folder containing a `page.tsx` by accident → an unwanted public URL.
 
-## 💥 What happens if we DON'T use it well?
-
-- Everything in `app/page.tsx` with `?tab=` switches → no deep links, no per-page loading states, huge bundles.
-- Duplicating the header/sidebar markup in every page → state (like a sidebar's scroll) resets on every navigation.
-- A `components/` folder inside `app/jobs/` without an underscore **and** a `page.tsx` inside it → accidentally public URLs.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Folders and pages
 
@@ -60,7 +72,7 @@ app/
 └── api/health/route.ts       → GET /api/health (Route Handler)
 ```
 
-Only `page` and `route` files make a segment publicly accessible. Other files (components, utils) can live next to them safely.
+Only `page.tsx` and `route.ts` files create public URLs. Other files (components, helpers) can safely sit next to them.
 
 ### 2. Layouts
 
@@ -78,14 +90,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 ```mermaid
 flowchart TB
-    R["app/layout.tsx (header, <html>)"] --> D["app/dashboard/layout.tsx (sidebar)"]
+    R["app/layout.tsx (header, html)"] --> D["app/dashboard/layout.tsx (sidebar)"]
     D --> P1["dashboard/page.tsx"]
     D --> P2["dashboard/applications/page.tsx"]
 ```
 
-Navigating between `/dashboard` and `/dashboard/applications` re-renders only the page; the layouts stay mounted and keep their state.
+When you go from `/dashboard` to `/dashboard/applications`, only the page changes. The layouts stay — like a TV frame that stays the same while the channel changes. Their state (like a scrolled sidebar) is kept.
 
-### 3. Dynamic segments and `params`
+### 3. Dynamic URLs and `params`
 
 ```tsx
 // app/jobs/[id]/page.tsx
@@ -100,7 +112,12 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
 }
 ```
 
-After `next dev`/`next build`, Next.js also generates global type helpers so you don't write the params type by hand:
+- `[id]` matches any value, like a mailbox labeled "room number": `/jobs/42`, `/jobs/7`…
+- `params` is a **Promise** — write `await params`.
+- The value is always **text**. Check it and convert it, just like `request.args` in Flask.
+- `notFound()` shows the 404 screen.
+
+Next.js also creates type helpers, so you don't have to write the params type yourself:
 
 ```tsx
 export default async function JobPage(props: PageProps<"/jobs/[id]">) {
@@ -114,9 +131,7 @@ export default async function JobPage(props: PageProps<"/jobs/[id]">) {
 | `[...slug]` | `/docs/a/b` | `{ slug: ["a", "b"] }` |
 | `[[...slug]]` | `/docs` and `/docs/a/b` | `{ slug: undefined }` / `{ slug: ["a","b"] }` |
 
-Params are always **strings** from the URL — validate and convert them, just like `request.args` in Flask.
-
-### 4. Search params
+### 4. Search params (`?status=…`)
 
 ```tsx
 export default async function ApplicationsPage({ searchParams }: { searchParams: Promise<{ status?: string; page?: string }> }) {
@@ -124,12 +139,12 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
 }
 ```
 
-Reading `searchParams` makes the page render per request (it depends on the URL). In Client Components, use `useSearchParams()` (lesson 02).
+Reading `searchParams` means the page is built fresh for each request, because it depends on the URL. In Client Components, use `useSearchParams()` (lesson 02).
 
 ### 5. Route groups and private folders
 
-- `(marketing)`, `(auth)`, `(app)` — organize routes, give different sections different layouts, without changing URLs.
-- `_components`, `_lib` — opt a folder out of routing entirely; a clear signal "not a route".
+- `(marketing)`, `(auth)`, `(app)` — group routes and give each group its own layout, **without** changing the URL. Like mall sections ("Food court", "Fashion") that don't appear in shop addresses.
+- `_components`, `_lib` — a `_` at the start means "never a URL". A clear sign: "this is not a page".
 
 ### 6. `loading.tsx` and `not-found.tsx`
 
@@ -140,64 +155,44 @@ export default function Loading() {
 }
 ```
 
-`loading.tsx` wraps the page in a `<Suspense>` boundary automatically: navigation is instant, the layout stays interactive, and the content streams in. `not-found.tsx` renders when `notFound()` is called in that segment.
+- `loading.tsx` shows immediately while the page loads, and the layout stays usable. Like a restaurant bringing water and cutlery while the food is cooked.
+- `not-found.tsx` shows when `notFound()` is called in that part of the app.
 
-### 7. Colocation
+### 7. Where to put code
 
-Keep route-specific components, tests and styles next to the route (`app/jobs/_components/job-row.tsx`); put shared code in top-level `components/` and `lib/` with the `@/` alias. Next.js is unopinionated — pick one convention for the team.
+Keep components used by only one route next to it (`app/jobs/_components/job-row.tsx`). Put shared code in top-level `components/` and `lib/`, and import it with `@/`. Pick one habit for the whole team.
 
 :::fastapi
-Flask and FastAPI define routes in Python decorators; Next.js defines them by files. Both use path parameters (`/jobs/<int:id>` / `/jobs/{id}` vs `app/jobs/[id]`) — and in all three, URL input must be validated.
+Flask and FastAPI define routes with Python decorators; Next.js defines them with files. All three use path parameters (`/jobs/<int:id>`, `/jobs/{id}`, `app/jobs/[id]`) — and in all three, you must validate what comes from the URL.
 :::
 
-## ⚖️ Trade-offs
+## ⚠️ Common mistakes
 
-| Choice | ✅ | ❌ |
-|---|---|---|
-| File-based routing | URL structure visible, automatic code splitting | many files named `page.tsx` (configure editor tab labels) |
-| Nested layouts | persistent UI and state, less duplication | layouts can't read `searchParams`; must plan structure |
-| Route groups | organize and multiple layouts without URL changes | extra nesting to understand |
-| Dynamic segments | one file for many pages | must validate params and handle not-found |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ A route per meaningful page (shareable URL); layouts for shared chrome.
-- ✅ `loading.tsx` for routes that fetch data; `not-found` for resources that may not exist.
-- 🚫 Tabs within a small widget don't need routes; big sections usually do.
-- 🚫 Don't put non-route code in folders without `_` if they might contain `page` files.
+- Using `params.id` without `await` (since Next.js 15 it's a Promise).
+- Treating params as numbers without checking them.
+- Putting `"use client"` on a layout — everything inside becomes browser code.
+- A `route.ts` and a `page.tsx` in the same folder (they conflict).
+- Routes for tiny tabs inside a widget (not needed) — but big sections usually deserve their own URL.
 
 ## 🏆 Best practices
 
 - [ ] One root layout with `<html lang>`; section layouts for shared navigation.
-- [ ] `await params`/`searchParams`, validate, and call `notFound()` for invalid or missing resources.
-- [ ] Add `loading.tsx` (or `<Suspense>`) to routes that fetch data.
-- [ ] Use route groups for sections with different layouts (marketing vs app vs auth).
-- [ ] Mark non-route folders private with `_`; use the `@/` alias for shared code.
-- [ ] Use `PageProps<'/route'>` / `LayoutProps` helpers for typed props.
-- [ ] Keep pages thin: fetch + compose components.
-
-## 🏭 How it's used in industry
-
-- Most new Next.js apps use the App Router with route groups like `(marketing)` and `(dashboard)`.
-- SEO-heavy sites (job portals, e-commerce) rely on one route per resource for indexing and sharing.
-- Monorepos colocate route components and tests to keep features self-contained.
-
-## ⚠️ Common mistakes
-
-- Using `params.id` without `await` (Next.js 15+ made it a Promise).
-- Treating params as numbers without validation.
-- Putting `"use client"` on a layout, turning the entire subtree into client code.
-- A `route.ts` and `page.tsx` in the same folder (conflict).
+- [ ] `await params` / `searchParams`, check them, and call `notFound()` when something doesn't exist.
+- [ ] Add `loading.tsx` to routes that load data.
+- [ ] Use route groups for sections with different layouts (marketing, app, auth).
+- [ ] Start non-route folders with `_`; use the `@/` alias for shared code.
+- [ ] Use `PageProps<'/route'>` and `LayoutProps` for typed props.
+- [ ] Keep pages thin: load data, then compose components.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain to a Flask developer how `app/jobs/[id]/page.tsx` compares to `@app.get("/jobs/<int:id>")`, including what's different about validation and 404s.
+Explain to a Flask developer how `app/jobs/[id]/page.tsx` compares to `@app.get("/jobs/<int:id>")`, including checking the id and showing a 404.
 
 ## 📐 Design it
 
-Design the `app/` folder tree for CareerPilot Phase 4: public landing and pricing pages, login/register, a logged-in area with dashboard, applications list and detail (with notes tab), companies, settings, and an API proxy route. Show route groups, layouts, loading/not-found files and private component folders.
+Plan the `app/` folder tree for CareerPilot Phase 4: public landing and pricing pages, login and register, a logged-in area with a dashboard, an applications list and detail page (with a notes tab), companies, settings, and an API proxy route. Show route groups, layouts, loading/not-found files and private component folders.
 
 :::quiz
 Show a possible tree
@@ -236,26 +231,27 @@ app/
 └── not-found.tsx                      ← app-wide 404
 ```
 
-The three route groups give marketing, auth and app pages different layouts while URLs stay clean; the application detail layout keeps its header and tabs mounted while switching between Overview and Notes.
+- Three route groups give marketing, auth and app pages different layouts, while the URLs stay clean.
+- The application detail layout keeps the header and tabs on screen while you switch between Overview and Notes.
 :::
 
 ### 📝 Self-review checklist
 
 - [ ] URLs are clean and shareable
-- [ ] Layouts match sections of the UI
-- [ ] Loading/not-found/error at data routes
+- [ ] Layouts match the sections of the app
+- [ ] Loading, not-found and error files where data is loaded
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w4/01-routing-layouts" ai="no-ai" title="Build the route files of a small app"}
-Write `routeFromFile()` to map App Router files to URLs (route groups, private folders, route handlers), then create real `layout`, `page`, dynamic `[id]` page with awaited params and `notFound()`, `loading`, `not-found`, a route group page and a nested layout. Tests import and render your files like Next.js would.
+Write `routeFromFile()` to turn App Router file paths into URLs (route groups, private folders, route handlers), then create real `layout`, `page`, a dynamic `[id]` page with awaited params and `notFound()`, `loading`, `not-found`, a page in a route group and a nested layout. The tests import and render your files like Next.js would.
 :::
 
 :::hints
-- In `routeFromFile`, drop `app`, the file name, and every `(group)` folder; return `null` if any folder starts with `_`.
-- The dynamic page: `const { id } = await params;` then validate with `/^[1-9]\d*$/`.
+- In `routeFromFile`, remove `app`, the file name and every `(group)` folder; return `null` if any folder starts with `_`.
+- The dynamic page: `const { id } = await params;` then check it with `/^[1-9]\d*$/`.
 - `notFound()` throws, so code after it never runs — TypeScript knows this (`never`).
 :::
 
@@ -264,25 +260,14 @@ Write `routeFromFile()` to map App Router files to URLs (route groups, private f
 :::quiz
 Does `app/(auth)/login/page.tsx` create `/auth/login` or `/login`?
 
-`/login` — route groups in parentheses aren't part of the URL.
+`/login` — folders in parentheses are not part of the URL.
 :::
 
 :::quiz
-What does a layout keep across navigation that a page doesn't?
+What does a layout keep when you navigate, that a page doesn't?
 
-Layouts stay mounted (with their state) when navigating between their child pages; only the page part re-renders.
+Layouts stay on screen (with their state) when you move between their child pages; only the page part changes.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Route segment | Segmen rute (bagian URL) |
-| Layout | Tata letak bersama |
-| Dynamic segment | Segmen dinamis (`[id]`) |
-| Route group | Grup rute (tidak masuk URL) |
-| Private folder | Folder privat (tidak jadi rute) |
-| Colocation | Menaruh kode terkait berdekatan |
 
 ## 📚 Keep learning
 
