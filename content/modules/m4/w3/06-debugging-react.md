@@ -1,6 +1,6 @@
 ---
 title: "🔥 Debugging React"
-summary: Find and fix React bugs systematically — reading errors and warnings, React DevTools, stale closures, mutation, keys, effect loops, hook order, hydration mismatches, and a repeatable debugging workflow.
+summary: Find and fix React bugs step by step — reading errors, React DevTools, the most common bug types (stale values, changed state, keys, effect loops, hook order), Next.js-specific problems, and a workflow you can repeat.
 type: lesson
 source: original
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: none }
@@ -12,72 +12,86 @@ tags: [react, debugging, devtools, hooks, nextjs]
 
 ## 🎯 What you'll learn
 
-- A repeatable workflow: reproduce → isolate → hypothesize → verify → fix → prevent
-- Reading React and Next.js error overlays, warnings and stack traces
-- React DevTools: component tree, props/state, "why did this render?", Profiler
-- The classic bug families: mutation, stale closures, wrong keys, effect loops, hook order, derived-state drift
-- Next.js-specific issues: server vs client errors, hydration mismatches
-- Turning every bug into a test (Week 6 connects this to CI)
+- A debugging workflow you can repeat for any bug
+- Reading React and Next.js error messages
+- Using React DevTools
+- The 8 most common React bug types and their fixes
+- Next.js problems: server vs browser errors, hydration mismatch
+- Turning every bug into a test
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Reproduce** | Make the bug happen again on purpose, with exact steps | Memunculkan bug lagi |
+| **Isolate** | Remove everything unrelated until only the bug is left | Mempersempit |
+| **Stale closure** | A function still using an old value from an earlier render | Nilai basi |
+| **Effect loop** | An effect that updates state, which runs the effect again, forever | Efek berputar terus |
+| **Hydration** | The browser "waking up" the HTML that came from the server | Menghidupkan HTML |
+| **Hydration mismatch** | Server HTML and the first browser render are different | HTML tidak cocok |
+| **Breakpoint** | A pause point where the debugger stops so you can look around | Titik jeda |
+| **Regression test** | A test that makes sure a fixed bug never comes back | Tes pencegah bug kembali |
 
 ## 🧠 The big idea
 
-Debugging is **detective work, not guessing**. A detective doesn't arrest the first suspect; they collect evidence, form a hypothesis, and test it. Random code changes until the bug disappears ("shotgun debugging") often hide the bug and create two new ones.
+Debugging is **detective work, not guessing**. A detective doesn't arrest the first person they see. They collect evidence, make a theory, and test it. Changing random code until the bug disappears usually hides the bug and creates two new ones.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-React's model (render snapshots, hooks, reconciliation) produces a small set of recurring bug shapes. Once you know the shapes, most bugs take minutes instead of hours — and you can explain them in interviews and code reviews.
+React bugs come in a small number of **repeating shapes**. Once you know the shapes, most bugs take minutes instead of hours — and you can explain them in interviews and code reviews.
 
-## 💥 What happens if we DON'T debug systematically?
+What guessing leads to:
+- Adding a `useEffect` to "sync" things → loops and flicker.
+- `key={Math.random()}` to "force updates" → lost focus and slow pages.
+- Turning off the `react-hooks` lint rule → silencing the warning that pointed at the bug.
+- Asking AI to "fix it" and pasting code that only hides the symptom.
 
-- Adding `useEffect` to "sync" things, creating loops and flicker.
-- Sprinkling `key={Math.random()}` to "force updates", destroying focus and performance.
-- Disabling the `react-hooks` ESLint rule to silence a warning that was pointing at the bug.
-- Asking an AI to "fix it" and pasting code that masks the symptom.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The workflow
 
 ```mermaid
 flowchart LR
-    R[Reproduce reliably] --> I[Isolate the smallest case] --> H[Hypothesis: what causes it?] --> V[Verify with evidence] --> F[Minimal fix] --> P[Prevent: test / lint rule]
+    R[Reproduce reliably] --> I[Isolate the smallest case] --> H[Theory: what causes it?] --> V[Check with evidence] --> F[Small fix] --> P[Prevent: test or lint rule]
     V -. wrong .-> H
 ```
 
-1. **Reproduce**: exact steps, data and browser. Write them down.
-2. **Isolate**: remove unrelated components until the bug still happens in the smallest tree.
-3. **Hypothesize**: "the list doesn't update because state is mutated".
-4. **Verify**: `console.log` the reference, inspect state in DevTools, set a breakpoint.
+1. **Reproduce**: write down the exact steps, data and browser.
+2. **Isolate**: remove unrelated parts until the bug still happens in the smallest piece.
+3. **Theory**: "the list doesn't update because state is changed directly".
+4. **Check**: log the value, look at state in DevTools, or set a breakpoint.
 5. **Fix** the cause, not the symptom.
-6. **Prevent**: add a failing test first (like the exercise), enable a lint rule, add a type.
+6. **Prevent**: write a failing test first, turn on a lint rule, or add a type.
+
+Like a doctor: reproduce the symptom, run tests, diagnose, treat the cause — not just give painkillers.
 
 ### 2. Read the message first
 
-- **Next.js dev overlay** shows build and runtime errors with the file and line; server errors also print in the **terminal**.
-- React warnings in the console usually name the component and the problem ("Each child in a list should have a unique key", "A component is changing an uncontrolled input to be controlled").
-- Read the **first** error in a cascade; later ones are often consequences.
+- The **Next.js error overlay** shows the file and line. Server errors also print in the **terminal**.
+- React warnings in the browser console usually name the component and the problem ("Each child in a list should have a unique key").
+- When there are many errors, read the **first** one. The rest are often side effects of it — like dominoes.
 
 ### 3. React DevTools
 
-- **Components** tab: select a component to see props, state and hooks; edit state live; jump to source.
-- **Highlight updates when components render**: see what re-renders on each interaction.
-- **Profiler**: record an interaction, find slow components and why they rendered.
-- In Next.js, only Client Components show interactive state; Server Components appear as server-rendered output.
+- **Components** tab: click a component to see its props, state and hooks; you can even change state live.
+- **Highlight updates when components render**: see what redraws when you click.
+- **Profiler**: record a click and find slow components.
+- In Next.js, only Client Components show live state.
 
-### 4. Bug families and their signatures
+### 4. The common bug types
 
-| Symptom | Likely cause | Fix |
+| What you see | Likely cause | Fix |
 |---|---|---|
-| Click does nothing until something else re-renders | **mutation** (`push`, `obj.x = …`) + same reference | create new arrays/objects |
-| Counter stuck, timer shows old value | **stale closure** (handler/effect captured an old snapshot) | updater function, correct dependencies, refs for latest values |
-| Wrong row keeps typed text after delete/reorder | **index or unstable keys** | stable ids as keys |
-| "Maximum update depth exceeded", frozen tab | **effect loop**: effect sets state that changes its own dependency (often a new object/array/function each render) | remove the effect (derive instead), memoize, depend on primitives |
-| "Rendered more/fewer hooks…" crash | **conditional hook** | hooks at top level, conditional output |
-| UI shows old values after props change | **props copied into state** / derived state stored | compute during render or reset with `key` |
-| Event handler runs on render | `onClick={handle()}` | `onClick={handle}` / `() => handle(id)` |
-| Warning: controlled ↔ uncontrolled | `value` starts `undefined` | initialize with `""` |
+| A click does nothing until something else redraws | **changed state directly** (`push`, `obj.x = …`) | make new arrays and objects |
+| A counter or timer is stuck on an old value | **stale closure** (a function kept an old snapshot) | updater function, correct dependencies |
+| After deleting a row, typed text jumps to the wrong row | **index or unstable keys** | stable ids as keys |
+| "Maximum update depth exceeded", tab freezes | **effect loop**: effect sets state that changes its own dependency | remove the effect (calculate instead), or depend on simple values |
+| Crash: "Rendered more/fewer hooks…" | **hook inside an `if`** | hooks at the top, make the **output** conditional |
+| Screen shows old values after props change | **props copied into state** | calculate during render, or reset with `key` |
+| A handler runs as soon as the page loads | `onClick={handle()}` | `onClick={handle}` or `() => handle(id)` |
+| Warning: uncontrolled → controlled | `value` starts as `undefined` | start with `""` |
 
-### 5. Stale closures, concretely
+### 5. Stale closure, in real code
 
 ```tsx
 useEffect(() => {
@@ -86,9 +100,9 @@ useEffect(() => {
 }, []);
 ```
 
-The effect runs once and its function remembers the first render's `seconds`. Fix with an updater (`setSeconds((s) => s + 1)`), or include dependencies correctly. The `react-hooks/exhaustive-deps` lint rule points at these.
+The effect runs once, and its function remembers `seconds` from the first render — like a **photo of a clock**: it always shows the same time. Fix it with an updater: `setSeconds((s) => s + 1)`. The `react-hooks/exhaustive-deps` lint rule warns about these.
 
-### 6. Do you need that effect?
+### 6. Do you really need that effect?
 
 Many bugs come from effects that shouldn't exist:
 
@@ -101,105 +115,92 @@ useEffect(() => setVisible(jobs.filter(matches)), [jobs, query]);
 const visible = jobs.filter(matches);
 ```
 
-Effects are for **synchronizing with external systems** (timers, subscriptions, the network, the DOM) — Week 5 goes deeper.
+Effects are for talking to **things outside React**: timers, subscriptions, the network, the DOM. If you can calculate a value from props and state, just calculate it. (Week 5 goes deeper.)
 
-### 7. Next.js-specific debugging
+### 7. Next.js-specific problems
 
-- **"You're importing a component that needs useState…"** → the file needs `"use client"` (or move the interactive part into a client component).
-- **Server Component errors** appear in the terminal; `console.log` in server code prints there too.
-- **Hydration mismatch** ("Text content does not match server-rendered HTML"): the server HTML and the first client render differ. Causes: `Date.now()`/`Math.random()` in render, `typeof window` branches, locale-dependent formatting, browser extensions changing the DOM, invalid HTML nesting (`<p>` inside `<p>`). Fix by rendering deterministic output and moving browser-only values into effects or client-only components.
-- `next build` catches type and lint errors the dev server might not show prominently — run it before pushing.
+- **"You're importing a component that needs useState…"** → the file needs `"use client"`, or move the interactive part into a client component.
+- **Server Component errors** show in the terminal, and `console.log` in server code prints there too.
+- **Hydration mismatch** ("Text content does not match server-rendered HTML"): the server's HTML and the browser's first render are different — like a **delivery that doesn't match the order receipt**. Common causes:
+  - `Date.now()` or `Math.random()` while rendering,
+  - `typeof window` checks that give different output,
+  - dates or numbers formatted differently on server and browser,
+  - invalid HTML (a `<p>` inside a `<p>`),
+  - browser extensions changing the page.
 
-### 8. Breakpoints beat logs for complex bugs
+  Fix: make the first render the same on both sides, and move browser-only values into effects or client-only components.
+- Run `next build` before pushing — it catches type and lint errors the dev server may not show clearly.
 
-Add `debugger;` or click a line number in the browser Sources panel (Client Components) or use VS Code's Next.js debug configuration (server code). Step through, inspect variables in scope, and watch the call stack.
+### 8. Breakpoints for hard bugs
 
-## ⚖️ Trade-offs
+Write `debugger;` in your code, or click a line number in the browser's Sources panel. The code pauses there, and you can look at every variable and step line by line — like pausing a football replay to see exactly who touched the ball.
 
-| Tool | ✅ | ❌ |
-|---|---|---|
-| `console.log` | fast, everywhere | noisy; logs objects that later mutate (log copies) |
-| Breakpoints | full context, step-by-step | setup; async code jumps around |
-| React DevTools | component-aware | doesn't show Server Component internals |
-| Writing a failing test first | proves the fix, prevents regressions | takes a few minutes |
-| AI assistant | quick hypotheses | may treat the symptom; verify with evidence |
+## ⚠️ Common mistakes
 
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Use the workflow for every non-trivial bug; write the failing test before the fix.
-- ✅ Keep `react-hooks` ESLint rules and TypeScript strict on — they're preventive debugging.
-- 🚫 Don't silence warnings or disable rules without understanding them.
-- 🚫 Don't "fix" by adding effects, random keys or `setTimeout`s.
+- Changing random things until the bug disappears.
+- Fixing with more effects, random keys or `setTimeout`.
+- Turning off warnings or lint rules without understanding them.
+- `console.log` of an object that changes later — log a copy (`structuredClone(value)`).
+- Using `suppressHydrationWarning` everywhere instead of fixing the different output.
+- Thinking "React is broken" — it's almost always a rule we broke in our code.
 
 ## 🏆 Best practices
 
 - [ ] Reproduce and isolate before changing code; change one thing at a time.
-- [ ] Read the first error and the component stack; check the terminal for server errors.
-- [ ] Use React DevTools to inspect props/state and highlight re-renders.
-- [ ] Prefer deriving values over syncing with effects; follow the Rules of Hooks.
-- [ ] Log snapshots (`structuredClone(value)`) rather than live objects.
-- [ ] Add a regression test for each fixed bug; mention **cause → fix** in the commit message.
-- [ ] Run `next build` and the test suite before pushing.
-
-## 🏭 How it's used in industry
-
-- Teams track bugs with reproduction steps and require a regression test in the fix PR.
-- Error monitoring (Sentry, Datadog RUM) captures production React errors with component stacks and session replays.
-- Interviewers often show a buggy component (stale closure, keys, effect loop) and ask you to explain and fix it — exactly the exercise.
-
-## ⚠️ Common mistakes
-
-- Debugging in production builds without source maps and wondering why stack traces are unreadable.
-- Fixing a hydration mismatch with `suppressHydrationWarning` everywhere instead of fixing non-deterministic rendering.
-- Assuming the bug is in React ("React is broken") — it's almost always a rule broken in our code.
+- [ ] Read the first error; check the terminal for server errors.
+- [ ] Use React DevTools to inspect props, state and redraws.
+- [ ] Calculate values instead of syncing them with effects; follow the Rules of Hooks.
+- [ ] Keep TypeScript strict and the `react-hooks` lint rules on — they prevent bugs.
+- [ ] Add a test for each fixed bug; write **cause → fix** in the commit message.
+- [ ] Run `next build` and the tests before pushing.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain a stale closure to a junior developer using the snapshot analogy from lesson 03, and show the one-line fix for a timer.
+Explain a stale closure to a junior developer with the "photo of a clock" idea, and show the one-line fix for a timer.
 
 ## 📐 Design it
 
-Write a **debugging playbook** your team could put in CareerPilot's `CONTRIBUTING.md`: the steps to follow, which tools to use for client vs server issues, what information a bug report must include, and the "definition of fixed".
+Write a **debugging playbook** for CareerPilot's `CONTRIBUTING.md`: the steps to follow, which tools to use for browser vs server problems, what a bug report must include, and when a bug counts as "fixed".
 
 :::quiz
 Show a possible playbook
 
-**Bug report must include**: steps to reproduce, expected vs actual, URL/route, user role, browser + device, screenshot or recording, console/terminal errors, request id from the API error (Module 2 Week 6 logging!).
+**A bug report must include**: steps to reproduce, expected vs actual result, the page URL, the user role, browser and device, a screenshot or recording, console/terminal errors, and the request id from the API error (from Module 2's logging).
 
 **Steps**
-1. Reproduce locally with the same data (seed script or copy of the API response).
-2. Classify: build error, server (terminal / API logs), client (browser console), network (DevTools Network tab: status, payload), or visual (CSS).
-3. Isolate: smallest route/component; for API issues, reproduce with `curl`/HTTP file.
-4. Hypothesize and verify with evidence: React DevTools (props/state/renders), breakpoints, logs of snapshots, Network tab, API logs by request id.
-5. Write a failing test (unit/component with Testing Library, or Playwright for flows).
-6. Fix the cause; keep the diff minimal.
-7. Prevent: lint rule, type, or test; note **cause → fix** in the PR description.
+1. Reproduce locally with the same data (seed script or a copy of the API response).
+2. Decide the type: build error, server (terminal / API logs), browser (console), network (DevTools Network tab: status and payload), or visual (CSS).
+3. Isolate: the smallest page or component; for API problems, reproduce with `curl`.
+4. Make a theory and check it with evidence: React DevTools, breakpoints, logs, the Network tab, API logs by request id.
+5. Write a failing test (Testing Library for components, Playwright for flows).
+6. Fix the cause with the smallest change.
+7. Prevent it: a lint rule, a type or a test; write **cause → fix** in the pull request.
 
-**Definition of fixed**: test fails before and passes after; `npm run lint`, `tsc`, tests and `next build` pass in CI; verified in the preview deployment; bug ticket links the PR.
+**Definition of fixed**: the test failed before and passes after; lint, `tsc`, tests and `next build` pass in CI; checked on the preview deployment; the bug ticket links the pull request.
 
-**Don'ts**: disabling lint rules, `suppressHydrationWarning` without a comment, random keys, effects to sync derived state, merging "works on my machine" without a test.
+**Don'ts**: turning off lint rules, `suppressHydrationWarning` without a comment, random keys, effects that copy calculated state, merging "works on my machine" without a test.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Report template captures reproduction data
-- [ ] Client, server and network investigation paths
-- [ ] Regression tests required
+- [ ] The report template captures how to reproduce
+- [ ] Separate paths for browser, server and network problems
+- [ ] Tests are required for every fix
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w3/06-debugging-react" ai="no-ai" title="Bug hunt: five real React bugs"}
-Five components, five QA bug reports: mutated state, a stale closure with a leaking timer, index keys that move input text to the wrong row, an effect loop that freezes the page, and a conditional hook that crashes when a user becomes an admin. Find each cause, apply the smallest fix, and write **cause → fix** comments.
+Five components, five bug reports from QA: state changed directly, a stale closure with a timer that never stops, index keys that move typed text to the wrong row, an effect loop that freezes the page, and a hook inside an `if` that crashes when a user becomes an admin. Find each cause, make the smallest fix, and write **cause → fix** comments.
 :::
 
 :::hints
-- Run the tests first: each failing test is a reproduction.
-- For the freeze: what's a new object on every render in the dependency array?
-- For the crash: hooks must be called in the same order every render — make the **output** conditional, not the hook.
+- Run the tests first: each failing test is a way to reproduce the bug.
+- For the freeze: which value in the dependency array is a new object on every render?
+- For the crash: hooks must be called in the same order on every render — make the **output** conditional, not the hook.
 :::
 
 ## ✅ Quick check
@@ -207,25 +208,14 @@ Five components, five QA bug reports: mutated state, a stale closure with a leak
 :::quiz
 What causes "Maximum update depth exceeded" with `useEffect`?
 
-An effect updates state that changes one of its own dependencies every time (often a new object/array/function created during render), so render → effect → setState → render loops forever.
+The effect updates state that changes one of its own dependencies every time (often a new object, array or function created during render), so render → effect → setState → render never stops.
 :::
 
 :::quiz
 Name two causes of a hydration mismatch in Next.js.
 
-Non-deterministic rendering (dates, random values, `typeof window` checks, locale formatting differences) and invalid HTML nesting or DOM changes by browser extensions.
+Output that differs each time (dates, random numbers, `typeof window` checks, different number/date formatting) and invalid HTML nesting or browser extensions changing the page.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Reproduce | Mereproduksi bug (membuatnya terjadi lagi) |
-| Stale closure | Closure basi — memakai nilai lama |
-| Effect loop | Perulangan tak berujung dari efek |
-| Hydration mismatch | Ketidakcocokan HTML server dan render klien |
-| Regression test | Tes regresi — mencegah bug kembali |
-| Breakpoint | Titik henti debugger |
 
 ## 📚 Keep learning
 
