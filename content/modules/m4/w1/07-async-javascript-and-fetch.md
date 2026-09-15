@@ -1,6 +1,6 @@
 ---
 title: "🔥 Async JavaScript: Promises, fetch & async/await"
-summary: How JavaScript does many things at once on a single thread — the event loop, promises, async/await, calling your Flask API with fetch, handling HTTP errors, timeouts, parallel requests and retries.
+summary: How JavaScript waits for slow things (like your Flask API) without freezing the page — promises, async/await, fetch, HTTP errors, timeouts, parallel requests, retries and CORS, in plain words.
 type: lesson
 source: original
 roles: { be: recommended, fe: core, fs: core, ai: core, ops: optional }
@@ -12,74 +12,83 @@ tags: [javascript, async, promises, fetch, event-loop, http]
 
 ## 🎯 What you'll learn
 
-- The **event loop**: why a single thread doesn't freeze while waiting for the network
-- Callbacks → **Promises** → **async/await**
-- `fetch`: requests, headers, JSON bodies, and why a 500 doesn't reject
-- Error handling with custom error classes
-- Timeouts and cancellation with `AbortController`
-- `Promise.all`, `allSettled`, `race`, `any` — parallel vs sequential
-- Retries with exponential backoff (connect to Week 5 of Module 2)
-- CORS: why the browser blocks your API call
+- Why the page doesn't freeze while it waits for the server
+- Promises and `async`/`await` — two ways to write "wait for this"
+- Calling your Flask API with `fetch`, and handling errors correctly
+- Timeouts, running requests in parallel, and retrying safely
+- What CORS errors mean and where to fix them
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Asynchronous (async)** | "Start it now, get the result later" — the code doesn't stop and wait | Asinkron |
+| **Promise** | An object that says "the result will come later — or an error" | Janji hasil nanti |
+| **`await`** | "Pause this function until the promise is finished" | Tunggu |
+| **Event loop** | The part of JavaScript that runs waiting work when it's ready | Pengatur antrean kerja |
+| **Timeout** | A time limit: "if no answer after 8 seconds, give up" | Batas waktu |
+| **Retry** | Trying a failed request again | Coba lagi |
+| **CORS** | A browser rule: a page may only read another server's data if that server allows it | Izin lintas situs |
 
 ## 🧠 The big idea
 
-JavaScript is a **single waiter** in a restaurant. A bad waiter takes one order, stands at the kitchen until the food is ready, and ignores everyone else. A good waiter takes an order, hands it to the kitchen, and serves other tables until the kitchen rings the bell. The **event loop** is the waiter; a **Promise** is the order ticket ("I'll bring the food later — or tell you it failed").
+Think of ordering at a busy **warung**. You order, get a number, and sit down. The cook works; you chat or check your phone. When your number is called, you pick up the food.
 
-## ❓ Why does this exist?
+JavaScript works the same way:
+- Your order = a request (`fetch`).
+- The number you hold = a **promise**.
+- Doing other things while waiting = the page stays usable.
+- Your number being called = the result arrives, and your code continues.
 
-Network requests, timers and file reads take time. If the browser waited synchronously, the page would freeze — no scrolling, no typing — while your API responds. Async code lets the UI stay responsive while data loads. Every React data-fetching tool (Week 4) is built on promises.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T understand it?
+Calling a server takes time (100 ms to many seconds). If JavaScript just stood and waited, the page would freeze: no scrolling, no typing. Async code keeps the page usable.
+
+Getting it wrong causes real bugs:
 
 ```js
 function loadJobs() {
   let jobs;
   fetch("/api/v1/jobs").then((r) => r.json()).then((data) => { jobs = data; });
-  return jobs;                        // 🐛 undefined — the request hasn't finished
+  return jobs;                        // 🐛 undefined — the request hasn't finished yet
 }
 
 const response = await fetch("/api/v1/jobs");
-const data = await response.json(); // 🐛 on a 401/500, you render an error body as if it were jobs
+const data = await response.json(); // 🐛 on a 401/500 you show the error body as if it were jobs
 ```
 
-- Sequential awaits for independent requests make the dashboard 3× slower.
-- No timeout → a spinner that spins forever on a flaky connection.
-- An old search response overwrites newer results.
+## 📖 Step by step
 
-## 📖 How it works, step by step
+### 1. JavaScript does one thing at a time — but never waits idle
 
-### 1. The event loop
+Like the warung cook with one pair of hands: take an order, pass it on, serve the next customer, come back when something is ready.
 
 ```mermaid
 sequenceDiagram
-    participant JS as Call stack (your code)
-    participant API as Browser (network, timers)
-    participant Q as Task queues
-    JS->>API: fetch("/api/v1/jobs") → returns a Promise immediately
-    JS->>JS: keeps running (render spinner, handle clicks)
-    API-->>Q: response arrived → queue the continuation
-    Q-->>JS: when the stack is empty, run .then / resume await
+    participant Code as Your code
+    participant Browser as Browser (network)
+    Code->>Browser: fetch("/api/v1/jobs") — gives back a promise right away
+    Code->>Code: keeps working (shows spinner, handles clicks)
+    Browser-->>Code: response arrived — your code continues
 ```
 
-Microtasks (promise callbacks) run before the next macrotask (timers, events). Long synchronous loops still block everything — async doesn't make CPU work parallel.
+One warning: a long calculation (a huge loop) still blocks everything. Async helps with **waiting**, not with heavy computing.
 
 ### 2. Promises
 
-A Promise is **pending**, then **fulfilled** with a value or **rejected** with an error — once.
+A promise has three states, like your order number: **waiting** (pending), **done** (fulfilled, with a value), or **failed** (rejected, with an error).
 
 ```js
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 fetch("/api/v1/jobs")
-  .then((response) => response.json())
-  .then((body) => render(body.data))
-  .catch((error) => showError(error))
-  .finally(() => hideSpinner());
+  .then((response) => response.json())   // when done: read the body
+  .then((body) => render(body.data))     // then show it
+  .catch((error) => showError(error))    // if anything failed
+  .finally(() => hideSpinner());         // always, at the end
 ```
 
-### 3. async / await
+### 3. `async` / `await` — the easier way to write it
 
-The same thing, reading top to bottom:
+Same thing, but it reads top to bottom like normal code:
 
 ```js
 async function loadJobs() {
@@ -96,13 +105,16 @@ async function loadJobs() {
 }
 ```
 
-An `async` function **always returns a Promise**. `await` pauses that function (not the page).
+- `await` pauses **only this function**, not the whole page.
+- An `async` function always returns a promise.
 
 :::fastapi
-Python's `async def` / `await` with `asyncio` works on the same principle — an event loop running coroutines. You'll use it in FastAPI (Module 3). The big difference: in the browser, the event loop is always there; in Python, you start one (`asyncio.run`) or the framework does.
+Python has the same idea: `async def` and `await` with `asyncio`. You'll use it in FastAPI (Module 3).
 :::
 
-### 4. fetch in practice
+### 4. `fetch` — and the trap everyone falls into
+
+`fetch` only fails when there is **no answer at all** (no internet, server down). A `404` or `500` is still "an answer", so `fetch` does **not** throw. You must check it yourself — like checking your food before you walk away from the counter.
 
 ```js
 const response = await fetch(`${API_URL}/api/v1/applications`, {
@@ -118,20 +130,11 @@ if (!response.ok) {                              // fetch only rejects on networ
 const { data } = await response.json();
 ```
 
-Map your Flask error format (`{"error": {"code": ...}}`) to UI messages in **one** place — an API client module.
+`ApiError` is a small custom error class that keeps the status code, so the UI can show the right message. Put this logic in **one file** (an "API client") so every page handles errors the same way.
 
-```js
-export class ApiError extends Error {
-  constructor(status, body) {
-    super(`Request failed with status ${status}`);
-    this.name = "ApiError";
-    this.status = status;
-    this.body = body;
-  }
-}
-```
+### 5. Timeouts — don't wait forever
 
-### 5. Timeouts and cancellation
+If the warung takes 30 minutes, you leave. Do the same with requests: set a limit, then stop waiting.
 
 ```js
 const controller = new AbortController();
@@ -144,9 +147,11 @@ try {
 // newer browsers: fetch(url, { signal: AbortSignal.timeout(8000) })
 ```
 
-Abort also cancels **outdated** requests: when the user types a new search, abort the previous one.
+`AbortController` is the "cancel" button. Use it too when a request is no longer needed — for example, the user typed a new search, so cancel the old one.
 
-### 6. Parallel vs sequential
+### 6. Parallel vs one-by-one
+
+Ordering three dishes one at a time (wait for the first, then order the second…) is slow. Order all three at once.
 
 ```js
 // ❌ sequential: 300 ms + 300 ms + 300 ms
@@ -157,165 +162,103 @@ const apps = await getJson("/api/v1/applications");
 const [me, apps, stats] = await Promise.all([getJson("/api/v1/me"), getJson("/api/v1/applications"), getJson("/api/v1/stats")]);
 ```
 
-| Combinator | Resolves when | Rejects when |
-|---|---|---|
-| `Promise.all` | all succeed → array of values | **any** fails (fail fast) |
-| `Promise.allSettled` | all finish → `{status, value/reason}` for each | never |
-| `Promise.race` | the first settles (success or failure) | first settles with failure |
-| `Promise.any` | the first **succeeds** | all fail (`AggregateError`) |
+| Tool | Use it when |
+|---|---|
+| `Promise.all` | you need **all** results; if one fails, everything fails |
+| `Promise.allSettled` | some results are still useful even if one fails (dashboard widgets) |
 
-Use `allSettled` when partial results are useful (a dashboard where one widget may fail). Limit concurrency for large batches (e.g. 5 at a time) to avoid hammering your API — remember Locust.
+### 7. Retry — but only when it makes sense
 
-### 7. Retries
+If the line was busy, calling again later makes sense. If the number is wrong, calling again won't help.
 
-Retry only **transient** failures: network errors (`TypeError: Failed to fetch`), `5xx`, `429`. Never retry `4xx` like `422`. Use exponential backoff with jitter, and only for idempotent requests (GET) or with idempotency keys (Module 2 Week 5).
+- ✅ Retry: no connection, `500`–`599` (server problem), `429` (too many requests).
+- 🚫 Don't retry other `4xx` errors like `400` or `422` (your data is wrong — it will fail again).
+- Wait a bit longer before each try (1 s, 2 s, 4 s…). This is called **exponential backoff**.
+- Only auto-retry requests that are safe to repeat, like `GET`. Repeating a `POST` could create two applications.
 
-### 8. CORS in one paragraph
+### 8. CORS — "blocked by CORS policy"
 
-A page on `http://localhost:3091` calling `http://localhost:5091/api` is a **cross-origin** request. The browser asks the API (preflight `OPTIONS`) whether that origin is allowed; if the Flask API doesn't answer with `Access-Control-Allow-Origin: http://localhost:3091`, the browser blocks the response. Fix it **on the server** (`flask-cors` with an explicit origin list) or proxy API calls through your frontend server (Next.js route handlers — Week 4).
+Your page runs on `http://localhost:3091`; your API runs on `http://localhost:5091`. For the browser these are **different sites**. Like a building guard, the browser asks the API: "Is this site allowed?" If the API doesn't answer "yes" (the header `Access-Control-Allow-Origin: http://localhost:3091`), the browser blocks the response.
 
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| `async/await` | readable, try/catch | easy to accidentally run things sequentially |
-| `.then` chains | good for small pipelines | nesting and error handling get messy |
-| `Promise.all` | fastest | one failure rejects all |
-| `allSettled` | resilient partial results | must inspect every result |
-| Retries | smooth over blips | amplify load during outages; need limits and backoff |
-| Raw `fetch` | built-in, small | boilerplate → wrap it, or use TanStack Query (Week 4) |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ `await` in async functions for any I/O; `Promise.all` for independent requests.
-- ✅ A small API client module that handles base URL, headers, JSON, errors and timeouts.
-- 🚫 `async` functions for CPU-heavy work (use a Web Worker).
-- 🚫 Fire-and-forget promises without `.catch` — unhandled rejections hide bugs.
-
-## 🏆 Best practices
-
-- [ ] Centralize HTTP in an API client: base URL from config, auth header, JSON parsing, `ApiError`.
-- [ ] Always check `response.ok`; parse error bodies defensively.
-- [ ] Add timeouts; abort outdated requests (search, navigation).
-- [ ] Run independent requests in parallel; cap concurrency for large batches.
-- [ ] Retry only transient errors, with backoff, a limit and idempotency.
-- [ ] Always handle rejections (`try/catch` or `.catch`); show users actionable error messages, log details.
-- [ ] Show loading, empty and error states for every request.
-- [ ] Inject `fetch` (or the client) into functions so they're testable with fakes.
-
-## 🏭 How it's used in industry
-
-- API clients are often **generated** from the backend's OpenAPI spec (openapi-typescript, Orval) — your Flask-smorest docs from Module 2 can feed them.
-- TanStack Query / SWR handle caching, retries, deduplication and cancellation on top of fetch.
-- Streaming LLM responses in AI apps use `fetch` with `ReadableStream` (Module 7).
+The fix is **on the server**, not in your frontend code: configure `flask-cors` with the allowed site, or send API calls through your own frontend server (Next.js route handlers — Week 4).
 
 ## ⚠️ Common mistakes
 
-- Treating a 4xx/5xx as success because fetch didn't throw.
-- `await` inside `forEach` (doesn't wait) — use `for...of` or `Promise.all(items.map(...))`.
-- Forgetting `Content-Type: application/json` when sending JSON (your Flask `get_json()` returns `None`).
-- Blaming CORS errors on the frontend code instead of configuring the API.
+- Treating a `404`/`500` as success because `fetch` didn't throw.
+- `await` inside `forEach` — it doesn't wait. Use `for...of` or `Promise.all(items.map(...))`.
+- Forgetting `Content-Type: application/json` when sending JSON (Flask's `get_json()` returns `None`).
+- Trying to "fix" CORS in frontend code instead of in the API.
+
+## 🏆 Best practices
+
+- [ ] Keep all HTTP code in one API client: base URL from config, auth header, JSON, `ApiError`.
+- [ ] Always check `response.ok`.
+- [ ] Add a timeout to every request; cancel requests that are no longer needed.
+- [ ] Run independent requests in parallel.
+- [ ] Retry only temporary errors, with a limit and growing waits, and only for safe requests.
+- [ ] Always handle errors (`try/catch`) and show a loading, empty and error state.
+- [ ] Pass `fetch` (or the client) into functions so tests can use a fake one.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain the event loop with the restaurant waiter analogy, then explain why `await` inside a `for` loop for 10 independent requests makes a page slow.
+Use the warung analogy to explain to a friend why the page doesn't freeze while it loads jobs. Then explain why using `await` in a loop for 10 independent requests makes the page slow.
 
 ## 📐 Design it
 
-Design CareerPilot's frontend **API client** for the Phase 2 Flask API: base URL and token handling, JSON and error parsing (mapping `{"error": {"code", "fields"}}`), timeouts, retry rules, 401 handling (token expired), and how components use it. Give function signatures.
+Plan CareerPilot's **API client** (one file every page uses). Answer: where does the base URL come from? How is the token added? What happens on a `401`? Which errors are retried? How does a component call it?
 
 :::quiz
-Show a possible design
+Show a possible plan
+
+- **Base URL**: from an environment variable (`NEXT_PUBLIC_API_URL` — Week 4), never hard-coded.
+- **Token**: the client adds `Authorization: Bearer …` in one place, so pages never build headers.
+- **Timeout**: every request gets `AbortSignal.timeout(10_000)`.
+- **Errors**: non-2xx → `ApiError(status, body)`; the UI turns `body.error.code` into a friendly message.
+- **401**: clear the session and send the user to the login page — handled once, in the client.
+- **Retries**: only `GET`, only network errors and `5xx`, at most 2 extra tries with growing waits. `POST` is never retried automatically.
+- **Components** call small functions like `listApplications(client)` — never `fetch` directly:
 
 ```js
-// api/client.js
-export function createApiClient({ baseUrl, getToken, onUnauthorized, fetchImpl = fetch, timeoutMs = 10_000 }) {
-  async function request(method, path, { body, query, signal, retries = method === "GET" ? 2 : 0 } = {}) {
-    const url = new URL(path, baseUrl);
-    Object.entries(query ?? {}).forEach(([k, v]) => v != null && url.searchParams.set(k, String(v)));
-    return withRetry(async () => {
-      const response = await fetchImpl(url, {
-        method,
-        headers: {
-          Accept: "application/json",
-          ...(body ? { "Content-Type": "application/json" } : {}),
-          ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
-        },
-        body: body ? JSON.stringify(body) : undefined,
-        signal: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)].filter(Boolean)),
-      });
-      const payload = response.status === 204 ? null : await response.json().catch(() => null);
-      if (response.status === 401) onUnauthorized();                         // clear session, redirect to login
-      if (!response.ok) throw new ApiError(response.status, payload?.error?.code ?? "unknown", payload?.error?.fields);
-      return payload;
-    }, { attempts: retries + 1 });                                           // retries only on network/5xx (inside withRetry)
-  }
-  return {
-    get: (path, options) => request("GET", path, options),
-    post: (path, body, options) => request("POST", path, { ...options, body }),
-    patch: (path, body, options) => request("PATCH", path, { ...options, body }),
-    delete: (path, options) => request("DELETE", path, options),
-  };
-}
-
-// api/applications.js — typed-ish resource functions used by components
-export const listApplications = (client, filters, signal) => client.get("/api/v1/applications", { query: filters, signal });
-export const moveStatus = (client, id, status) => client.post(`/api/v1/applications/${id}/status`, { status });
+export const listApplications = (client, signal) => client.get("/api/v1/applications", { signal });
 ```
-
-- Components call resource functions, never `fetch` directly.
-- `ApiError.code` drives messages: `invalid_transition` → "That move isn't allowed", `fields` → inline form errors.
-- POSTs aren't retried automatically (not idempotent) unless the API supports idempotency keys.
-- Base URL comes from environment config (`NEXT_PUBLIC_API_URL` — Week 4).
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] One place for headers, JSON, errors and timeouts
-- [ ] Retries only for safe requests
-- [ ] 401 handled centrally
-- [ ] Error codes mapped to user messages
+- [ ] Headers, JSON, errors and timeouts are in one place
+- [ ] Only safe requests are retried
+- [ ] `401` is handled in one place
+- [ ] Error codes become messages a user understands
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w1/07-async-fetch" ai="no-ai" title="A robust fetch client"}
-Write a small API client with injected `fetch`: JSON parsing and `ApiError` for non-2xx responses, a timeout with `AbortController`, a parallel dashboard loader, partial-failure handling with `allSettled`, and retries with exponential backoff for transient errors only. Tests use fake fetch and fake timers.
+Build a small API client that receives `fetch` as a parameter: read JSON and throw `ApiError` for non-2xx responses, add a timeout with `AbortController`, load dashboard data in parallel, handle partial failures with `allSettled`, and retry temporary errors with growing waits. The tests use a fake `fetch` and fake timers.
 :::
 
 :::hints
 - In `getJsonWithTimeout`, check `controller.signal.aborted` inside `catch` to tell a timeout from other errors; clear the timer in `finally`.
-- `Promise.allSettled` results keep the input order — use the index to find failed ids.
+- `Promise.allSettled` keeps results in the same order as the input — use the index to find which ids failed.
 - In `withRetry`, a `for (let attempt = 1; ; attempt++)` loop with `return await fn()` inside `try` is the simplest shape.
 :::
 
 ## ✅ Quick check
 
 :::quiz
-Does `fetch` reject for HTTP 404?
+Does `fetch` throw an error for a `404` response?
 
-No — only for network errors or aborts. Check `response.ok`.
+No. It only throws when there is no response at all (network error) or the request was cancelled. Check `response.ok` yourself.
 :::
 
 :::quiz
-When would you choose `Promise.allSettled` over `Promise.all`?
+When is `Promise.allSettled` better than `Promise.all`?
 
-When partial success is useful and one failure shouldn't discard the other results (e.g. independent dashboard widgets).
+When some results are still useful even if one request fails — for example, separate dashboard widgets.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Asynchronous | Asinkron — tidak menunggu sampai selesai |
-| Event loop | Putaran peristiwa |
-| Promise | Janji — nilai yang akan tersedia nanti |
-| Timeout | Batas waktu |
-| Abort / cancel | Membatalkan permintaan |
-| CORS | Aturan berbagi sumber lintas asal |
 
 ## 📚 Keep learning
 

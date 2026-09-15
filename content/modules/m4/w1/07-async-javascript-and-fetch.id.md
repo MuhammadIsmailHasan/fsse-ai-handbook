@@ -1,81 +1,90 @@
 ---
 title: "🔥 JavaScript Async: Promise, fetch & async/await"
-summary: Bagaimana JavaScript mengerjakan banyak hal sekaligus di satu thread — event loop, promise, async/await, memanggil Flask API-mu dengan fetch, menangani error HTTP, timeout, request paralel, dan retry.
-sourceHash: dcc2c1e947d8
+summary: Cara JavaScript menunggu hal yang lambat (seperti Flask API-mu) tanpa membuat halaman macet — promise, async/await, fetch, error HTTP, timeout, request paralel, retry, dan CORS, dengan bahasa sederhana.
+sourceHash: fb98378378ff
 ---
 
 ::part[Pelajari Konsepnya]{n="1"}
 
 ## 🎯 Yang akan kamu pelajari
 
-- **Event loop**: kenapa satu thread tidak membeku saat menunggu jaringan
-- Callback → **Promise** → **async/await**
-- `fetch`: request, header, body JSON, dan kenapa response 500 tidak reject
-- Penanganan error dengan class error custom
-- Timeout dan pembatalan dengan `AbortController`
-- `Promise.all`, `allSettled`, `race`, `any` — paralel vs berurutan
-- Retry dengan exponential backoff (terhubung ke Minggu 5 Modul 2)
-- CORS: kenapa browser memblokir panggilan API-mu
+- Kenapa halaman tidak macet saat menunggu jawaban server
+- Promise dan `async`/`await` — dua cara menulis "tunggu ini dulu"
+- Memanggil Flask API-mu dengan `fetch`, dan menangani error dengan benar
+- Timeout, menjalankan request bersamaan, dan mencoba ulang dengan aman
+- Arti error CORS dan di mana memperbaikinya
+
+## 🔤 Istilah penting
+
+| Istilah | Artinya (sederhana) |
+|---|---|
+| **Asynchronous (async)** | "Mulai sekarang, hasilnya nanti" — kode tidak berhenti untuk menunggu |
+| **Promise** | Object yang berkata "hasilnya datang nanti — atau error" |
+| **`await`** | "Jeda function ini sampai promise-nya selesai" |
+| **Event loop** | Bagian JavaScript yang menjalankan pekerjaan yang menunggu, saat sudah siap |
+| **Timeout** | Batas waktu: "kalau 8 detik tidak ada jawaban, berhenti" |
+| **Retry** | Mencoba lagi request yang gagal |
+| **CORS** | Aturan browser: halaman hanya boleh membaca data dari server lain kalau server itu mengizinkan |
 
 ## 🧠 Ide besarnya
 
-JavaScript adalah **satu pelayan** di sebuah restoran. Pelayan yang buruk menerima satu pesanan, berdiri di dapur sampai makanannya siap, dan mengabaikan tamu lain. Pelayan yang baik menerima pesanan, menyerahkannya ke dapur, lalu melayani meja lain sampai dapur membunyikan bel. **Event loop** adalah pelayannya; **Promise** adalah tiket pesanan ("makanannya kuantar nanti — atau kukabari kalau gagal").
+Bayangkan memesan di **warung** yang ramai. Kamu pesan, dapat nomor, lalu duduk. Juru masak bekerja; kamu ngobrol atau main HP. Saat nomormu dipanggil, kamu ambil makanannya.
 
-## ❓ Kenapa ini ada?
+JavaScript bekerja dengan cara yang sama:
+- Pesananmu = sebuah request (`fetch`).
+- Nomor yang kamu pegang = sebuah **promise**.
+- Melakukan hal lain sambil menunggu = halaman tetap bisa dipakai.
+- Nomormu dipanggil = hasilnya datang, dan kodemu lanjut berjalan.
 
-Request jaringan, timer, dan membaca file butuh waktu. Kalau browser menunggu secara sinkron, halaman akan membeku — tidak bisa scroll, tidak bisa mengetik — selama API-mu merespons. Kode async membuat UI tetap responsif selagi data dimuat. Setiap tool data-fetching React (Minggu 4) dibangun di atas promise.
+## ❓ Kenapa ini penting
 
-## 💥 Apa yang terjadi kalau TIDAK memahaminya?
+Memanggil server butuh waktu (100 ms sampai beberapa detik). Kalau JavaScript diam menunggu, halaman akan macet: tidak bisa scroll, tidak bisa mengetik. Kode async menjaga halaman tetap bisa dipakai.
+
+Kalau salah, muncul bug nyata:
 
 ```js
 function loadJobs() {
   let jobs;
   fetch("/api/v1/jobs").then((r) => r.json()).then((data) => { jobs = data; });
-  return jobs;                        // 🐛 undefined — the request hasn't finished
+  return jobs;                        // 🐛 undefined — the request hasn't finished yet
 }
 
 const response = await fetch("/api/v1/jobs");
-const data = await response.json(); // 🐛 on a 401/500, you render an error body as if it were jobs
+const data = await response.json(); // 🐛 on a 401/500 you show the error body as if it were jobs
 ```
 
-- `await` berurutan untuk request yang saling independen membuat dashboard 3× lebih lambat.
-- Tanpa timeout → spinner berputar selamanya di koneksi yang tidak stabil.
-- Response pencarian lama menimpa hasil yang lebih baru.
+## 📖 Langkah demi langkah
 
-## 📖 Cara kerjanya, langkah demi langkah
+### 1. JavaScript mengerjakan satu hal dalam satu waktu — tapi tidak pernah menunggu sambil diam
 
-### 1. Event loop
+Seperti juru masak warung yang hanya punya dua tangan: terima pesanan, teruskan ke dapur, layani pembeli berikutnya, kembali saat ada yang sudah siap.
 
 ```mermaid
 sequenceDiagram
-    participant JS as Call stack (kodemu)
-    participant API as Browser (jaringan, timer)
-    participant Q as Task queue
-    JS->>API: fetch("/api/v1/jobs") → langsung mengembalikan Promise
-    JS->>JS: tetap berjalan (render spinner, tangani klik)
-    API-->>Q: response tiba → antrekan lanjutannya
-    Q-->>JS: saat stack kosong, jalankan .then / lanjutkan await
+    participant Code as Kodemu
+    participant Browser as Browser (jaringan)
+    Code->>Browser: fetch("/api/v1/jobs") — langsung memberi promise
+    Code->>Code: tetap bekerja (tampilkan spinner, tangani klik)
+    Browser-->>Code: response tiba — kodemu lanjut
 ```
 
-Microtask (callback promise) dijalankan sebelum macrotask berikutnya (timer, event). Loop sinkron yang panjang tetap memblokir semuanya — async tidak membuat kerja CPU jadi paralel.
+Satu peringatan: perhitungan yang panjang (loop yang sangat besar) tetap memblokir semuanya. Async membantu saat **menunggu**, bukan saat menghitung berat.
 
 ### 2. Promise
 
-Sebuah Promise berstatus **pending**, lalu **fulfilled** dengan sebuah nilai atau **rejected** dengan sebuah error — hanya sekali.
+Promise punya tiga keadaan, seperti nomor pesananmu: **menunggu** (pending), **selesai** (fulfilled, ada nilainya), atau **gagal** (rejected, ada error-nya).
 
 ```js
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 fetch("/api/v1/jobs")
-  .then((response) => response.json())
-  .then((body) => render(body.data))
-  .catch((error) => showError(error))
-  .finally(() => hideSpinner());
+  .then((response) => response.json())   // when done: read the body
+  .then((body) => render(body.data))     // then show it
+  .catch((error) => showError(error))    // if anything failed
+  .finally(() => hideSpinner());         // always, at the end
 ```
 
-### 3. async / await
+### 3. `async` / `await` — cara menulis yang lebih mudah
 
-Hal yang sama, dibaca dari atas ke bawah:
+Sama saja, tapi dibaca dari atas ke bawah seperti kode biasa:
 
 ```js
 async function loadJobs() {
@@ -92,13 +101,16 @@ async function loadJobs() {
 }
 ```
 
-Function `async` **selalu mengembalikan Promise**. `await` menjeda function itu (bukan halamannya).
+- `await` hanya menjeda **function ini**, bukan seluruh halaman.
+- Function `async` selalu mengembalikan promise.
 
 :::fastapi
-`async def` / `await` di Python dengan `asyncio` bekerja dengan prinsip yang sama — event loop yang menjalankan coroutine. Kamu akan memakainya di FastAPI (Modul 3). Perbedaan besarnya: di browser, event loop selalu ada; di Python, kamu yang memulainya (`asyncio.run`) atau framework yang melakukannya.
+Python punya ide yang sama: `async def` dan `await` dengan `asyncio`. Kamu akan memakainya di FastAPI (Modul 3).
 :::
 
-### 4. fetch dalam praktik
+### 4. `fetch` — dan jebakan yang sering kena
+
+`fetch` hanya gagal saat **tidak ada jawaban sama sekali** (tidak ada internet, server mati). `404` atau `500` tetap dianggap "jawaban", jadi `fetch` **tidak** melempar error. Kamu harus mengeceknya sendiri — seperti mengecek pesananmu sebelum meninggalkan kasir.
 
 ```js
 const response = await fetch(`${API_URL}/api/v1/applications`, {
@@ -114,20 +126,11 @@ if (!response.ok) {                              // fetch only rejects on networ
 const { data } = await response.json();
 ```
 
-Petakan format error Flask-mu (`{"error": {"code": ...}}`) ke pesan UI di **satu** tempat — sebuah module API client.
+`ApiError` adalah class error kecil buatan sendiri yang menyimpan status code, supaya UI bisa menampilkan pesan yang tepat. Taruh logika ini di **satu file** (sebuah "API client") agar semua halaman menangani error dengan cara yang sama.
 
-```js
-export class ApiError extends Error {
-  constructor(status, body) {
-    super(`Request failed with status ${status}`);
-    this.name = "ApiError";
-    this.status = status;
-    this.body = body;
-  }
-}
-```
+### 5. Timeout — jangan menunggu selamanya
 
-### 5. Timeout dan pembatalan
+Kalau warung butuh 30 menit, kamu pergi. Lakukan hal yang sama dengan request: pasang batas waktu, lalu berhenti menunggu.
 
 ```js
 const controller = new AbortController();
@@ -140,9 +143,11 @@ try {
 // newer browsers: fetch(url, { signal: AbortSignal.timeout(8000) })
 ```
 
-Abort juga membatalkan request yang **sudah usang**: saat pengguna mengetik pencarian baru, batalkan yang sebelumnya.
+`AbortController` adalah tombol "batal". Pakai juga saat request sudah tidak dibutuhkan — misalnya pengguna mengetik pencarian baru, jadi batalkan yang lama.
 
-### 6. Paralel vs berurutan
+### 6. Bersamaan vs satu per satu
+
+Memesan tiga menu satu per satu (tunggu yang pertama datang, baru pesan yang kedua…) itu lambat. Pesan ketiganya sekaligus.
 
 ```js
 // ❌ sequential: 300 ms + 300 ms + 300 ms
@@ -153,165 +158,103 @@ const apps = await getJson("/api/v1/applications");
 const [me, apps, stats] = await Promise.all([getJson("/api/v1/me"), getJson("/api/v1/applications"), getJson("/api/v1/stats")]);
 ```
 
-| Combinator | Resolve saat | Reject saat |
-|---|---|---|
-| `Promise.all` | semua berhasil → array berisi nilai | **salah satu** gagal (fail fast) |
-| `Promise.allSettled` | semua selesai → `{status, value/reason}` untuk masing-masing | tidak pernah |
-| `Promise.race` | yang pertama selesai (berhasil atau gagal) | yang pertama selesai dengan gagal |
-| `Promise.any` | yang pertama **berhasil** | semua gagal (`AggregateError`) |
+| Tool | Pakai saat |
+|---|---|
+| `Promise.all` | kamu butuh **semua** hasil; kalau satu gagal, semuanya gagal |
+| `Promise.allSettled` | sebagian hasil tetap berguna walau ada yang gagal (widget dashboard) |
 
-Pakai `allSettled` saat hasil sebagian tetap berguna (dashboard yang salah satu widget-nya bisa gagal). Batasi konkurensi untuk batch besar (misalnya 5 sekaligus) agar tidak membanjiri API-mu — ingat Locust.
+### 7. Retry — hanya kalau masuk akal
 
-### 7. Retry
+Kalau teleponnya sibuk, menelepon lagi nanti masuk akal. Kalau nomornya salah, menelepon lagi tidak akan membantu.
 
-Retry hanya untuk kegagalan **sementara**: error jaringan (`TypeError: Failed to fetch`), `5xx`, `429`. Jangan pernah retry `4xx` seperti `422`. Pakai exponential backoff dengan jitter, dan hanya untuk request yang idempotent (GET) atau dengan idempotency key (Modul 2 Minggu 5).
+- ✅ Retry: tidak ada koneksi, `500`–`599` (masalah di server), `429` (terlalu banyak request).
+- 🚫 Jangan retry error `4xx` lain seperti `400` atau `422` (datamu salah — pasti gagal lagi).
+- Tunggu sedikit lebih lama sebelum setiap percobaan (1 detik, 2 detik, 4 detik…). Ini disebut **exponential backoff**.
+- Hanya retry otomatis untuk request yang aman diulang, seperti `GET`. Mengulang `POST` bisa membuat dua lamaran.
 
-### 8. CORS dalam satu paragraf
+### 8. CORS — "blocked by CORS policy"
 
-Halaman di `http://localhost:3091` yang memanggil `http://localhost:5091/api` adalah request **cross-origin**. Browser bertanya ke API (preflight `OPTIONS`) apakah origin itu diizinkan; kalau Flask API tidak menjawab dengan `Access-Control-Allow-Origin: http://localhost:3091`, browser memblokir response-nya. Perbaiki **di server** (`flask-cors` dengan daftar origin yang eksplisit) atau proxy panggilan API lewat server frontend-mu (route handler Next.js — Minggu 4).
+Halamanmu berjalan di `http://localhost:3091`; API-mu di `http://localhost:5091`. Bagi browser, ini **dua situs berbeda**. Seperti satpam gedung, browser bertanya ke API: "Situs ini boleh masuk?" Kalau API tidak menjawab "boleh" (header `Access-Control-Allow-Origin: http://localhost:3091`), browser memblokir response-nya.
 
-## ⚖️ Trade-off
-
-| Pilihan | ✅ | ❌ |
-|---|---|---|
-| `async/await` | mudah dibaca, try/catch | mudah tanpa sengaja menjalankan hal secara berurutan |
-| Rangkaian `.then` | bagus untuk pipeline kecil | nesting dan penanganan error jadi berantakan |
-| `Promise.all` | paling cepat | satu kegagalan me-reject semuanya |
-| `allSettled` | hasil sebagian yang tangguh | harus memeriksa setiap hasil |
-| Retry | meredam gangguan sesaat | memperbesar beban saat outage; butuh batas dan backoff |
-| `fetch` mentah | bawaan, kecil | boilerplate → bungkus, atau pakai TanStack Query (Minggu 4) |
-
-## ✅ Kapan dipakai / 🚫 Kapan TIDAK dipakai
-
-- ✅ `await` di function async untuk I/O apa pun; `Promise.all` untuk request yang independen.
-- ✅ Module API client kecil yang menangani base URL, header, JSON, error, dan timeout.
-- 🚫 Function `async` untuk pekerjaan berat CPU (pakai Web Worker).
-- 🚫 Promise "tembak lalu lupakan" tanpa `.catch` — rejection yang tidak ditangani menyembunyikan bug.
-
-## 🏆 Praktik terbaik
-
-- [ ] Pusatkan HTTP di sebuah API client: base URL dari config, header auth, parsing JSON, `ApiError`.
-- [ ] Selalu cek `response.ok`; parse body error secara defensif.
-- [ ] Tambahkan timeout; batalkan request yang usang (pencarian, navigasi).
-- [ ] Jalankan request independen secara paralel; batasi konkurensi untuk batch besar.
-- [ ] Retry hanya untuk error sementara, dengan backoff, batas, dan idempotency.
-- [ ] Selalu tangani rejection (`try/catch` atau `.catch`); tampilkan pesan error yang bisa ditindaklanjuti pengguna, log detailnya.
-- [ ] Tampilkan state loading, kosong, dan error untuk setiap request.
-- [ ] Inject `fetch` (atau client-nya) ke function agar bisa dites dengan fake.
-
-## 🏭 Cara dipakai di industri
-
-- API client sering **di-generate** dari spesifikasi OpenAPI backend (openapi-typescript, Orval) — dokumentasi Flask-smorest-mu dari Modul 2 bisa menjadi sumbernya.
-- TanStack Query / SWR menangani caching, retry, deduplikasi, dan pembatalan di atas fetch.
-- Streaming response LLM di aplikasi AI memakai `fetch` dengan `ReadableStream` (Modul 7).
+Perbaikannya ada **di server**, bukan di kode frontend: atur `flask-cors` dengan situs yang diizinkan, atau kirim panggilan API lewat server frontend-mu sendiri (route handler Next.js — Minggu 4).
 
 ## ⚠️ Kesalahan umum
 
-- Menganggap 4xx/5xx sebagai sukses karena fetch tidak melempar error.
-- `await` di dalam `forEach` (tidak menunggu) — pakai `for...of` atau `Promise.all(items.map(...))`.
-- Lupa `Content-Type: application/json` saat mengirim JSON (`get_json()` di Flask-mu mengembalikan `None`).
-- Menyalahkan kode frontend atas error CORS alih-alih mengonfigurasi API.
+- Menganggap `404`/`500` sukses karena `fetch` tidak melempar error.
+- `await` di dalam `forEach` — tidak menunggu. Pakai `for...of` atau `Promise.all(items.map(...))`.
+- Lupa `Content-Type: application/json` saat mengirim JSON (`get_json()` di Flask mengembalikan `None`).
+- Mencoba "memperbaiki" CORS di kode frontend, bukan di API.
+
+## 🏆 Praktik terbaik
+
+- [ ] Taruh semua kode HTTP di satu API client: base URL dari config, header auth, JSON, `ApiError`.
+- [ ] Selalu cek `response.ok`.
+- [ ] Pasang timeout di setiap request; batalkan request yang sudah tidak dibutuhkan.
+- [ ] Jalankan request yang tidak saling bergantung secara bersamaan.
+- [ ] Retry hanya untuk error sementara, dengan batas dan jeda yang makin lama, dan hanya untuk request yang aman.
+- [ ] Selalu tangani error (`try/catch`) dan tampilkan keadaan loading, kosong, dan error.
+- [ ] Oper `fetch` (atau client-nya) ke dalam function supaya tes bisa memakai versi palsu.
 
 ::part[Jelaskan & Rancang]{n="2"}
 
 ## 🗣️ Jelaskan
 
-Jelaskan event loop dengan analogi pelayan restoran, lalu jelaskan kenapa `await` di dalam loop `for` untuk 10 request independen membuat halaman lambat.
+Pakai analogi warung untuk menjelaskan ke teman kenapa halaman tidak macet saat memuat lowongan. Lalu jelaskan kenapa memakai `await` di dalam loop untuk 10 request yang tidak saling bergantung membuat halaman lambat.
 
 ## 📐 Rancang
 
-Rancang **API client** frontend CareerPilot untuk Flask API Fase 2: penanganan base URL dan token, parsing JSON dan error (memetakan `{"error": {"code", "fields"}}`), timeout, aturan retry, penanganan 401 (token kedaluwarsa), dan cara component memakainya. Berikan signature function-nya.
+Rencanakan **API client** CareerPilot (satu file yang dipakai semua halaman). Jawab: base URL diambil dari mana? Bagaimana token ditambahkan? Apa yang terjadi saat `401`? Error apa saja yang di-retry? Bagaimana component memanggilnya?
 
 :::quiz
-Tampilkan contoh desainnya
+Tampilkan contoh rencananya
+
+- **Base URL**: dari environment variable (`NEXT_PUBLIC_API_URL` — Minggu 4), tidak pernah ditulis langsung di kode.
+- **Token**: client menambahkan `Authorization: Bearer …` di satu tempat, jadi halaman tidak pernah menyusun header sendiri.
+- **Timeout**: setiap request mendapat `AbortSignal.timeout(10_000)`.
+- **Error**: non-2xx → `ApiError(status, body)`; UI mengubah `body.error.code` menjadi pesan yang ramah.
+- **401**: hapus sesi dan arahkan pengguna ke halaman login — ditangani sekali, di client.
+- **Retry**: hanya `GET`, hanya error jaringan dan `5xx`, maksimal 2 kali tambahan dengan jeda yang makin lama. `POST` tidak pernah di-retry otomatis.
+- **Component** memanggil function kecil seperti `listApplications(client)` — tidak pernah `fetch` langsung:
 
 ```js
-// api/client.js
-export function createApiClient({ baseUrl, getToken, onUnauthorized, fetchImpl = fetch, timeoutMs = 10_000 }) {
-  async function request(method, path, { body, query, signal, retries = method === "GET" ? 2 : 0 } = {}) {
-    const url = new URL(path, baseUrl);
-    Object.entries(query ?? {}).forEach(([k, v]) => v != null && url.searchParams.set(k, String(v)));
-    return withRetry(async () => {
-      const response = await fetchImpl(url, {
-        method,
-        headers: {
-          Accept: "application/json",
-          ...(body ? { "Content-Type": "application/json" } : {}),
-          ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
-        },
-        body: body ? JSON.stringify(body) : undefined,
-        signal: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)].filter(Boolean)),
-      });
-      const payload = response.status === 204 ? null : await response.json().catch(() => null);
-      if (response.status === 401) onUnauthorized();                         // clear session, redirect to login
-      if (!response.ok) throw new ApiError(response.status, payload?.error?.code ?? "unknown", payload?.error?.fields);
-      return payload;
-    }, { attempts: retries + 1 });                                           // retries only on network/5xx (inside withRetry)
-  }
-  return {
-    get: (path, options) => request("GET", path, options),
-    post: (path, body, options) => request("POST", path, { ...options, body }),
-    patch: (path, body, options) => request("PATCH", path, { ...options, body }),
-    delete: (path, options) => request("DELETE", path, options),
-  };
-}
-
-// api/applications.js — typed-ish resource functions used by components
-export const listApplications = (client, filters, signal) => client.get("/api/v1/applications", { query: filters, signal });
-export const moveStatus = (client, id, status) => client.post(`/api/v1/applications/${id}/status`, { status });
+export const listApplications = (client, signal) => client.get("/api/v1/applications", { signal });
 ```
-
-- Component memanggil function resource, tidak pernah `fetch` langsung.
-- `ApiError.code` menentukan pesan: `invalid_transition` → "Perpindahan itu tidak diizinkan", `fields` → error inline di form.
-- POST tidak di-retry otomatis (tidak idempotent) kecuali API mendukung idempotency key.
-- Base URL berasal dari config environment (`NEXT_PUBLIC_API_URL` — Minggu 4).
 :::
 
 ### 📝 Checklist self-review
 
-- [ ] Satu tempat untuk header, JSON, error, dan timeout
-- [ ] Retry hanya untuk request yang aman
-- [ ] 401 ditangani secara terpusat
-- [ ] Kode error dipetakan ke pesan untuk pengguna
+- [ ] Header, JSON, error, dan timeout ada di satu tempat
+- [ ] Hanya request yang aman yang di-retry
+- [ ] `401` ditangani di satu tempat
+- [ ] Kode error diubah menjadi pesan yang dipahami pengguna
 
 ::ai-review{task="design"}
 
 ::part[Latihan Kecil]{n="3"}
 
 :::exercise{path="exercises/web/m4/w1/07-async-fetch" ai="no-ai" title="Fetch client yang tangguh"}
-Tulis API client kecil dengan `fetch` yang di-inject: parsing JSON dan `ApiError` untuk response non-2xx, timeout dengan `AbortController`, pemuat dashboard paralel, penanganan gagal sebagian dengan `allSettled`, dan retry dengan exponential backoff khusus untuk error sementara. Tes memakai fake fetch dan fake timer.
+Buat API client kecil yang menerima `fetch` sebagai parameter: baca JSON dan lempar `ApiError` untuk response non-2xx, pasang timeout dengan `AbortController`, muat data dashboard secara bersamaan, tangani gagal sebagian dengan `allSettled`, dan retry error sementara dengan jeda yang makin lama. Tes memakai `fetch` palsu dan timer palsu.
 :::
 
 :::hints
 - Di `getJsonWithTimeout`, cek `controller.signal.aborted` di dalam `catch` untuk membedakan timeout dari error lain; bersihkan timer di `finally`.
-- Hasil `Promise.allSettled` menjaga urutan input — pakai indeksnya untuk menemukan id yang gagal.
+- `Promise.allSettled` menyimpan hasil dengan urutan yang sama seperti input — pakai indeksnya untuk menemukan id yang gagal.
 - Di `withRetry`, loop `for (let attempt = 1; ; attempt++)` dengan `return await fn()` di dalam `try` adalah bentuk paling sederhana.
 :::
 
 ## ✅ Cek cepat
 
 :::quiz
-Apakah `fetch` reject untuk HTTP 404?
+Apakah `fetch` melempar error untuk response `404`?
 
-Tidak — hanya untuk error jaringan atau abort. Cek `response.ok`.
+Tidak. `fetch` hanya melempar error saat tidak ada response sama sekali (error jaringan) atau request dibatalkan. Cek `response.ok` sendiri.
 :::
 
 :::quiz
-Kapan kamu memilih `Promise.allSettled` daripada `Promise.all`?
+Kapan `Promise.allSettled` lebih baik daripada `Promise.all`?
 
-Saat keberhasilan sebagian tetap berguna dan satu kegagalan tidak boleh membuang hasil lainnya (misalnya widget dashboard yang saling independen).
+Saat sebagian hasil tetap berguna walau satu request gagal — misalnya widget-widget dashboard yang terpisah.
 :::
-
-## 📖 Kamus (glosarium)
-
-| Istilah | Bahasa Indonesia |
-|---|---|
-| Asynchronous | Asinkron — tidak menunggu sampai selesai |
-| Event loop | Putaran peristiwa |
-| Promise | Janji — nilai yang akan tersedia nanti |
-| Timeout | Batas waktu |
-| Abort / cancel | Membatalkan permintaan |
-| CORS | Aturan berbagi sumber lintas asal |
 
 ## 📚 Lanjut belajar
 
