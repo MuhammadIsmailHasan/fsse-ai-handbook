@@ -1,6 +1,6 @@
 ---
 title: "Controlled Inputs & Forms"
-summary: Build forms React can reason about — controlled inputs of every type, one state object per form, accessible validation, typed payloads, refs for focus, and when uncontrolled inputs are better.
+summary: Build forms React can manage — controlled inputs of every type, one state object per form, validation users can find, converting input text into clean data, refs for focus, and when uncontrolled inputs are better.
 type: lesson
 source: core
 sourceRef: "M3 · W3 · L5"
@@ -14,23 +14,34 @@ tags: [react, forms, controlled-components, validation, refs]
 ## 🎯 What you'll learn
 
 - Controlled vs uncontrolled inputs
-- Controlling every input type: text, number, select, checkbox, radio, textarea
-- One state object for a form, with a typed generic setter
-- Converting input strings into a typed payload (numbers, `null`)
-- Validation on submit, accessible error messages and focusing the first error
-- Refs with `useRef` for focus and DOM access
-- Resetting forms, disabling submit while submitting
-- A preview of React 19 form actions and React Hook Form + Zod (Week 5)
+- Controlling text, number, select, checkbox, radio and textarea
+- One state object for the whole form
+- Turning form text into clean data for your API (numbers, `null`)
+- Validation with accessible error messages
+- `useRef` to move focus
+- Submitting safely (no double submits)
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Controlled input** | An input whose value comes from React state | Input yang dikendalikan state |
+| **Uncontrolled input** | An input that keeps its own value in the browser; you read it on submit | Input yang menyimpan nilainya sendiri |
+| **`onChange`** | The event that fires on every change (each key press) | Saat nilai berubah |
+| **Payload** | The clean data you send to the API | Data kiriman |
+| **Validation** | Checking the values are correct before sending | Pengecekan data |
+| **Ref (`useRef`)** | A box that holds something (like a DOM element) without redrawing | Referensi |
+| **`FormData`** | A browser object that reads all values of a form at once | Pembaca data form |
 
 ## 🧠 The big idea
 
-A controlled input is a **puppet whose strings React holds**: what you see in the box is always exactly what's in state, and every keystroke goes through your code first. That makes validation, formatting and conditional fields simple — because the truth lives in one place.
+A controlled input is like a **shop display that only the shopkeeper arranges**: what you see in the box is always exactly what's in React state, and every key press goes through your code first. Because the truth lives in one place, validation, formatting and "show this field only if…" become simple.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Forms are where users give your API data. You need live character counters, dependent fields ("show salary only if disclosed"), validation before hitting Flask, and a clean typed payload. When React controls the values, all of these are just render logic.
+Forms are where users give data to your API. You often need a live character counter, fields that appear depending on other fields, checks before calling Flask, and clean typed data.
 
-## 💥 What happens if we DON'T?
+Common problems when forms are careless:
 
 ```tsx
 <input type="number" onChange={(e) => setSalary(e.target.value)} />   // salary is "9000000" (a string!)
@@ -38,9 +49,13 @@ Forms are where users give your API data. You need live character counters, depe
 <input value={maybeUndefined} onChange={…} />                          // "changing an uncontrolled input to be controlled" warning
 ```
 
-And payloads like `{ salary_min: "", salary_max: "9000000" }` make your Flask validation return 422 or, worse, store wrong data.
+- Even a number input gives you **text**.
+- `value` without `onChange` makes an input you can't type in.
+- Starting with `undefined` causes a React warning.
 
-## 📖 How it works, step by step
+And sending `{ salary_min: "", salary_max: "9000000" }` makes your Flask API return 422 — or save wrong data.
+
+## 📖 Step by step
 
 ### 1. Controlled inputs
 
@@ -49,17 +64,19 @@ const [role, setRole] = useState("");
 <input id="role" value={role} onChange={(e) => setRole(e.target.value)} />
 ```
 
-| Input | Value prop | Read from |
+The loop: you type → `onChange` → `setRole` → React redraws → the box shows the new `role`.
+
+| Input | Set its value with | Read the new value from |
 |---|---|---|
 | text, email, search, textarea | `value={string}` | `e.target.value` |
-| number | `value={string}` (keep as string while typing) | `e.target.value` → convert on submit |
+| number | `value={string}` (keep it as text while typing) | `e.target.value` → convert on submit |
 | select | `value={string}` on `<select>` | `e.target.value` |
 | checkbox | `checked={boolean}` | `e.target.checked` |
 | radio group | `checked={value === option}` | `e.target.value` |
 
-Initial values must never be `undefined` (use `""`, `false`).
+Start with `""` or `false`, never `undefined`.
 
-### 2. One state object + a generic setter
+### 2. One state object for the form
 
 ```tsx
 type Values = { companyId: string; role: string; salaryMin: string; salaryMax: string; remote: boolean; notes: string };
@@ -72,11 +89,13 @@ const set = <K extends keyof Values>(key: K, value: Values[K]) => setValues((pre
 <input type="checkbox" checked={values.remote} onChange={(e) => set("remote", e.target.checked)} />
 ```
 
-The generic `K extends keyof Values` (Week 2!) makes `set("remote", "yes")` a compile error.
+Like one **registration form** with all fields, instead of loose notes. The small `set` helper uses a generic (Week 2), so `set("remote", "yes")` is a type error.
 
-### 3. From form values to a typed payload
+### 3. From form values to clean data
 
-Keep **form values** (strings, as typed) separate from the **domain payload** (numbers, nulls):
+Keep two separate shapes — like a **draft** you're still writing and the **final letter** you send:
+- **Form values**: text, exactly as typed.
+- **Payload**: cleaned data with real numbers and `null`.
 
 ```tsx
 const toNumber = (value: string) => (value.trim() === "" ? null : Number(value));
@@ -90,6 +109,8 @@ const payload: ApplicationPayload = {
   notes: values.notes,
 };
 ```
+
+`toNumber` turns an empty field into `null`, not `0` (`Number("")` is `0`!).
 
 ### 4. Validation with accessible errors
 
@@ -114,7 +135,9 @@ function validate(values: Values): Partial<Record<"company" | "role" | "salaryMa
 {errors.role && <p id="role-error">{errors.role}</p>}
 ```
 
-When to validate: **on submit** first; then optionally re-validate a field on blur/change after it has shown an error. Don't yell at users while they're still typing the first character. And remember: **client validation is UX; the Flask API's validation is security** — keep both.
+- Check **when the user submits** first. Don't show errors while they're still typing the first letter.
+- After an error is shown, you can re-check that field as they fix it.
+- Frontend checks are for **a nice experience**. The Flask API's checks are for **safety**. Keep both — like a shop assistant who helps you fill the form, and the bank teller who checks it again.
 
 ### 5. Refs and focus
 
@@ -124,7 +147,7 @@ const roleRef = useRef<HTMLInputElement>(null);
 roleRef.current?.focus();       // after validation fails
 ```
 
-Refs hold values that don't trigger re-renders (DOM nodes, timers). Don't read or write `ref.current` during render.
+A ref is like a **bookmark** to a real element: you can jump to it (focus it) without redrawing the page. Don't read or change `ref.current` while rendering — only in event handlers or effects.
 
 ### 6. Submitting
 
@@ -148,9 +171,11 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 <button type="submit" disabled={submitting}>{submitting ? "Saving…" : "Save application"}</button>
 ```
 
-Use `noValidate` on the `<form>` if you render your own messages (so native bubbles don't duplicate them), but keep `type="email"`, `required`, `min` for mobile keyboards and semantics.
+- Disable the button while saving, so people can't submit twice (like double-tapping "Pay").
+- Clear the form only after **success**. If the API fails, keep what the user typed.
+- Add `noValidate` to the `<form>` if you show your own messages, but keep `type="email"`, `required` and `min` for mobile keyboards.
 
-### 7. Uncontrolled inputs (sometimes better)
+### 7. Uncontrolled inputs (sometimes simpler)
 
 ```tsx
 <form onSubmit={(e) => { e.preventDefault(); const data = new FormData(e.currentTarget); … }}>
@@ -158,55 +183,36 @@ Use `noValidate` on the `<form>` if you render your own messages (so native bubb
 </form>
 ```
 
-The DOM keeps the value; you read it on submit. Fine for simple forms without live behavior. React 19 **form actions** (`<form action={serverAction}>`, `useActionState`) build on this with progressive enhancement — Week 5 covers them together with React Hook Form + Zod.
-
-## ⚖️ Trade-offs
-
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Controlled | live validation, dependent fields, single source of truth | re-render per keystroke (fine for normal forms), more code |
-| Uncontrolled + FormData | little code, works with native forms/actions | harder to do live behavior |
-| Hand-rolled validation | no dependencies, full control | repetitive at scale → schema libraries |
-| React Hook Form + Zod | less boilerplate, shared schemas | libraries to learn (Week 5) |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Controlled for forms with live counters, conditional fields, formatting, or instant feedback.
-- ✅ Uncontrolled/`FormData` for simple forms and server actions.
-- 🚫 Don't convert `type="number"` values to numbers on every keystroke (you'll fight empty and partial input) — convert on submit.
-
-## 🏆 Best practices
-
-- [ ] Every input has a label; errors are linked with `aria-describedby` + `aria-invalid`; focus the first error.
-- [ ] Initialize controlled values with `""`/`false`, never `undefined`.
-- [ ] Keep form values (strings) separate from the typed payload; convert and trim on submit.
-- [ ] Validate on submit first; keep server-side validation as the source of truth.
-- [ ] Disable submit and show progress while submitting; prevent double submits.
-- [ ] Reset the form (or navigate away) after success; keep values after failures.
-- [ ] Use the right input types and `autoComplete` attributes.
-
-## 🏭 How it's used in industry
-
-- Most production React apps use React Hook Form (performance, less code) with Zod schemas shared with API clients.
-- Next.js apps increasingly use Server Actions for mutations with `useActionState` for pending/error states.
-- Form accessibility is one of the most common audit findings — labels, errors and focus are checked first.
+The browser keeps the value, and you read everything at once on submit with `FormData`. Good for simple forms with no live behavior. React 19 **form actions** build on this — Week 5 covers them with React Hook Form + Zod.
 
 ## ⚠️ Common mistakes
 
-- `value` without `onChange` (read-only input).
-- Using the string `"false"` or `"on"` from a checkbox instead of `checked`.
-- `Number("")` → `0` silently turning empty salaries into zero.
+- `value` without `onChange` (you can't type).
+- Reading `"on"` from a checkbox instead of using `checked`.
+- `Number("")` → `0`, silently turning an empty salary into zero.
+- Converting number inputs on every key press (empty and half-typed values break) — convert on submit.
 - Clearing the form when the API returned an error.
+- No labels, or errors not connected to their fields.
+
+## 🏆 Best practices
+
+- [ ] Every input has a label; errors use `aria-describedby` + `aria-invalid`; focus the first error.
+- [ ] Start controlled values with `""` / `false`, never `undefined`.
+- [ ] Keep form values (text) separate from the payload; trim and convert on submit.
+- [ ] Validate on submit first; the server's validation is still the final check.
+- [ ] Disable submit and show progress while saving.
+- [ ] Reset after success; keep values after failure.
+- [ ] Use the right input `type` and `autoComplete`.
 
 ::part[Explain & Design]{n="2"}
 
 ## 🗣️ Explain it
 
-Explain to a backend teammate why the frontend validates a salary range even though the Flask API already does — and why the API must still validate.
+Explain to a backend teammate, with the shop-assistant-and-bank-teller idea, why the frontend checks the salary range even though the Flask API already does — and why the API must still check it.
 
 ## 📐 Design it
 
-Design the **"Add note with reminder"** form for an application: note text (required, max 1000), an optional reminder toggle that reveals a date and time input (required when the toggle is on, must be in the future), and a priority radio group (low/normal/high, default normal). Describe the form values type, the payload type, validation rules, and the rendered accessibility attributes.
+Design an **"Add note with reminder"** form: note text (required, max 1000 characters), a "remind me" toggle that shows a date-time field (required when on, must be in the future), and a priority choice (low / normal / high, default normal). Describe the form values type, the payload type, the checks, and the accessibility attributes.
 
 :::quiz
 Show a possible design
@@ -233,33 +239,32 @@ const toPayload = (v: NoteValues): NotePayload => ({
 });
 ```
 
-Markup notes:
-- `<textarea id="note" maxLength={1000} aria-describedby="note-count note-error">` with a live counter `<p id="note-count">120/1000</p>`.
-- Toggle: `<input type="checkbox" id="remind" aria-controls="reminder-fields">`; the date field is rendered only when checked (and its error cleared when unchecked).
-- `<input type="datetime-local" id="remindAt" min={nowLocalString}>` with `aria-invalid`/`aria-describedby` on error.
-- Priority: `<fieldset><legend>Priority</legend>` with three native radios `checked={values.priority === "high"}`.
-- `validate` receives `now` as a parameter → testable without mocking the clock.
+- The note: `<textarea id="note" maxLength={1000} aria-describedby="note-count note-error">` with a live counter `<p id="note-count">120/1000</p>`.
+- The toggle: `<input type="checkbox" id="remind" aria-controls="reminder-fields">`. The date field only appears when it's on (and its error is cleared when it's turned off).
+- The date: `<input type="datetime-local" id="remindAt" min={nowLocalString}>`, with `aria-invalid` and `aria-describedby` when there's an error.
+- Priority: `<fieldset><legend>Priority</legend>` with three normal radio buttons.
+- `validate` receives `now` as a parameter, so tests don't need to fake the clock.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Values vs payload types separated
-- [ ] Conditional field validated only when shown
-- [ ] Time logic testable (injected `now`)
-- [ ] Accessible grouping and error links
+- [ ] Form values and payload are separate types
+- [ ] The extra field is checked only when it's shown
+- [ ] Time checks are testable (`now` passed in)
+- [ ] Grouped radios and connected errors
 
 ::ai-review{task="design"}
 
 ::part[Toy Exercise]{n="3"}
 
 :::exercise{path="exercises/web/m4/w3/05-controlled-inputs" ai="no-ai" title="A controlled application form"}
-Build a fully controlled form with a select, text, number, checkbox and textarea inputs, a live character counter, accessible validation that focuses the first error, a typed payload with number conversion, and a reset after success — plus a controlled search box whose Clear button refocuses the input with a ref.
+Build a fully controlled form with select, text, number, checkbox and textarea inputs, a live character counter, accessible validation that focuses the first error, a typed payload with number conversion, and a reset after success — plus a controlled search box whose Clear button puts focus back in the input using a ref.
 :::
 
 :::hints
-- One `values` object + `set(key, value)` helper keeps handlers tiny.
-- Store refs in an object keyed by field so you can focus `refs[firstInvalid]`.
-- The `<option>` `value` is always a string — convert with `Number()` in the payload.
+- One `values` object + a `set(key, value)` helper keeps the handlers tiny.
+- Keep refs in an object by field name, so you can focus `refs[firstInvalid]`.
+- An `<option>` value is always text — convert with `Number()` in the payload.
 :::
 
 ## ✅ Quick check
@@ -267,24 +272,14 @@ Build a fully controlled form with a select, text, number, checkbox and textarea
 :::quiz
 What makes an input "controlled"?
 
-Its current value comes from React state via `value` (or `checked`) and changes only through an `onChange` handler that updates that state.
+Its value comes from React state through `value` (or `checked`), and it changes only through an `onChange` handler that updates that state.
 :::
 
 :::quiz
-Why keep number inputs as strings in form state?
+Why keep number inputs as text in the form state?
 
-While typing, inputs can be empty or partial; converting on every keystroke turns empty into 0 or NaN. Convert once on submit.
+While typing, the field can be empty or half-written. Converting on every key press turns empty into 0 or NaN. Convert once, on submit.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Controlled input | Input terkontrol (nilainya dari state) |
-| Uncontrolled input | Input tidak terkontrol (nilainya di DOM) |
-| Ref | Referensi ke elemen/nilai tanpa memicu render |
-| Payload | Data yang dikirim ke API |
-| Validation | Validasi |
 
 ## 📚 Keep learning
 
