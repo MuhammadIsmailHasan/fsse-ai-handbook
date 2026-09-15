@@ -1,6 +1,6 @@
 ---
 title: "Deploying the Next.js Frontend"
-summary: Ship the Next.js app to production — Vercel vs self-hosting, environment variables per environment, validating config at startup, standalone output, a secure multi-stage Dockerfile, health checks, CI/CD with previews, and rollbacks.
+summary: Put the Next.js app online — Vercel vs self-hosting, environment variables per environment, checking config at startup, standalone output, a safe multi-stage Dockerfile, health checks, CI/CD with previews, and rollbacks.
 type: lesson
 source: core
 sourceRef: "M3 · W6 · L5"
@@ -13,45 +13,60 @@ tags: [deployment, docker, vercel, ci-cd, environment-variables, nextjs]
 
 ## 🎯 What you'll learn
 
-- Deployment options: **Vercel**, other platforms, **Docker** on a VPS/AWS, static export — and what each supports
+- Deployment options: **Vercel**, other platforms, **Docker** on a server/AWS, static export — and what each supports
 - Environments (development, preview, staging, production) and their variables
 - Build-time vs runtime variables (`NEXT_PUBLIC_` is baked in at build)
-- **Validating configuration** at startup without leaking secrets
+- **Checking configuration** at startup without leaking secrets
 - `output: "standalone"` and a **multi-stage, non-root Dockerfile**
-- **Health checks**, logs, and graceful operation behind a load balancer
+- **Health checks**, logs, and running behind a load balancer
 - CI/CD: checks → build → deploy, **preview deployments**, **rollbacks**
-- Connecting the frontend to the Flask API securely (CORS, cookies, domains)
+- Connecting the frontend to the Flask API safely (CORS, cookies, domains)
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Deploy** | Put a version of your app on servers so real users can use it | Menerapkan ke server |
+| **Environment** | A separate copy of the app: preview, staging (rehearsal), production (real users) | Lingkungan |
+| **Environment variable** | A setting given to the app from outside the code (API URL, secret) | Variabel lingkungan |
+| **Build time / runtime** | While `next build` runs / while the server is running | Saat build / saat berjalan |
+| **Docker image** | A sealed package with your app and everything it needs to run | Paket aplikasi |
+| **Health check** | A small URL that answers "I'm OK" so the platform knows the app works | Cek kesehatan |
+| **Preview deployment** | A temporary copy of the app for one pull request | Deploy pratinjau |
+| **Rollback** | Going back to the previous working version | Kembali ke versi lama |
 
 ## 🧠 The big idea
 
-Deploying is like **opening a restaurant branch**. Your recipes (code) are the same everywhere, but each branch has its own supplier contacts and keys (environment variables). You don't open the doors until the kitchen passes an inspection (health check), and if the new menu makes people sick you switch back to the old one immediately (rollback).
+Deploying is like **opening a restaurant branch**. The recipes (code) are the same everywhere, but each branch has its own supplier contacts and keys (environment variables). You don't open the doors until the kitchen passes inspection (health check). If the new menu makes people sick, you switch back to the old menu right away (rollback).
 
-A **Docker image** is the branch **kit**: the same sealed box runs in staging and production — only the configuration differs.
+A **Docker image** is the **branch kit**: the same sealed box runs in staging and production — only the settings differ.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-`npm run dev` on your laptop isn't a product. Production needs: an optimized build, HTTPS, the right API URL and secrets per environment, automatic restarts, logs, zero-downtime updates, and a way to undo a bad release in minutes.
+`npm run dev` on your laptop isn't a product. Production needs: an optimized build, HTTPS, the right API URL and secrets per environment, automatic restarts, logs, updates without downtime, and a way to undo a bad release in minutes.
 
-## 💥 What happens if we DON'T?
+What goes wrong without it:
 
-- `NEXT_PUBLIC_API_URL` set only at runtime → the browser bundle still contains `undefined` (it was inlined at build).
-- A missing `SESSION_SECRET` in production → every login throws 500s at 2 a.m.; or the error message prints the secret into logs.
-- A 1.5 GB image running as root with dev dependencies and `.env` files copied in.
-- No health check → the load balancer sends traffic to a container that's still starting.
-- Deploys straight from a laptop, no record of what's running, no rollback.
+- `NEXT_PUBLIC_API_URL` set only at runtime → the browser code still contains `undefined` (it was baked in during the build).
+- `SESSION_SECRET` missing in production → every login fails with 500 at 2 a.m.; or the error message prints the secret into the logs.
+- A 1.5 GB image running as root, with dev tools and `.env` files copied inside.
+- No health check → the load balancer sends users to a container that's still starting.
+- Deploying straight from a laptop: no record of what's running, no rollback.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Where to deploy
 
 | Option | Good for | Notes |
 |---|---|---|
-| **Vercel** | fastest start, previews per PR, edge/CDN built in | made by the Next.js team; free hobby tier; costs grow with usage |
+| **Vercel** | fastest start, previews per PR, CDN built in | made by the Next.js team; free hobby tier; costs grow with usage |
 | Netlify, Cloudflare, Render, Railway, Fly.io | similar managed experience | check support for newer Next.js features on each platform |
-| **Docker** (VPS, AWS ECS/App Runner, Google Cloud Run, Kubernetes) | control, same infra as your Flask API, predictable costs | you manage scaling, CDN, TLS (Module 5) |
+| **Docker** (VPS, AWS ECS/App Runner, Google Cloud Run, Kubernetes) | control, same setup as your Flask API, predictable costs | you manage scaling, CDN, TLS (Module 5) |
 | Static export (`output: "export"`) | marketing sites, no server features | no Server Actions, cookies, proxy, dynamic rendering |
 
-Next.js supports self-hosting with `next start` or Docker, including caching features; a CDN in front for static assets is still recommended.
+Vercel is like a **food court**: rent a stall, and electricity, cleaning and security are handled for you. Docker on your own server is like **renting a shophouse (ruko)**: more control and often cheaper at scale, but you handle everything.
+
+Next.js can also be self-hosted with `next start` or Docker, including its caching features; a CDN in front for static files is still recommended.
 
 ### 2. Environments and variables
 
@@ -61,10 +76,12 @@ Next.js supports self-hosting with `next start` or Docker, including caching fea
 | `SESSION_SECRET` | server only | runtime | **yes** |
 | `NEXT_PUBLIC_APP_URL` | server **and** browser | **build time** (inlined) | never |
 
-- Keep secrets in the platform's secret store (Vercel env vars, AWS Secrets Manager/SSM, GitHub Actions secrets) — never in the image or Git.
-- One Docker image promoted from staging to production only works if **public** values don't differ, or are provided at runtime through a server-rendered config instead of `NEXT_PUBLIC_`.
+`NEXT_PUBLIC_` values are **printed into the menu** during the build: the browser gets a copy, so changing the server's settings later doesn't change menus already printed. And anyone can read the menu — so never put secrets there.
 
-### 3. Validate config at startup
+- Keep secrets in the platform's secret store (Vercel env vars, AWS Secrets Manager/SSM, GitHub Actions secrets) — never in the image or Git.
+- Using one Docker image for both staging and production only works if **public** values are the same, or come at runtime from a server-rendered config instead of `NEXT_PUBLIC_`.
+
+### 3. Check config at startup
 
 ```ts
 // lib/env.ts
@@ -88,7 +105,10 @@ export function parseServerEnv(source = process.env) {
 export const env = parseServerEnv();
 ```
 
-Call it from `instrumentation.ts` (runs once when the server starts) or import `env` in server modules so a misconfigured deploy **fails immediately** instead of on the first user request.
+Like a pilot's pre-flight checklist: check everything **before** take-off, not in the air.
+
+- Call it from `instrumentation.ts` (runs once when the server starts) or import `env` in server files, so a wrong setup **fails right away** instead of on the first user's request.
+- The error lists variable **names**, never their values — logs are read by many people.
 
 ### 4. Standalone output
 
@@ -97,7 +117,7 @@ Call it from `instrumentation.ts` (runs once when the server starts) or import `
 const nextConfig: NextConfig = { output: "standalone" };
 ```
 
-`next build` creates `.next/standalone` with `server.js` and only the traced dependencies. Copy `public` and `.next/static` next to it (or serve them from a CDN).
+`next build` creates `.next/standalone` with `server.js` and only the dependencies the app really uses. Copy `public` and `.next/static` next to it (or serve them from a CDN).
 
 ### 5. A production Dockerfile
 
@@ -128,17 +148,19 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 CMD ["node", "server.js"]
 ```
 
+A multi-stage build is like a **kitchen and a dining room**: you cook in the kitchen with all the tools (build stage), then only the finished plate goes to the table (runner stage). Knives and dirty pans stay behind.
+
 | Choice | Why |
 |---|---|
-| Three stages | build tools and full `node_modules` never reach the runtime image |
-| Copy `package*.json` before code | `npm ci` layer is cached until dependencies change |
-| `node:24-alpine` pinned (optionally by digest) | reproducible, small; Node 24 is an LTS line |
+| Three stages | build tools and the full `node_modules` never reach the final image |
+| Copy `package*.json` before the code | the `npm ci` step is reused from cache until dependencies change |
+| `node:24-alpine` pinned (optionally by digest) | repeatable and small; Node 24 is a long-term support version |
 | `USER node` | not root inside the container |
-| `HOSTNAME=0.0.0.0` | listen on all interfaces so the container port is reachable |
-| exec-form `CMD` | Node receives `SIGTERM` directly for graceful shutdown |
+| `HOSTNAME=0.0.0.0` | listen on all network interfaces so the container port can be reached |
+| exec-form `CMD` | Node receives the `SIGTERM` stop signal directly and can shut down cleanly |
 | `.dockerignore` with `node_modules`, `.next`, `.git`, `.env*` | faster builds; secrets never copied |
 
-The same pattern as your Flask image in Module 2 W6 — now both services can run side by side in `docker compose` (Postgres 5491, Flask 5091, Next.js 3091).
+Same pattern as your Flask image in Module 2 W6 — now both services can run side by side in `docker compose` (Postgres 5491, Flask 5091, Next.js 3091).
 
 ### 6. Health checks
 
@@ -149,9 +171,10 @@ export async function GET() {
 }
 ```
 
-- **Liveness** ("is the process alive?") — cheap, no dependencies.
-- **Readiness** ("can it serve traffic?") — may check that the Flask API responds; don't make liveness depend on other services or one API hiccup restarts every frontend container.
-- Never include secrets or detailed internals in health responses.
+- **Liveness** ("is the process alive?") — cheap, checks nothing else. Like checking a person has a pulse.
+- **Readiness** ("can it serve users now?") — may check that the Flask API responds. Like checking a staff member is at their station.
+- Don't make liveness depend on other services, or one API hiccup restarts every frontend container.
+- Never put secrets or internal details in health responses.
 
 ### 7. CI/CD
 
@@ -169,58 +192,43 @@ flowchart LR
     Mon -->|bad| RB[rollback to previous image/deployment]
 ```
 
-- Tag images with the **commit SHA** (`careerpilot-web:3f2c1ab`), not only `latest` — rollback = redeploy the previous tag.
-- Vercel and similar platforms create **preview deployments** for every PR and allow **instant rollback** to a previous deployment.
-- Run database migrations for the API **before** deploying frontend code that needs them, and keep changes backward compatible (expand → migrate → contract).
+- Tag images with the **commit SHA** (`careerpilot-web:3f2c1ab`), not only `latest`. Then rollback = deploy the previous tag again — like a numbered menu version you can reprint.
+- Vercel and similar platforms create **preview deployments** for every PR and offer **instant rollback**.
+- Run the API's database migrations **before** deploying frontend code that needs them, and keep changes backward compatible (expand → migrate → contract), so the old version still works if you roll back.
 
 ### 8. Frontend ↔ API in production
 
 - Same site (e.g. `app.careerpilot.id` and `api.careerpilot.id`) keeps `sameSite: "lax"` cookies simple.
-- With the BFF pattern (W5 L5) the browser only talks to the Next.js origin; the Next.js server calls Flask over a private network → **no CORS** needed for the browser.
-- If the browser calls Flask directly, configure CORS on Flask with an explicit origin allow-list — never `*` with credentials.
-- Security headers (`Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options`) via `headers()` in `next.config.ts` or the proxy/CDN.
+- With the BFF pattern (W5 L5), the browser only talks to the Next.js site; the Next.js server calls Flask over a private network → **no CORS** needed for the browser.
+- If the browser calls Flask directly, set up CORS on Flask with an explicit list of allowed origins — never `*` with credentials.
+- Add security headers (`Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options`) through `headers()` in `next.config.ts` or at the proxy/CDN.
 
-## ⚖️ Trade-offs
-
-| | ✅ | ❌ |
-|---|---|---|
-| Vercel | zero-config, previews, CDN, rollbacks | vendor lock-in for some features, usage-based costs, less infra control |
-| Docker self-hosting | portable, same pipeline as backend, cost control | you operate scaling, TLS, CDN, logs, zero-downtime deploys |
-| Build per environment | `NEXT_PUBLIC_` values can differ | more builds; "tested image ≠ deployed image" |
-| One image promoted | exactly what you tested ships | public config must be runtime-provided |
-
-## ✅ When to use it / 🚫 When NOT to use it
+### When to choose what
 
 - ✅ Vercel (or similar) for portfolios, prototypes and teams without platform engineers.
-- ✅ Docker when the company runs its own infrastructure (AWS, Kubernetes) or you need the frontend next to private APIs.
-- 🚫 Don't use static export for an app with auth, Server Actions or per-user pages.
-- 🚫 Don't deploy from a laptop to production.
-
-## 🏆 Best practices
-
-- [ ] Validate environment variables at startup; error messages name variables, never values.
-- [ ] Secrets only in the platform's secret store; nothing secret in `NEXT_PUBLIC_*`, `ARG` or `ENV` in the Dockerfile.
-- [ ] Multi-stage, non-root, pinned-base images with a `.dockerignore`.
-- [ ] Liveness/readiness endpoints with `Cache-Control: no-store`.
-- [ ] CI gates: lint, typecheck, tests, E2E, build — before any deploy.
-- [ ] Preview deployments per PR; staging smoke tests; immutable image tags; one-command rollback.
-- [ ] Pin GitHub Actions to commit SHAs; least-privilege `permissions`.
-- [ ] Structured logs to stdout; error tracking (e.g. Sentry) with source maps uploaded privately.
-- [ ] Security headers and HTTPS everywhere.
-
-## 🏭 How it's used in industry
-
-- Startups commonly deploy Next.js on Vercel; larger companies often run it in containers on AWS/GCP next to their other services, fronted by a CDN.
-- Preview environments per pull request are standard practice for product review and E2E runs.
-- Blue-green and canary deployments (Module 5) reduce risk further by shifting traffic gradually and rolling back automatically on error spikes.
+- ✅ Docker when the company runs its own infrastructure (AWS, Kubernetes) or the frontend must sit next to private APIs.
+- 🚫 Don't use static export for an app with login, Server Actions or per-user pages.
+- 🚫 Don't deploy to production from a laptop.
 
 ## ⚠️ Common mistakes
 
 - Expecting `NEXT_PUBLIC_*` changes to apply without rebuilding.
-- Forgetting to copy `.next/static` and `public` into the standalone image → unstyled pages, 404 assets.
-- Running `next start` without `HOSTNAME=0.0.0.0` in a container → unreachable.
-- Health checks that call the database every 5 seconds from every container.
-- `COPY . .` without `.dockerignore` → `.env.local` inside the image.
+- Forgetting to copy `.next/static` and `public` into the standalone image → pages without CSS, 404 files.
+- Running `next start` in a container without `HOSTNAME=0.0.0.0` → can't be reached.
+- Health checks that hit the database every 5 seconds from every container.
+- `COPY . .` without `.dockerignore` → `.env.local` ends up inside the image.
+
+## 🏆 Best practices
+
+- [ ] Check environment variables at startup; error messages name variables, never values.
+- [ ] Secrets only in the platform's secret store; nothing secret in `NEXT_PUBLIC_*`, `ARG` or `ENV` in the Dockerfile.
+- [ ] Multi-stage, non-root images with a pinned base and a `.dockerignore`.
+- [ ] Liveness/readiness endpoints with `Cache-Control: no-store`.
+- [ ] CI gates: lint, typecheck, tests, E2E, build — before any deploy.
+- [ ] Preview deployments per PR; staging smoke tests; image tags that never change; one-command rollback.
+- [ ] Pin GitHub Actions to commit SHAs; give workflows only the `permissions` they need.
+- [ ] Structured logs to stdout; error tracking (e.g. Sentry) with source maps uploaded privately.
+- [ ] Security headers and HTTPS everywhere.
 
 ::part[Explain & Design]{n="2"}
 
@@ -235,22 +243,22 @@ Design CareerPilot's production setup for the **Next.js frontend + Flask API + P
 :::quiz
 Show a possible design
 
-**Option A (simplest):** Next.js on Vercel (`app.careerpilot.id`), Flask API as a Docker container on Render/Fly.io/AWS App Runner (`api.careerpilot.id`), managed Postgres (Neon/Supabase/RDS). Next.js server calls the API over HTTPS with a service-to-user token from the session; browser only talks to `app.` (BFF) → no browser CORS.
+**Option A (simplest):** Next.js on Vercel (`app.careerpilot.id`), the Flask API as a Docker container on Render/Fly.io/AWS App Runner (`api.careerpilot.id`), managed Postgres (Neon/Supabase/RDS). The Next.js server calls the API over HTTPS with the user's token from the session; the browser only talks to `app.` (BFF) → no browser CORS.
 
-**Option B (one cloud):** AWS — both containers on ECS Fargate behind an Application Load Balancer (path/host routing), RDS Postgres in private subnets, CloudFront in front for static assets, secrets in SSM Parameter Store/Secrets Manager injected as env vars, images in ECR tagged by git SHA.
+**Option B (one cloud):** AWS — both containers on ECS Fargate behind an Application Load Balancer (routing by path/host), RDS Postgres in private subnets, CloudFront in front for static files, secrets in SSM Parameter Store/Secrets Manager given to the containers as env vars, images in ECR tagged by git SHA.
 
-**CI/CD (GitHub Actions, SHA-pinned):** PR → lint/typecheck/tests → Playwright against `docker compose` (Postgres 5491, API 5091, web 3091) → preview (Vercel preview or ephemeral env). Merge → build + push images → run API migrations (backward compatible) → deploy staging → smoke E2E → manual approval → production.
+**CI/CD (GitHub Actions, SHA-pinned):** PR → lint/typecheck/tests → Playwright against `docker compose` (Postgres 5491, API 5091, web 3091) → preview (Vercel preview or a temporary environment). Merge → build + push images → run API migrations (backward compatible) → deploy staging → smoke E2E → manual approval → production.
 
-**Rollback:** redeploy previous image tag / Vercel "instant rollback"; database changes follow expand-migrate-contract so the previous version still works.
+**Rollback:** deploy the previous image tag again / Vercel "instant rollback"; database changes follow expand-migrate-contract so the previous version still works.
 
-**Monitoring:** `/api/health` for liveness; readiness checks API reachability; structured logs → CloudWatch/Better Stack; Sentry for frontend + API errors; Web Vitals field data (lesson 07); uptime check running the login journey every 5 minutes; alerts on 5xx rate and LCP p75.
+**Monitoring:** `/api/health` for liveness; readiness checks that the API responds; structured logs → CloudWatch/Better Stack; Sentry for frontend + API errors; real-user Web Vitals (lesson 07); an uptime check running the login journey every 5 minutes; alerts on the 5xx rate and LCP p75.
 :::
 
 ### 📝 Self-review checklist
 
 - [ ] Secrets never in images, Git or public variables
 - [ ] Rollback takes minutes and works with the database
-- [ ] Health and monitoring defined
+- [ ] Health checks and monitoring defined
 
 ::ai-review{task="design"}
 
@@ -277,19 +285,8 @@ Copying `.next/static` (and `public`) into the standalone output — the standal
 :::quiz
 Why must the production image not run `npm ci` in the final stage?
 
-It would add the full dependency tree (and npm itself) to the runtime image: bigger, slower to deploy, more vulnerabilities. The standalone output already contains only the needed modules.
+It would add the full dependency tree (and npm itself) to the final image: bigger, slower to deploy, more security holes. The standalone output already contains only the modules it needs.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Deployment | Penerapan aplikasi ke server |
-| Environment variable | Variabel lingkungan (konfigurasi) |
-| Preview deployment | Deploy pratinjau per pull request |
-| Health check | Pemeriksaan kesehatan layanan |
-| Rollback | Kembali ke versi sebelumnya |
-| Multi-stage build | Build Docker bertahap |
 
 ## 📚 Keep learning
 
