@@ -105,11 +105,17 @@ After Module 5: Module 2 (largest, 52), Module 1, tracks, projects, guides; Modu
 
 ## 4. Resuming in a new session
 
-Paste this as the first message:
+Every new Claude Code session in this repo reads `CLAUDE.md` at the root automatically, so it already knows the standing rules (never push, commit trailers, ports, RevoShop is read-only) and that this file is the current task. A short prompt is therefore enough — see the templates in section 6.
 
-> Continue the plain-language rewrite of the FSSE handbook as described in `docs/PLAIN_LANGUAGE_REWRITE.md`. Read that file and `docs/WRITING_STYLE.md` first, then continue at the first unchecked lesson in the Module 5 checklist. One lesson per commit, English + Indonesian, `content:check` must pass. Don't push.
+Three things tell you where the work stopped:
 
-The per-lesson git history is the other record: `git log --oneline | grep "plain language"`.
+```bash
+git log --oneline | grep "plain language" | head -5   # last lessons finished
+git status --short                                    # anything half-written (should be empty)
+npm run -s i18n                                       # Indonesian coverage per module
+```
+
+Plus the checklist in section 3 of this file. If `git status` is **not** empty, the previous session stopped mid-lesson: finish that lesson (write the `.id.md`, run `content:check`, commit) before starting a new one.
 
 ---
 
@@ -134,4 +140,55 @@ Guard rails that make delegation safe:
 - One lesson per commit → a bad lesson is one `git revert` away.
 - Spot-check rule: read the 🔤 Key words table and one analogy per delegated lesson; if either is vague or wrong, redo that lesson on the stronger model.
 
-In Claude Code this is `Agent(subagent_type: "general-purpose", model: "haiku")` with a prompt that points at this file plus the exact lesson path.
+### The delegation loop, step by step
+
+1. Strong model rewrites the **English** lesson and runs `npm run -s i18n -- hash <file>`.
+2. Strong model starts a subagent: `Agent(subagent_type: "general-purpose", model: "haiku")` with template **C2** below (it contains the file path and the hash).
+3. Subagent writes `<lesson>.id.md` and runs `npm run -s content:check`; it does **not** commit.
+4. Strong model reads the new `.id.md` (key words table + one analogy + the RevoShop box), fixes what is off, then commits both files together.
+5. Repeat. Every 5 lessons: `npm run -s typecheck && npm run -s lint && npm run -s test && npm run -s build`.
+
+Two subagents can work on two different lessons at the same time; they must never touch the same file, and only the main session commits.
+
+---
+
+## 6. Prompt templates (copy-paste)
+
+### A — Start a new session (default)
+
+> Baca `CLAUDE.md` dan `docs/PLAIN_LANGUAGE_REWRITE.md`, lalu lanjutkan penulisan ulang gaya bahasa sederhana dari materi pertama yang belum dicentang di checklist Module 5. Satu materi per commit (EN + ID), `content:check` harus lulus, jangan push.
+
+### B — Continue a specific module
+
+> Lanjutkan plain-language rewrite untuk `content/modules/m5/w2/` (semua materi W2), sesuai `docs/PLAIN_LANGUAGE_REWRITE.md`. Update checklist di dokumen itu setiap minggu selesai.
+
+### C1 — Turn on delegation (cheap model does the Indonesian version)
+
+> Pakai pola delegasi di `docs/PLAIN_LANGUAGE_REWRITE.md` bagian 5: kamu tulis versi Inggrisnya, lalu delegasikan file `.id.md` ke subagent Haiku, review hasilnya, baru commit. Lanjutkan dari materi pertama yang belum dicentang.
+
+### C2 — Prompt for the subagent itself (the strong model writes this)
+
+> You are writing the Indonesian version of one lesson in the FSSE handbook.
+>
+> 1. Read `docs/TRANSLATION_GUIDE.md` and `docs/WRITING_STYLE.md`.
+> 2. Read the English lesson `<PATH>.md` and an example pair already done: `content/modules/m5/w1/03-docker-compose-full-stack.md` and `.id.md`.
+> 3. Write `<PATH>.id.md` with frontmatter `title`, `summary` (≤ 240 characters, Indonesian) and `sourceHash: <HASH>`.
+> 4. Rules: translate prose into plain Indonesian; keep every code block **byte-identical** to the English file (comments inside code stay English); keep the same directives in the same order; keep internal links unchanged; mermaid node labels may be translated; use the standard Indonesian headings from the translation guide (`📖 Langkah demi langkah`, `🏆 Praktik terbaik`, `📚 Lanjut belajar`, `⚠️ Kesalahan umum`, `[Pelajari Konsepnya]` / `[Jelaskan & Rancang]` / `[Latihan Kecil]`).
+> 5. Run `npm run -s content:check` and fix any problem it reports.
+> 6. Do **not** commit and do not touch any other file. Report the path you wrote and the check output.
+
+### D — Ask for status only
+
+> Berikan status plain-language rewrite: berapa materi selesai per modul, apa yang sedang dikerjakan, dan sisa tugasnya. Jangan ubah file apa pun.
+
+### E — After Module 5: new material
+
+> Modul yang ada sudah ditulis ulang. Lanjutkan membuat materi baru C5b part 2 (M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) sesuai `docs/IMPLEMENTATION_PLAN.md`, langsung dalam gaya bahasa sederhana dan dua bahasa (EN + ID).
+
+### F — Health check before closing a session
+
+> Jalankan semua pengecekan (`typecheck`, `lint`, `test`, `build`, `content:check`, `i18n`), pastikan `git status` bersih, update checklist di `docs/PLAIN_LANGUAGE_REWRITE.md`, lalu laporkan hasilnya.
+
+### G — Fix one lesson that feels wrong
+
+> Materi `<PATH>` masih terasa sulit/terlalu banyak istilah. Tulis ulang bagian yang bermasalah (EN + ID), pertahankan kode dan directive-nya, jalankan `content:check`, lalu commit.
