@@ -12,32 +12,53 @@ tags: [redis, caching, rate-limiting, queues, idempotency, performance]
 
 ## 🎯 What you'll learn
 
-- What Redis is good at, and its core **data structures**
+- What Redis is good at, and its main **data structures**
 - **Cache-aside** with TTLs, **jitter** and invalidation — and what to cache
-- **Cache stampedes** and lock-based protection
-- **Rate limiting** (fixed and sliding windows) made atomic with **Lua**
+- **Cache stampedes** and how locks protect against them
+- **Rate limiting** (fixed and sliding windows) made safe with **Lua**
 - **Reliable queues** (`BLMOVE`), **Streams** with consumer groups, and when to use a job library or SQS
 - **Idempotency keys** for webhooks and payments
-- Persistence (RDB/AOF), memory limits and **eviction** policies, security basics
+- Saving data to disk (RDB/AOF), memory limits and **eviction**, security basics
 - Using Redis from Flask
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Redis** | A very fast in-memory store for small pieces of data | Penyimpanan data di memori |
+| **Cache** | A saved copy of a slow answer, so next time it's fast | Salinan sementara |
+| **TTL** | How long a key lives before Redis deletes it | Masa berlaku |
+| **Invalidation** | Removing a cached copy because the real data changed | Membuang cache lama |
+| **Cache stampede** | Many requests rebuilding the same expired cache at once | Serbuan saat cache habis |
+| **Rate limiting** | Allowing only N attempts per time window | Pembatasan jumlah permintaan |
+| **Atomic** | Happens as one step — nothing can sneak in between | Satu langkah utuh |
+| **Queue** | A line of jobs waiting for a worker | Antrean tugas |
+| **Idempotent** | Doing it twice has the same effect as doing it once | Diulang pun hasilnya sama |
+| **Eviction** | Redis deleting keys when memory is full | Pengusiran data |
 
 ## 🧠 The big idea
 
-Redis is a **very fast whiteboard in the middle of the office**. Everyone can read it instantly, write short notes on it, and set notes to erase themselves after a while. It's perfect for "today's best-sellers" (cache), "how many times did this person knock in the last minute" (rate limit) and "to-do cards to pick up" (queue). It is **not** the filing cabinet where contracts are stored (your database).
+Redis is a **very fast whiteboard in the middle of the office**. Everyone can read it instantly, write short notes on it, and set notes to erase themselves after a while. It's perfect for:
 
-## ❓ Why does this matter?
+- "today's best-sellers" (cache),
+- "how many times did this person knock in the last minute" (rate limit),
+- "to-do cards waiting to be picked up" (queue).
 
-RevoShop's product list is read far more often than products change. Login is a target for password guessing. Midtrans may deliver the same payment notification twice. Sending an email inside the request makes checkout slow. Redis solves all four with a few well-known patterns — and misuse of those patterns causes some of the worst production incidents (stampedes, lost jobs, double charges).
+It is **not** the filing cabinet where contracts are kept — that's your database.
 
-## 💥 What happens if we DON'T (or do it naively)?
+## ❓ Why it matters
 
-- Every product list request hits PostgreSQL; a marketing push takes the database down.
+RevoShop's product list is read far more often than products change. Login is a target for password guessing. Midtrans may send the same payment notification twice. Sending an email inside the request makes checkout slow. Redis solves all four with a few well-known patterns — and using those patterns wrongly causes some of the worst production incidents.
+
+Done naively:
+
+- Every product list request hits PostgreSQL; a marketing campaign takes the database down.
 - A cache without invalidation shows an old price after the seller changes it.
-- `LPUSH`/`RPOP` queue: a worker crashes mid-job → the order email is lost forever.
-- A rate limiter implemented as `GET` then `SET` lets 30 concurrent attempts through a limit of 5.
+- A `LPUSH`/`RPOP` queue: a worker crashes in the middle of a job → the order email is lost forever.
+- A rate limiter written as `GET` then `SET` lets 30 simultaneous attempts through a limit of 5.
 - A duplicate webhook marks the order paid twice and triggers two shipments.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Data structures you'll use
 
@@ -50,7 +71,7 @@ RevoShop's product list is read far more often than products change. Login is a 
 | Sorted set | `ZADD`, `ZRANGEBYSCORE`, `ZREMRANGEBYSCORE` | leaderboards, sliding-window rate limits, scheduled jobs |
 | Stream | `XADD`, `XREADGROUP`, `XACK`, `XAUTOCLAIM` | durable event/job streams with consumer groups |
 
-Operations on one key are atomic; multi-step logic needs `MULTI` transactions or **Lua scripts** (run atomically on the server).
+One command on one key is atomic. Logic with several steps needs `MULTI` transactions or **Lua scripts**, which Redis runs as one uninterrupted step.
 
 ### 2. Cache-aside
 
@@ -82,18 +103,21 @@ sequenceDiagram
     end
 ```
 
-**Keys** encode everything the result depends on: `products:v2:list:category=3:page=1:limit=20:sort=price_asc`. The `v2` lets you invalidate everything after a schema change by bumping the version.
+Like a shopkeeper who writes today's popular prices on the whiteboard: check the board first; if it's not there, look it up in the ledger (database) and write it on the board for the next customer.
 
-**Invalidation** strategies:
-- **TTL only** — simple; data is stale for up to TTL. Fine for listings (60–300 s).
-- **Delete on write** — after updating product 7, delete `product:7` and bump a `products:list:version` counter that list keys include.
-- Never cache per-user sensitive data under keys another user could hit.
+**Keys** must include everything the answer depends on: `products:v2:list:category=3:page=1:limit=20:sort=price_asc`. The `v2` lets you throw away all old entries after a data format change, just by changing the version.
 
-What to cache: expensive, frequently read, tolerant of short staleness (catalog, categories, computed stats). What not: stock counts used for checkout decisions, payment state, anything that must be exact.
+**Invalidation** options:
+
+- **TTL only** — simple; data can be old for up to the TTL. Fine for listings (60–300 s).
+- **Delete on write** — after updating product 7, delete `product:7` and increase a `products:list:version` counter that list keys include.
+- Never cache one user's private data under a key another user could read.
+
+What to cache: expensive, often-read data that can be a little old (catalog, categories, calculated stats). What not to cache: stock numbers used to accept an order, payment status, anything that must be exact.
 
 ### 3. Stampede protection
 
-When a hot key expires, hundreds of requests miss at once and all hit the database.
+When a popular key expires, hundreds of requests miss at the same moment and all hit the database — like a shop's single sample running out and every customer rushing to the warehouse at once.
 
 ```python
 lock_key, token = f"lock:{key}", secrets.token_hex(16)
@@ -106,7 +130,9 @@ else:
     ...poll for the value briefly, then fall back to loader()
 ```
 
-Release with a **token check** — if your work took longer than the lock TTL, someone else may hold the lock now. Other techniques: jitter (spreads expirations), **stale-while-revalidate**, pre-warming popular keys.
+- Only the request that gets the lock goes to the warehouse; the others wait a moment for the board to be updated.
+- Release the lock only if **your token** is still on it — if your work took longer than the lock's TTL, someone else may own the lock now.
+- Other techniques: jitter (so keys don't all expire together), **stale-while-revalidate** (serve the old value while refreshing), pre-filling popular keys.
 
 ### 4. Rate limiting
 
@@ -120,13 +146,15 @@ if redis.call('ZCARD', KEYS[1]) < tonumber(ARGV[3]) then
 end
 ```
 
+Like an ATM that blocks your card after 3 wrong PINs. The check and the count must happen **together** in Lua — otherwise 30 requests can all read "4 attempts so far" before any of them writes "5".
+
 | Algorithm | ✅ | ❌ |
 |---|---|---|
-| Fixed window (`INCR` + `EXPIRE`) | cheapest | bursts at window edges (2× limit) |
-| Sliding window log (sorted set) | accurate | memory per request |
-| Token bucket | smooth bursts, common in APIs | slightly more logic |
+| Fixed window (`INCR` + `EXPIRE`) | cheapest | bursts at window edges (up to 2× the limit) |
+| Sliding window log (sorted set) | accurate | uses memory per request |
+| Token bucket | allows smooth bursts, common in APIs | slightly more logic |
 
-Limit by what attackers can't cheaply rotate: login attempts per **email** *and* per **IP**. Return `429 Too Many Requests` with a `Retry-After` header. Libraries such as **Flask-Limiter** support Redis storage.
+Limit by things attackers can't change cheaply: login attempts per **email** *and* per **IP**. Return `429 Too Many Requests` with a `Retry-After` header. Libraries such as **Flask-Limiter** can store counts in Redis.
 
 ### 5. Queues
 
@@ -137,13 +165,15 @@ r.lrem("emails:processing", 1, raw)                                             
 # a janitor moves jobs stuck in processing back to ready (visibility timeout)
 ```
 
-Guarantees are **at-least-once**: a job can run twice (worker crashed after doing the work, before ack) → make handlers **idempotent**.
+Think of a kitchen order rail: the cook moves the ticket from "waiting" to "cooking" in one motion, and removes it only when the dish is served. If the cook disappears, the ticket is still on the "cooking" rail — someone puts it back in "waiting".
+
+This gives **at-least-once** delivery: a job can run twice (the worker crashed after doing the work but before removing the ticket) → handlers must be **idempotent**.
 
 | Option | When |
 |---|---|
 | Lists + `BLMOVE` | learning, tiny workloads |
-| **Redis Streams** + consumer groups | built-in acknowledgements, pending lists, claiming stale messages |
-| Job libraries: **RQ**, **Celery**, **Dramatiq** (Python) | retries, scheduling, monitoring out of the box |
+| **Redis Streams** + consumer groups | built-in acknowledgements, pending lists, reclaiming stuck messages |
+| Job libraries: **RQ**, **Celery**, **Dramatiq** (Python) | retries, scheduling, monitoring included |
 | **Amazon SQS** (Week 5) | managed, durable, scales, dead-letter queues |
 
 ### 6. Idempotency keys
@@ -163,20 +193,22 @@ def run_once(r, key, ttl, action):
     return json.loads(stored), False
 ```
 
-For a Midtrans notification: key `idem:midtrans:{order_id}:{transaction_status}`. Keep the **database** as the source of truth too (a unique constraint or conditional `UPDATE … WHERE status = 'pending'`) — Redis is an extra fast guard, not the only one.
+Like a **receipt number** at a pharmacy: if the same prescription number shows up twice, the pharmacist sees it was already given out and doesn't hand out the medicine again.
 
-### 7. Operating Redis
+For a Midtrans notification, the key is `idem:midtrans:{order_id}:{transaction_status}`. Also keep the **database** as the final guard (a unique constraint or a conditional `UPDATE … WHERE status = 'pending'`) — Redis is an extra fast check, not the only one.
+
+### 7. Running Redis
 
 | Topic | Guidance |
 |---|---|
-| Persistence | **RDB** snapshots (compact, may lose recent writes) and/or **AOF** (append-only, more durable). Pure cache: persistence optional. Queues: enable AOF. |
-| Memory | set `maxmemory`; choose an eviction policy: `allkeys-lru`/`allkeys-lfu` for caches, `noeviction` when Redis holds queues or locks you can't lose |
-| Security | never expose port 6379 publicly; require auth/ACLs; TLS on managed services |
-| Separate instances | cache vs queue often deserve different eviction/persistence settings |
+| Saving to disk | **RDB** snapshots (compact, may lose the latest writes) and/or **AOF** (a log of every write, more durable). Pure cache: optional. Queues: turn on AOF. |
+| Memory | set `maxmemory` and an eviction policy: `allkeys-lru`/`allkeys-lfu` for caches, `noeviction` when Redis holds queues or locks you can't lose |
+| Security | never open port 6379 to the internet; require auth/ACLs; TLS on managed services |
+| Separate instances | cache and queue often need different eviction/persistence settings |
 | Managed options | Amazon ElastiCache (Redis OSS / Valkey), Redis Cloud, Upstash |
-| Observability | hit ratio (`INFO stats` keyspace_hits/misses), memory, evictions, slow log |
+| Monitoring | hit ratio (`INFO stats` keyspace_hits/misses), memory, evictions, slow log |
 
-Licensing note: Redis moved to source-available licenses in 2024 and added AGPL as an option in Redis 8; the Linux Foundation fork **Valkey** is protocol-compatible and offered by major clouds. For application code, the client APIs are the same.
+License note: Redis moved to source-available licenses in 2024 and added AGPL as an option in Redis 8. The Linux Foundation fork **Valkey** speaks the same protocol and is offered by major clouds. Your application code uses the same client APIs.
 
 ### 8. Redis in Flask
 
@@ -190,49 +222,40 @@ def init_redis(app):
     redis_client = redis.Redis.from_url(app.config["REDIS_URL"], decode_responses=True, socket_timeout=1, health_check_interval=30)
 ```
 
-Set short socket timeouts and decide what happens when Redis is down: a cache should **fail open** (go to the database); a rate limiter usually fails open with an alert; an idempotency guard should fall back to the database constraint.
+Use short timeouts, and decide what happens when Redis is down:
 
-## ⚖️ Trade-offs
+- a cache should **fail open** (go to the database),
+- a rate limiter usually fails open and sends an alert,
+- an idempotency guard falls back to the database constraint.
 
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Caching | lower latency and DB load | staleness, invalidation bugs, another dependency |
-| Short TTL | fresher data | lower hit ratio |
-| Redis queue | fast, already in the stack | durability and retries are your job |
-| SQS / Celery | mature features | more infrastructure or concepts |
+### When to use it
 
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ Read-heavy data tolerant of seconds of staleness; counters; rate limits; short-lived locks; sessions; small queues.
+- ✅ Often-read data that can be a few seconds old; counters; rate limits; short-lived locks; sessions; small queues.
 - 🚫 As the only copy of important data (orders, payments).
 - 🚫 Caching before measuring — first fix N+1 queries and add indexes.
-- 🚫 Distributed locks for correctness-critical money movement — use database transactions and constraints.
+- 🚫 Locks for money movement where correctness is critical — use database transactions and constraints.
 
-## 🏆 Best practices
-
-- [ ] Measure first (query counts, p95 latency); cache the proven hot paths.
-- [ ] Versioned, descriptive keys; TTL on every cache key; jitter for hot keys.
-- [ ] Invalidate on writes where staleness hurts; never cache per-user data under shared keys.
-- [ ] Protect hot keys from stampedes.
-- [ ] Atomic multi-step logic with Lua or transactions.
-- [ ] At-least-once queues with idempotent handlers, retries and a dead-letter strategy.
-- [ ] Idempotency keys for webhooks and payment actions, backed by DB constraints.
-- [ ] `maxmemory` + eviction policy matched to the use; no public exposure; auth/TLS in production.
-- [ ] Short client timeouts and a defined failure mode when Redis is unavailable.
-- [ ] Track hit ratio, evictions and memory.
-
-## 🏭 How it's used in industry
-
-- E-commerce and marketplaces cache catalog pages and search results heavily, often at several layers (CDN, Redis, database).
-- API providers publish rate limits (`429` + `Retry-After`) implemented with Redis or API gateways.
-- Payment providers (e.g. Stripe's idempotency keys) popularized idempotent APIs; webhook consumers are expected to deduplicate.
+Every cache adds a cost: old data, invalidation bugs, and one more thing that can break. A short TTL gives fresher data but fewer cache hits.
 
 ## ⚠️ Common mistakes
 
-- Keys without TTL filling memory; `KEYS *` in production (blocks Redis — use `SCAN`).
-- JSON-serializing `Decimal` prices as floats in the cache.
+- Keys without a TTL filling memory; `KEYS *` in production (it blocks Redis — use `SCAN`).
+- Saving `Decimal` prices as floats in cached JSON.
 - Deleting another request's lock.
-- Using Redis on the same small VM without memory limits and letting it evict queue data.
+- Running Redis on the same small VM without memory limits and letting it evict queue data.
+
+## 🏆 Best practices
+
+- [ ] Measure first (query counts, p95 latency); cache the paths proven to be hot.
+- [ ] Versioned, descriptive keys; a TTL on every cache key; jitter for hot keys.
+- [ ] Invalidate on writes where old data hurts; never cache per-user data under shared keys.
+- [ ] Protect hot keys from stampedes.
+- [ ] Multi-step logic atomically with Lua or transactions.
+- [ ] At-least-once queues with idempotent handlers, retries and a plan for failed jobs.
+- [ ] Idempotency keys for webhooks and payment actions, backed by database constraints.
+- [ ] `maxmemory` + an eviction policy that fits the use; never public; auth/TLS in production.
+- [ ] Short client timeouts and a clear plan for when Redis is unavailable.
+- [ ] Track hit ratio, evictions and memory.
 
 :::revoshop
 1. **Measure before caching.** Start the dev stack (`config/development.py` has `SQLALCHEMY_ECHO = True`) and call `GET /api/v1/products/?page=1&limit=20`. Count the SQL statements in `docker compose logs web`. Is there an N+1 on product images or categories? Fix queries first; cache second.
@@ -246,11 +269,11 @@ Set short socket timeouts and decide what happens when Redis is down: a cache sh
 
 ## 🗣️ Explain it
 
-Explain the "office whiteboard" analogy, then explain to a teammate why a cached product price must be invalidated when a seller edits it, but a cached category list can simply expire.
+Explain the "office whiteboard" analogy, then explain to a teammate why a cached product price must be removed when a seller edits it, but a cached category list can simply expire.
 
 ## 📐 Design it
 
-Design Redis usage for RevoShop: product list/detail caching (keys, TTLs, invalidation), login rate limiting (limits, identities, response), Midtrans webhook idempotency (key and DB fallback), and background order emails (queue choice, retries). Include what happens when Redis is down for each.
+Design Redis usage for RevoShop: product list/detail caching (keys, TTLs, invalidation), login rate limiting (limits, identities, response), Midtrans webhook idempotency (key and database fallback), and background order emails (queue choice, retries). Include what happens when Redis is down for each.
 
 :::quiz
 Show a possible design
@@ -261,17 +284,17 @@ Show a possible design
 | Product list | `products:v1:list:{hash(query params)}:gen={list_generation}`; `INCR products:list:generation` on any product write; TTL 60 s; lock on the first page key | fail open → DB (watch DB load) |
 | Categories | `categories:v1:all`, TTL 1 h, delete on category write | fail open |
 | Login rate limit | sliding window: 5 attempts / 15 min per email **and** 20 / 15 min per IP → `429` + `Retry-After`, generic error text | fail open + alert (or a small in-process limiter) |
-| Midtrans webhook | `run_once("idem:midtrans:{order_id}:{transaction_status}", 24 h)` + DB: `UPDATE payments SET status='settlement' WHERE id=:id AND status <> 'settlement'` and a unique constraint on the provider transaction id | DB guard still prevents double processing |
-| Order emails | Redis queue with RQ (or Streams): retries with backoff, max 5, failed jobs kept for inspection; job handler checks `order.confirmation_sent_at` before sending | enqueue fails → store an `outbox` row in PostgreSQL in the same transaction; a worker drains it (outbox pattern) |
+| Midtrans webhook | `run_once("idem:midtrans:{order_id}:{transaction_status}", 24 h)` + DB: `UPDATE payments SET status='settlement' WHERE id=:id AND status <> 'settlement'` and a unique constraint on the provider transaction id | the DB guard still prevents double processing |
+| Order emails | Redis queue with RQ (or Streams): retries with backoff, max 5, failed jobs kept for inspection; the handler checks `order.confirmation_sent_at` before sending | enqueue fails → store an `outbox` row in PostgreSQL in the same transaction; a worker sends them later (outbox pattern) |
 
-Instances: one Redis for cache + rate limits (`allkeys-lru`), and queues either on a separate Redis with AOF + `noeviction` or SQS later.
+Instances: one Redis for cache + rate limits (`allkeys-lru`), and queues either on a separate Redis with AOF + `noeviction` or on SQS later.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] Every cache has TTL and invalidation reasoning
+- [ ] Every cache has a TTL and a reason for its invalidation
 - [ ] Money-related correctness doesn't depend on Redis alone
-- [ ] Failure mode defined per feature
+- [ ] A failure plan for each feature
 
 ::ai-review{task="design"}
 
@@ -283,34 +306,23 @@ Implement cache-aside with jitter, a stampede lock with safe release, an atomic 
 
 :::hints
 - `r.register_script(lua)` returns a callable; pass `keys=[...]` and `args=[...]`.
-- `BLMOVE` with `src="RIGHT", dest="LEFT"` gives FIFO when you enqueue with `LPUSH`.
-- For `requeue_stale`, push back with `RPUSH` so the job is reserved next.
+- `BLMOVE` with `src="RIGHT", dest="LEFT"` gives first-in-first-out when you add jobs with `LPUSH`.
+- For `requeue_stale`, push back with `RPUSH` so the job is picked up next.
 :::
 
 ## ✅ Quick check
 
 :::quiz
-Why must the lock release compare a token instead of just `DEL lock:key`?
+Why must the lock release compare a token instead of just running `DEL lock:key`?
 
-If your work outlived the lock TTL, another client may have acquired the lock; a blind `DEL` would remove *their* lock and let a third client in.
+If your work took longer than the lock's TTL, another client may have taken the lock; a blind `DEL` would remove *their* lock and let a third client in.
 :::
 
 :::quiz
 Your queue guarantees at-least-once delivery. What must job handlers be, and why?
 
-Idempotent — a job can run twice (crash after doing the work but before acknowledging), so running it again must not duplicate effects like emails or charges.
+Idempotent — a job can run twice (a crash after doing the work but before acknowledging), so running it again must not repeat effects like emails or charges.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Cache | Tembolok / penyimpanan sementara |
-| TTL (time to live) | Masa berlaku data |
-| Cache stampede | Serbuan permintaan saat cache kedaluwarsa |
-| Rate limiting | Pembatasan laju permintaan |
-| Idempotency | Idempotensi — diulang pun hasilnya sama |
-| Eviction | Pengusiran data saat memori penuh |
 
 ## 📚 Keep learning
 
