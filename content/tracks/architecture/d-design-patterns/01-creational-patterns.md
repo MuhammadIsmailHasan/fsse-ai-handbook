@@ -18,42 +18,37 @@ tags: [architecture, design-patterns, factory, builder, singleton]
 - **Singleton**: why global instances hurt testing, and Pythonic alternatives
 - How Python features (first-class classes, decorators, modules, `functools.cache`) simplify these patterns
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Design pattern** | A named, proven solution to a problem that keeps coming back | Pola solusi yang sudah terbukti |
+| **Factory** | One place that decides which class to create | Pusat pembuat objek |
+| **Registry** | A table mapping a name to the class that handles it | Daftar nama ke kelas |
+| **Builder** | Building a complex object step by step, validated at the end | Pembangun bertahap |
+| **Singleton** | Exactly one shared instance for the whole program | Satu instance bersama |
+| **Global state** | Shared data anything can reach — hard to test | Data global |
+| **`functools.cache`** | Python's simple way to reuse one created object | Cara menyimpan hasil pembuatan |
+
 ## 🧠 The big idea
 
 Patterns are **names for solutions you'll keep reinventing**. Saying "use a factory with a registry" in a code review communicates a whole design in five words — like a doctor saying "fracture" instead of describing the X-ray.
 
 Creational patterns answer one question: **who decides which object gets created, and how?**
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Creating objects looks trivial (`CsvExporter()`), until:
+Creating an object looks trivial — `CsvExporter()` — until:
+
 - the class to create depends on **configuration or user input** (`format=xlsx`),
-- an object needs **ten optional settings** and must always be **valid**,
-- everyone needs **the same shared thing** (settings, a database engine, an HTTP client).
+- an object has **ten optional settings** and must always end up **valid**,
+- everybody needs **the same shared thing** (settings, a database engine, an HTTP client).
 
-Without a plan, construction logic spreads across the codebase as `if/elif` chains, half-built objects and hidden globals.
+Then the creation code spreads: `if format == "csv" … elif …` in six files, half-built objects, and a shared instance nobody can replace in tests.
 
-## 💥 What happens if we DON'T?
+Patterns are also **names for solutions you'll keep reinventing**: saying "use a factory with a registry" in a review communicates a whole design in five words, like a doctor saying "fracture" instead of describing the X-ray.
 
-```python
-# routes.py, reports.py, cli.py, worker.py — the same chain copy-pasted
-if fmt == "csv":
-    exporter = CsvExporter(separator=",")
-elif fmt == "json":
-    exporter = JsonExporter()
-```
-
-```python
-posting = JobPosting("Dev", "Kopi", None, False, 20_000_000, 9_000_000, ["python", "Python"])
-# positional soup, invalid salary range, duplicate skills — and nothing stopped it
-```
-
-```python
-settings = Settings.from_env()     # at import time, in settings.py
-# tests can't change it; importing the module requires production env vars
-```
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Factory: centralize "which class?"
 
@@ -69,6 +64,8 @@ def create_exporter(name: str, **options):
 One place to change; callers depend on "an exporter", not on concrete classes (SOLID's D).
 
 ### 2. Registry: a factory that's open for extension
+
+A registry is the phone directory version of a factory: adding a new exporter means adding one line to the directory, not editing an `if` chain everyone else is also editing.
 
 In Python, classes are objects — store them in a dict and register with a decorator:
 
@@ -121,6 +118,8 @@ posting = (
 
 ### 4. Singleton: one instance — and the trap
 
+The trap is that a single global instance is shared by your tests too, so one test's changes leak into the next. In Python you rarely need the pattern: a module-level object or a cached factory function does the job and stays replaceable.
+
 The classic Singleton guarantees a class has one instance with global access:
 
 ```python
@@ -152,7 +151,9 @@ def get_settings() -> Settings:
     return load_settings(os.environ)     # load_settings(env) stays pure and testable
 ```
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Pattern | ✅ | ❌ |
 |---|---|---|
@@ -162,30 +163,12 @@ def get_settings() -> Settings:
 | Singleton class | guaranteed single instance | global state, testing pain, concurrency surprises |
 | Cached getter / DI | explicit, resettable | someone must wire it (composition root) |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Factory/registry: choosing implementations from config or input (exporters, payment gateways, LLM providers).
 - ✅ Builder: many optional parts + invariants; test data builders.
 - ✅ Shared instance: expensive clients (DB engine, HTTP session) — created once in the app factory and injected.
 - 🚫 A factory for a class with one implementation and no configuration.
 - 🚫 A builder for a 3-field object — use a dataclass.
 - 🚫 Singletons for things tests need to vary (settings, clocks, repositories).
-
-## 🏆 Best practices
-
-- [ ] Keep creation logic in **one** place (a factory function, registry or composition root).
-- [ ] Make "unknown option" errors helpful: list the valid choices.
-- [ ] Builders return **immutable** objects and validate in `build()`.
-- [ ] Prefer keyword arguments + dataclass validation before inventing a builder.
-- [ ] No side effects at import time: no connecting, no reading env into globals.
-- [ ] Replace singletons with **cached factory functions** or **dependency injection**; make caches resettable for tests.
-- [ ] Name patterns in code reviews only when it adds clarity — never force a pattern.
-
-## 🏭 How it's used in industry
-
-- Flask's **application factory** (`create_app(config)`) replaced global app objects for testability — the Singleton lesson learned by a whole ecosystem.
-- SQLAlchemy's `create_engine()` factory and query builders; `requests.Session` as a shared client created once.
-- AI SDKs: `client = Anthropic()` created once and injected; provider registries in LLM gateways (LiteLLM) map `"provider/model"` names to client classes.
 
 ## ⚠️ Common mistakes
 
@@ -197,6 +180,16 @@ def get_settings() -> Settings:
 :::revoshop
 (1) RevoShop's `config/__init__.py` has `config_by_name = {"development": DevelopmentConfig, "production": ProductionConfig}` — that's a **registry**. What happens with an unknown `FLASK_ENV` value, and how would you make the error helpful? (2) `create_app()` is an application **factory** ✅ — but `config/base.py` calls `load_dotenv()` and reads env vars **at import time**. Why can that surprise tests? (3) Find the seeders: would a `ProductBuilder` make test data clearer than long constructor calls?
 :::
+
+## 🏆 Best practices
+
+- [ ] Keep creation logic in **one** place (a factory function, registry or composition root).
+- [ ] Make "unknown option" errors helpful: list the valid choices.
+- [ ] Builders return **immutable** objects and validate in `build()`.
+- [ ] Prefer keyword arguments + dataclass validation before inventing a builder.
+- [ ] No side effects at import time: no connecting, no reading env into globals.
+- [ ] Replace singletons with **cached factory functions** or **dependency injection**; make caches resettable for tests.
+- [ ] Name patterns in code reviews only when it adds clarity — never force a pattern.
 
 ::part[Explain & Design]{n="2"}
 
@@ -274,16 +267,6 @@ Name two reasons a classic Singleton makes testing harder.
 It's hidden global state shared between tests, and it's hard to replace or reset with test-specific values (often created at import time).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Design pattern | Pola desain |
-| Factory | Pabrik — tempat pembuatan objek |
-| Registry | Daftar pendaftaran (nama → kelas) |
-| Builder | Pembangun — merakit objek bertahap |
-| Singleton | Objek tunggal |
-| Composition root | Titik perakitan dependensi aplikasi |
 
 ## 📚 Keep learning
 

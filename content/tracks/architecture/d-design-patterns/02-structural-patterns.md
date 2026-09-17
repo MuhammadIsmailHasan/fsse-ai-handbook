@@ -19,6 +19,18 @@ tags: [architecture, design-patterns, adapter, decorator, facade, proxy]
 - The difference between the design pattern "decorator" and Python's `@decorator` syntax
 - How these patterns stack
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Adapter** | A wrapper that makes one interface look like another | Penyesuai antarmuka |
+| **Decorator (pattern)** | A wrapper that adds behaviour but keeps the same interface | Pembungkus penambah perilaku |
+| **Facade** | One simple entry point over a complicated set of parts | Pintu depan yang sederhana |
+| **Proxy** | A stand-in that controls access to the real thing | Perantara pengendali akses |
+| **Interface** | The set of methods callers rely on | Kumpulan metode yang dipakai |
+| **Wrapping** | Putting one object around another | Membungkus objek |
+| **Lazy loading** | Creating or fetching something only when it's first needed | Dibuat saat dibutuhkan |
+
 ## 🧠 The big idea
 
 All four are **wrappers**, distinguished by intent:
@@ -30,27 +42,13 @@ All four are **wrappers**, distinguished by intent:
 | **Facade** | a travel agent: one call books flight, hotel and visa |
 | **Proxy** | a hotel receptionist: you reach guests only through them, and only if allowed |
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Real systems glue together code you **don't control** (SDKs, legacy modules, partner APIs) and need **cross-cutting** behavior (retries, caching, metrics, permissions) in many places. Editing every class for each concern violates single responsibility; copying the logic everywhere violates DRY. Wrapping solves both.
+You rarely control every piece of code you use. Payment gateways, email providers, AI clients and legacy modules all have their own shapes — and you need caching, retries, permission checks and logging around them without rewriting either side.
 
-## 💥 What happens if we DON'T?
+All four patterns are wrappers, and the difference is only **why** you wrap: to fit (adapter), to add (decorator), to simplify (facade), or to control (proxy). Naming the intent is what stops a codebase full of `XHelper2` classes.
 
-```python
-def import_jobs():
-    for item in karir_client.get_listings():                # third-party format leaks everywhere
-        salary = int(item["gaji"].replace("Rp ", "").replace(".", "")) if item["gaji"].startswith("Rp") else None
-        for attempt in range(3):                              # retry logic copy-pasted
-            try: ...
-            except ConnectionError: ...
-        if not user.is_premium:                               # permission check mixed in
-            salary = None
-        cache[...] = ...                                      # caching mixed in
-```
-
-Every new job board means copying all of it. Changing the retry policy means editing every importer.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Adapter
 
@@ -71,6 +69,8 @@ class KarirFeedAdapter:
 The rest of the app only knows `JobSource.fetch() -> list[Job]`. The foreign format lives in **one** class — the "anti-corruption layer" in domain-driven design terms.
 
 ### 2. Decorator (the design pattern)
+
+Note the difference from Python's `@decorator` syntax: that wraps a **function**, this wraps an **object** that keeps the same interface. Same idea, different level.
 
 Same interface in, same interface out, extra behavior around the call:
 
@@ -119,6 +119,8 @@ A route or scheduled job calls `boards.refresh()` and doesn't know there are ada
 
 ### 4. Proxy
 
+A proxy looks identical to the real thing from outside, which is exactly what makes it useful — callers don't change when you add a permission check or delay the loading.
+
 Same interface as the real object, but **controls access** to it:
 
 | Proxy kind | Example |
@@ -138,7 +140,9 @@ class SalaryPrivacyProxy:
 
 Decorator vs proxy: structure is identical; **decorator adds behavior**, **proxy controls access** to the subject.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Pattern | ✅ | ❌ |
 |---|---|---|
@@ -148,31 +152,12 @@ Decorator vs proxy: structure is identical; **decorator adds behavior**, **proxy
 | Proxy | transparent access control/laziness | hidden costs (a "simple" call may hit the network) |
 | Inheritance instead | fewer objects | combinations explode (`RetryingCachedKarirSource`) |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Adapter: every third-party API, SDK or legacy module your core logic depends on.
 - ✅ Decorator: cross-cutting concerns (retry, cache, metrics, rate limit, logging) around an interface.
 - ✅ Facade: a use case that coordinates several subsystems; a clean public API for a package.
 - ✅ Proxy: permissions, lazy loading, remote calls.
 - 🚫 Wrapping just to rename methods you fully own — refactor the class instead.
 - 🚫 Stacking wrappers so deep nobody knows what a call does — document the assembly in one place.
-
-## 🏆 Best practices
-
-- [ ] Put **all** knowledge of a vendor format in its adapter; convert to your own domain types immediately.
-- [ ] Every wrapper implements the **same protocol** as what it wraps, so wrappers stack.
-- [ ] Assemble wrapper stacks in **one place** (factory / composition root), not scattered across call sites.
-- [ ] Inject clocks and sleep functions into caching/retry wrappers so they're testable.
-- [ ] Keep facades thin: coordinate, don't implement every rule inside.
-- [ ] Make hidden costs visible in names or docs (`RemoteJobSource`, `LazyCv`).
-- [ ] Return copies from caches so callers can't mutate cached data.
-
-## 🏭 How it's used in industry
-
-- Payment and shipping integrations (Midtrans, Xendit, JNE APIs) behind adapters so providers can be switched.
-- HTTP client middleware (retries with `urllib3.Retry`, auth, tracing) is decorator stacking.
-- Boto3 and other SDK clients are remote proxies; ORMs use lazy-loading proxies for relationships (hello, N+1 from Week 4).
-- LLM gateways wrap provider clients with caching, retries, fallbacks and cost tracking — decorators around an `LLMClient` interface (Module 7).
 
 ## ⚠️ Common mistakes
 
@@ -184,6 +169,16 @@ Decorator vs proxy: structure is identical; **decorator adds behavior**, **proxy
 :::revoshop
 Open `app/integrations/midtrans.py`: (1) Is it an **adapter** — do Midtrans-specific field names stay inside it, or do services also handle raw Midtrans payloads (look at `PaymentService.handle_notification`)? (2) Where would a `RetryingPaymentGateway` decorator fit, and which Midtrans calls are safe to retry? (3) Is `PaymentService` acting as a **facade** for checkout? List what it coordinates.
 :::
+
+## 🏆 Best practices
+
+- [ ] Put **all** knowledge of a vendor format in its adapter; convert to your own domain types immediately.
+- [ ] Every wrapper implements the **same protocol** as what it wraps, so wrappers stack.
+- [ ] Assemble wrapper stacks in **one place** (factory / composition root), not scattered across call sites.
+- [ ] Inject clocks and sleep functions into caching/retry wrappers so they're testable.
+- [ ] Keep facades thin: coordinate, don't implement every rule inside.
+- [ ] Make hidden costs visible in names or docs (`RemoteJobSource`, `LazyCv`).
+- [ ] Return copies from caches so callers can't mutate cached data.
 
 ::part[Explain & Design]{n="2"}
 
@@ -257,16 +252,6 @@ Why should third-party formats stop at the adapter?
 So the rest of the system depends only on your own types; changing or replacing the vendor affects one class instead of every service and template.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Adapter | Adaptor — penyesuai antarmuka |
-| Decorator (pattern) | Dekorator — pembungkus penambah perilaku |
-| Facade | Fasad — pintu masuk sederhana |
-| Proxy | Perantara / wakil |
-| Cross-cutting concern | Kepentingan lintas bagian (log, cache, retry) |
-| Anti-corruption layer | Lapisan anti-korupsi (pelindung dari format luar) |
 
 ## 📚 Keep learning
 

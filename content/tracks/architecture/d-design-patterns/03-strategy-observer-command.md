@@ -18,6 +18,19 @@ tags: [architecture, design-patterns, strategy, observer, command, events]
 - Error isolation in event handlers
 - How these map to things you'll use: sorting keys, signals, domain events, job queues, React state updates
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Strategy** | Swappable algorithms behind one agreed interface | Algoritma yang bisa ditukar |
+| **Observer (pub/sub)** | One publisher, many subscribers who react to an event | Penerbit dan pelanggan |
+| **Event** | A message saying "this happened" | Pesan kejadian |
+| **Handler / subscriber** | Code that reacts to an event | Penanggap kejadian |
+| **Command** | An action turned into an object you can store and replay | Aksi sebagai objek |
+| **Undo/redo** | Reversing or repeating a stored command | Batal / ulangi |
+| **Error isolation** | One failing handler not breaking the others | Kegagalan tidak menular |
+| **Domain event** | A business fact like "OrderPaid" | Kejadian bisnis |
+
 ## 🧠 The big idea
 
 | Pattern | Everyday analogy |
@@ -26,31 +39,21 @@ tags: [architecture, design-patterns, strategy, observer, command, events]
 | **Observer** | a WhatsApp group: the sender posts once; everyone subscribed gets it; the sender doesn't call each person |
 | **Command** | a restaurant order slip: the order is written down, queued for the kitchen, can be cancelled, and leaves a record |
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Behavioral patterns manage **who does what and who knows whom**:
-- Strategy removes `if mode == ...` chains around algorithms.
-- Observer removes a central function that must call every side effect (email, analytics, audit, cache invalidation).
-- Command separates *deciding* to do something from *doing* it — so it can happen later, elsewhere, again, or be reversed.
+These three patterns manage **who does what, and who knows whom**:
 
-## 💥 What happens if we DON'T?
+- Strategy removes `if mode == …` chains from around algorithms.
+- Observer lets a publisher announce something without knowing who cares — the WhatsApp group, not fifty phone calls.
+- Command turns an action into a thing you can queue, retry, log or undo.
 
-```python
-def change_status(application, new_status, sort_mode):
-    application.status = new_status
-    send_email(application)              # status change knows about email…
-    track_analytics(application)         # …and analytics…
-    update_search_index(application)     # …and search…
-    if new_status == "offer":
-        notify_mentor(application)       # …and every future feature
-    # and no way to undo the change
-```
+Without them, one function ends up knowing everything: how to sort, who to email, how to write the audit log — and every new requirement edits that same function.
 
-Every new reaction edits `change_status`. A failing analytics call breaks status changes. Tests need all integrations.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Strategy
+
+In Python a plain function is often the whole pattern: pass `key=by_salary` instead of building a `SortStrategy` class hierarchy.
 
 ```python
 class ScoringStrategy(Protocol):
@@ -74,6 +77,8 @@ The user picks "best match" or "highest salary" at runtime; `rank_jobs` never ch
 **Pythonic shortcut**: a single-method strategy can just be a **function** — `sorted(jobs, key=score_fn)` is the Strategy pattern built into Python. Use classes when strategies need configuration (like `my_skills`) or several methods.
 
 ### 2. Observer (publish/subscribe)
+
+Wrap each handler so one failure doesn't stop the rest. In a group chat, one person's phone being off shouldn't stop the message reaching everyone else.
 
 ```python
 class EventBus:
@@ -138,7 +143,9 @@ What commands enable:
 
 The CQRS style (Command Query Responsibility Segregation) and job queues like Celery (`send_reminder.delay(7)`) are command objects at scale.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Pattern | ✅ | ❌ |
 |---|---|---|
@@ -148,29 +155,11 @@ The CQRS style (Command Query Responsibility Segregation) and job queues like Ce
 | Direct calls | explicit and simple | every new reaction edits the caller |
 | Command objects | undo, queue, log, retry | more classes; undo must be designed per command |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Strategy: user-selectable ranking/pricing/scoring, provider selection, A/B testing algorithms.
 - ✅ Observer: side effects that multiply over time (notifications, analytics, cache invalidation), UI state changes.
 - ✅ Command: undoable UI actions, background jobs, audit trails, batch operations.
 - 🚫 Events for a single, essential step that must succeed (e.g. charging the customer) — call it directly and handle errors.
 - 🚫 An event bus in a 200-line app where two direct calls are clearer.
-
-## 🏆 Best practices
-
-- [ ] Define strategy interfaces by **what the caller needs** (`score(job)`), keep them to one or two methods.
-- [ ] Use plain functions as strategies when no configuration is needed.
-- [ ] Name events in the **past tense** (`application_status_changed`) with a small, serializable payload (ids, not ORM objects).
-- [ ] Isolate subscriber failures and log them with context; publish after commit.
-- [ ] Move slow side effects out of the request: event → queue → worker.
-- [ ] Commands store everything needed to execute **and** undo; make queued commands idempotent.
-- [ ] Document the event catalog (event name → payload → subscribers) so implicit flows stay discoverable.
-
-## 🏭 How it's used in industry
-
-- **Strategy**: pricing engines, recommendation rankers, `sorted(key=...)`, authentication backends.
-- **Observer**: Django signals, SQLAlchemy events, DOM `addEventListener`, React state subscriptions, Kafka/SNS topics across services.
-- **Command**: Celery/RQ tasks, Redux actions (Module 4), database migrations (each with `upgrade`/`downgrade` — Week 4!), editor undo stacks.
 
 ## ⚠️ Common mistakes
 
@@ -182,6 +171,16 @@ The CQRS style (Command Query Responsibility Segregation) and job queues like Ce
 :::revoshop
 (1) Look at `OrderService.update_status` and `PaymentService._apply_order_status`: which side effects happen directly when an order is paid (stock, payment rows, logs)? Which of them could be subscribers to an `order_paid` event, and which must stay in the same transaction? (2) Product listing supports `sort_by` and `order` — is the sort logic a strategy, an `if` chain, or SQL `ORDER BY` built dynamically? (3) Alembic migrations are Commands with `upgrade`/`downgrade`: open one in `migrations/versions/` and check whether its downgrade truly undoes the upgrade.
 :::
+
+## 🏆 Best practices
+
+- [ ] Define strategy interfaces by **what the caller needs** (`score(job)`), keep them to one or two methods.
+- [ ] Use plain functions as strategies when no configuration is needed.
+- [ ] Name events in the **past tense** (`application_status_changed`) with a small, serializable payload (ids, not ORM objects).
+- [ ] Isolate subscriber failures and log them with context; publish after commit.
+- [ ] Move slow side effects out of the request: event → queue → worker.
+- [ ] Commands store everything needed to execute **and** undo; make queued commands idempotent.
+- [ ] Document the event catalog (event name → payload → subscribers) so implicit flows stay discoverable.
 
 ::part[Explain & Design]{n="2"}
 
@@ -248,16 +247,6 @@ Why should domain events usually be published after the transaction commits?
 If published before, subscribers might act (send emails, update caches) on changes that are later rolled back.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Strategy | Strategi — algoritma yang bisa ditukar |
-| Observer / publish-subscribe | Pengamat / terbit-langganan |
-| Event handler / subscriber | Penangan peristiwa / pelanggan |
-| Command | Perintah sebagai objek |
-| Undo / redo | Batalkan / ulangi |
-| Idempotent | Idempoten — aman dijalankan berulang |
 
 ## 📚 Keep learning
 

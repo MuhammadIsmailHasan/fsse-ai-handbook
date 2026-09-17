@@ -18,34 +18,31 @@ tags: [architecture, oop, composition, inheritance, mixins]
 - When inheritance is the right tool (and how to use it safely)
 - Mixins and multiple inheritance — with care
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Inheritance ("is-a")** | A class based on another class | Kelas mewarisi kelas lain |
+| **Composition ("has-a")** | A class built from other objects it holds | Kelas tersusun dari objek lain |
+| **Delegation** | Passing the work to the object you hold | Melimpahkan tugas |
+| **Class explosion** | Too many subclasses for every combination | Ledakan jumlah kelas |
+| **Fragile base class** | A parent change quietly breaking its children | Induk rapuh |
+| **Strategy object** | A swappable piece of behaviour passed in | Objek perilaku yang bisa diganti |
+| **Mixin** | A small class adding one focused ability | Kelas tambahan kecil |
+
 ## 🧠 The big idea
 
 Inheritance is like **genetics**: a child inherits everything from its parents, forever, and can't pick and choose. Composition is like **LEGO**: you build a thing from bricks, and you can swap a wheel for a propeller at any time.
 
 When the combinations of features multiply (role × plan × region…), genetics produces a family tree you can't manage. LEGO just adds a brick.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Early OOP teaching emphasized inheritance for reuse. Decades of experience (the *Design Patterns* book, 1994, already said "favor object composition over class inheritance") showed that inheritance couples subclasses tightly to parents' internals, while most real-world variation is better modeled as **parts you can combine and replace**.
+Early lessons on object-oriented programming pushed inheritance as the way to reuse code. Decades of experience — the *Design Patterns* book already said "favour object composition over class inheritance" in 1994 — showed that inheritance ties a subclass tightly to the parent's internals, while most real variation is better described as **parts you can combine and replace**.
 
-## 💥 What happens if we DON'T?
+The moment features start multiplying (role × plan × region), genetics gives you a family tree nobody can manage, and LEGO just adds another brick.
 
-```text
-User
-├── JobSeeker
-│   └── ProJobSeeker
-├── Recruiter
-│   └── ProRecruiter
-└── RecruiterWhoIsAlsoJobSeeker (multiple inheritance 😬)
-        └── ProRecruiterWhoIsAlsoJobSeeker ...
-```
-
-- Adding an "Enterprise" plan doubles the classes.
-- Upgrading a user to Pro means creating a **different object** and copying data.
-- A change in `User.can()` silently changes behavior in five subclasses (**fragile base class**).
-- Multiple inheritance makes method resolution order a puzzle.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Is-a vs has-a
 
@@ -95,6 +92,8 @@ Swap the renderer (PDF → HTML) or the repository (Postgres → fake) without s
 
 ### 4. Why inheritance couples so tightly
 
+A subclass can depend on *how* the parent does something, not just what it promises. Then an innocent change inside the parent breaks children the author never looked at.
+
 ```python
 class BaseImporter:
     def run(self):
@@ -110,6 +109,8 @@ class CsvImporter(BaseImporter):
 If the base class later batches saves (`save_many`), `CsvImporter` silently breaks: subclasses depend on **how** the parent works, not just **what** it promises. That's the fragile base class problem.
 
 ### 5. When inheritance is fine
+
+Inheritance is right when the relationship really is "a kind of", the parent is stable, and the hierarchy stays shallow — for example your own exception classes.
 
 - **Exception hierarchies**: `class InvalidTransition(DomainError)` — callers catch families of errors.
 - **Framework extension points** designed for subclassing: `flask.views.MethodView`, Django class-based views, `unittest.TestCase`, SQLAlchemy `DeclarativeBase`.
@@ -136,7 +137,9 @@ class Renderer(Protocol):
 
 Any class with `render` works — no base class to inherit from, so nothing to become fragile.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -145,27 +148,10 @@ Any class with `render` works — no base class to inherit from, so nothing to b
 | Mixins | reuse small behaviors | MRO complexity if overused |
 | Protocols | no coupling to a base class | no shared implementation (use helper functions/composition for that) |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Composition: variations that combine (roles × plans), behaviors that change at runtime, anything you want to fake in tests.
 - ✅ Inheritance: exceptions, framework hooks, genuinely stable is-a relationships.
 - 🚫 Inheritance just to reuse a couple of methods — extract a function or a helper object.
 - 🚫 Deep hierarchies (more than 2 levels) in application code.
-
-## 🏆 Best practices
-
-- [ ] Default to composition; justify inheritance with a real is-a and a stable contract.
-- [ ] Keep hierarchies **shallow**; prefer protocols for polymorphism.
-- [ ] Model roles, plans, permissions and settings as **data** (frozen dataclasses, enums), not subclasses.
-- [ ] Inject collaborators through the constructor; don't create them inside methods.
-- [ ] If you subclass framework classes, override only the documented hooks.
-- [ ] Use mixins sparingly, for independent features, without state conflicts.
-
-## 🏭 How it's used in industry
-
-- Game engines use Entity–Component–System (entities **have** components) instead of `FlyingShootingEnemy` class trees.
-- React replaced class component inheritance with composition of components and hooks (Module 4).
-- Authorization libraries model roles and permissions as data (RBAC tables, policy documents like AWS IAM).
 
 ## ⚠️ Common mistakes
 
@@ -177,6 +163,15 @@ Any class with `render` works — no base class to inherit from, so nothing to b
 :::revoshop
 RevoShop has buyers, sellers and admins. (1) Look at `app/models/users.py`: are roles a column (data) or classes? (2) What would it take for one person to be both a buyer and a seller? (3) Search `app/services/` for `if role ==` checks — how many places would change if you added a "support" role? Sketch a `Role` + permissions model and a single `can(user, permission)` function.
 :::
+
+## 🏆 Best practices
+
+- [ ] Default to composition; justify inheritance with a real is-a and a stable contract.
+- [ ] Keep hierarchies **shallow**; prefer protocols for polymorphism.
+- [ ] Model roles, plans, permissions and settings as **data** (frozen dataclasses, enums), not subclasses.
+- [ ] Inject collaborators through the constructor; don't create them inside methods.
+- [ ] If you subclass framework classes, override only the documented hooks.
+- [ ] Use mixins sparingly, for independent features, without state conflicts.
 
 ::part[Explain & Design]{n="2"}
 
@@ -253,16 +248,6 @@ Give one good use of inheritance in Python.
 Exception hierarchies (e.g. `class InvalidTransition(DomainError)`), or documented framework extension points like `MethodView`.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Inheritance | Pewarisan |
-| Composition | Komposisi — menyusun objek dari bagian-bagian |
-| Delegation | Delegasi — meneruskan pekerjaan ke objek lain |
-| Fragile base class | Kelas induk yang rapuh |
-| Mixin | Kelas kecil untuk menambah fitur |
-| Method resolution order (MRO) | Urutan pencarian metode |
 
 ## 📚 Keep learning
 
