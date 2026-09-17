@@ -19,27 +19,38 @@ tags: [dsa, sorting, intervals, heap, merge-sort, patterns]
 - **Partitioning** (Dutch national flag) and **divide & conquer** (inversions)
 - 🧭 How to recognize when sorting unlocks a problem
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Stable sort** | Equal items keep their original order | Urutan data sama tetap |
+| **`key=`** | The function that decides what to sort by | Penentu dasar pengurutan |
+| **Timsort** | Python's built-in sort — fast on partly sorted data | Pengurutan bawaan Python |
+| **Merge sort / quicksort** | The two classic O(n log n) algorithms | Dua algoritma klasik |
+| **Interval** | A range with a start and an end | Rentang waktu/nilai |
+| **Sweep line** | Walking through events in time order, counting as you go | Menyapu kejadian berurutan |
+| **Heap** | A structure that always gives you the smallest (or largest) fast | Tumpukan prioritas |
+| **Top-k** | The k best items, without sorting everything | k data teratas |
+| **Partitioning** | Rearranging items into groups in one pass | Memisahkan dalam satu jalan |
+
 ## 🧠 The big idea
 
 Sorting is like **organizing a messy pile of receipts by date** before doing your taxes. The sorting takes some effort, but afterwards "which receipts overlap this week?", "what's the biggest gap?", "any duplicates?" become simple walks through the pile.
 
 In interviews, the question is rarely "implement a sort" — it's "**would sorting first make this easy**, and is O(n log n) acceptable?"
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Order creates structure: neighbors become meaningful. After sorting:
-- duplicates are adjacent,
-- overlapping intervals are adjacent,
+Order creates structure, and structure makes questions easy. After sorting:
+
+- duplicates sit next to each other,
+- overlapping intervals sit next to each other,
 - two pointers and binary search become possible,
-- greedy choices (earliest end time first) become provably correct.
+- and greedy choices (earliest finishing time first) become provably correct.
 
-## 💥 What happens if we DON'T use it?
+In an interview the question is almost never "implement a sort". It's "**would sorting first make this easy**, and can I afford O(n log n)?" — the same judgement as deciding whether to tidy the receipts before doing your taxes.
 
-Checking every pair of 50,000 meetings for overlaps is 1.25 billion comparisons. Sorting by start time first makes it one pass after an O(n log n) sort.
-
-The opposite mistake is common too: sorting 10 million items to get the **top 3** — a heap does it in O(n log 3).
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The algorithms you should be able to explain
 
@@ -71,6 +82,8 @@ by_date = sorted(by_title, key=lambda j: j["posted_on"], reverse=True)   # newes
 
 ### 3. Intervals: sort by start, then merge
 
+Once intervals are sorted by start time, you only ever compare each one with the last kept interval — the rest can't overlap, because they start later.
+
 ```python
 merged = []
 for start, end in sorted(intervals):
@@ -95,6 +108,8 @@ ends = sorted(e for _, e in meetings)
 The maximum number of simultaneous meetings = rooms needed. Same idea: peak concurrent users, max overlapping bookings, busiest hour.
 
 ### 5. Top-k with a heap
+
+For "the 10 best out of a million", sorting everything is like ranking every athlete in the country to find a top ten. A heap keeps only the current best ten as you walk past.
 
 ```python
 import heapq
@@ -127,7 +142,9 @@ Merge sort's merge step knows something useful: when an item from the **right** 
 - Pairs counted with an order condition (`i < j` and `a[i] > a[j]`) → merge sort variant.
 :::
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -137,12 +154,18 @@ Merge sort's merge step knows something useful: when an item from the **right** 
 | In-place sort | O(1)–O(log n) extra memory | mutates the caller's data |
 | `sorted()` copy | safe | O(n) extra memory |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Interval/scheduling problems, ranking, neighbors-matter problems, preparing for binary search.
 - ✅ When the data is sorted once and queried many times.
 - 🚫 A single membership check (O(n) scan or a set beats sorting).
 - 🚫 You only need the min/max or top few items → one pass or a heap.
+
+## ⚠️ Common mistakes
+
+- Sorting the caller's list in place by accident.
+- Mixing up `reverse=True` with negated keys and breaking the tie order.
+- Merging intervals without sorting first.
+- Using full sorts for top-3 of millions of items.
+- Advancing `mid` after swapping with `high` in the Dutch flag algorithm (the swapped item is unchecked).
 
 ## 🏆 Best practices
 
@@ -153,21 +176,6 @@ Merge sort's merge step knows something useful: when an item from the **right** 
 - [ ] Prefer `heapq.nlargest/nsmallest` for small k; state O(n log k).
 - [ ] For intervals, define open/closed boundaries explicitly.
 - [ ] Be able to explain merge sort and quicksort (and why quicksort's worst case happens).
-
-## 🏭 How it's used in industry
-
-- Databases sort for `ORDER BY`, merge joins and index builds (external merge sort when data exceeds memory).
-- Calendars and booking systems (meeting rooms, doctor appointments) use interval logic and sweep lines.
-- Search and recommendation ranking = multi-key sorts plus top-k heaps.
-- Leaderboards: Redis sorted sets.
-
-## ⚠️ Common mistakes
-
-- Sorting the caller's list in place by accident.
-- Mixing up `reverse=True` with negated keys and breaking the tie order.
-- Merging intervals without sorting first.
-- Using full sorts for top-3 of millions of items.
-- Advancing `mid` after swapping with `high` in the Dutch flag algorithm (the swapped item is unchecked).
 
 ::part[Explain & Design]{n="2"}
 
@@ -247,17 +255,6 @@ Why is a heap better than sorting for "top 5 of 10 million scores"?
 A size-5 heap processes each score in O(log 5), so the whole pass is O(n); sorting everything is O(n log n) and needs to order items you'll never use.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Stable sort | Pengurutan stabil |
-| Sort key | Kunci pengurutan |
-| Interval | Rentang / selang waktu |
-| Sweep line | Garis sapu (memproses peristiwa berurutan) |
-| Partition | Partisi — membagi menjadi kelompok |
-| Inversion | Inversi — pasangan yang urutannya terbalik |
-| Divide and conquer | Bagi dan taklukkan |
 
 ## 📚 Keep learning
 

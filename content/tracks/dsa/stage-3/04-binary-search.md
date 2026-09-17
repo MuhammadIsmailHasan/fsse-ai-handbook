@@ -19,13 +19,26 @@ tags: [dsa, binary-search, patterns, monotonic, interviews]
 - **Binary search on the answer** for optimization problems
 - 🧭 How to recognize binary search problems — including ones without an array
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Binary search** | Halving the range of possible answers each step | Pencarian dengan membelah dua |
+| **O(log n)** | A billion items in about 30 steps | Tumbuh sangat lambat |
+| **Interval invariant** | The promise about which range still holds the answer | Janji tentang rentang tersisa |
+| **Lower bound** | The first position with a value ≥ x | Posisi pertama ≥ x |
+| **Upper bound** | The first position with a value > x | Posisi pertama > x |
+| **Predicate** | A yes/no question that flips from false to true once | Pertanyaan ya/tidak |
+| **Rotated array** | A sorted array cut and swapped at one point | Larik terurut yang digeser |
+| **Search on the answer** | Guessing the answer and checking "is this enough?" | Mencari nilai jawabannya |
+
 ## 🧠 The big idea
 
 Guess a number between 1 and 1,000. After each guess you hear "higher" or "lower". Guessing 500 first eliminates **half** of the options no matter the answer; then 250 or 750; and so on. You'll always win within 10 guesses, because 2¹⁰ = 1,024.
 
 Binary search works whenever a question has that **"higher / lower"** structure.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
 | n | Linear scan | Binary search |
 |---|---|---|
@@ -33,14 +46,11 @@ Binary search works whenever a question has that **"higher / lower"** structure.
 | 1,000,000 | 1,000,000 | 20 |
 | 1,000,000,000 | 1,000,000,000 | 30 |
 
-Databases (B-tree indexes), `git bisect`, autocomplete over sorted words, version lookups and capacity planning all rely on it.
+That's the whole argument. Any time a question has a "higher or lower?" answer — a sorted list, a database index, "what's the smallest server size that still handles the load?" — you can throw away half the possibilities at every step.
 
-## 💥 What happens if we DON'T use it — or get it slightly wrong?
+The catch is that most people write it from memory, get the boundaries slightly wrong, and loop forever. That's why this lesson insists on one template with a clear promise about the remaining range.
 
-- A linear scan over a sorted list of 10 million records on every request.
-- The famous bugs: infinite loops when `low` and `high` stop moving, missing the last element, `mid` overflow in fixed-width integer languages (`(low + high) / 2` in Java — Python ints don't overflow, but the lesson is worth knowing).
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Exact search (closed interval)
 
@@ -78,6 +88,8 @@ This template answers a whole family: first `>= x`, insertion position, count of
 
 ### 3. Think in terms of a predicate
 
+Stop thinking "find the value" and start thinking "where does the answer flip from no to yes?". Almost every variant becomes the same problem.
+
 Rewrite any binary search as: *find the first position where `condition(i)` becomes True*, given the sequence looks like:
 
 ```text
@@ -92,6 +104,8 @@ If you can prove the condition is **monotonic** (once True, stays True), binary 
 `[13, 15, 18, 2, 5, 9, 11]`: at any `mid`, **one half is sorted**. If `nums[low] <= nums[mid]`, the left half is sorted: check whether the target lies within `nums[low]..nums[mid]`; if yes, go left, else go right. Otherwise the right half is sorted — mirror the logic.
 
 ### 5. Binary search on the answer
+
+Here there's no array at all — you're guessing the answer (a speed, a capacity, a deadline) and asking a checker "is this enough?". The guesses halve just the same.
 
 *"What's the minimum daily capacity to finish all reviews in D days?"*
 
@@ -119,7 +133,9 @@ Total: O(n · log(sum)). Same shape: split tasks into k sprints minimizing the l
 - You catch yourself trying candidate answers one by one: "try 1, try 2, try 3…".
 :::
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Approach | Time | Needs |
 |---|---|---|
@@ -129,12 +145,17 @@ Total: O(n · log(sum)). Same shape: split tasks into k sprints minimizing the l
 | Binary search on answer | O(check × log range) | monotonic feasibility |
 | B-tree index (databases) | O(log n) disk-friendly | database maintenance |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Sorted arrays, ranges, "first/last", optimization with a monotonic check.
 - ✅ Debugging: `git bisect` to find which commit introduced a bug.
 - 🚫 Unsorted data you'd have to sort for a **single** lookup (O(n log n) > O(n)).
 - 🚫 Exact-match lookups repeated many times on changing data → a set/dict.
+
+## ⚠️ Common mistakes
+
+- `while low < high` with the closed template (misses the last candidate) or `<=` with the half-open one (index error).
+- `high = mid - 1` when `mid` could be the answer.
+- Forgetting that rotated-array logic needs **distinct** values (duplicates break the "which half is sorted" test).
+- Using binary search on the answer without a monotonic check.
 
 ## 🏆 Best practices
 
@@ -144,20 +165,6 @@ Total: O(n · log(sum)). Same shape: split tasks into k sprints minimizing the l
 - [ ] When the loop uses `low = mid`, compute `mid` rounding **up** (`(low + high + 1) // 2`) to avoid infinite loops.
 - [ ] For "search on the answer", state the predicate, prove monotonicity, and choose tight bounds.
 - [ ] In production Python, use `bisect` — implement by hand in interviews and to understand it.
-
-## 🏭 How it's used in industry
-
-- Database indexes (B-trees) are multi-way binary searches designed for disks.
-- `git bisect` finds a bad commit among thousands in ~12 test runs.
-- Load testing: binary search the maximum users before p95 breaks the SLO (lesson 03 of Week 6!).
-- Feature rollout and ML: finding thresholds that meet a precision target.
-
-## ⚠️ Common mistakes
-
-- `while low < high` with the closed template (misses the last candidate) or `<=` with the half-open one (index error).
-- `high = mid - 1` when `mid` could be the answer.
-- Forgetting that rotated-array logic needs **distinct** values (duplicates break the "which half is sorted" test).
-- Using binary search on the answer without a monotonic check.
 
 ::part[Explain & Design]{n="2"}
 
@@ -227,16 +234,6 @@ What property must a condition have for "binary search on the answer" to work?
 Monotonicity: once the condition becomes true for some value, it stays true for all larger (or all smaller) values.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Binary search | Pencarian biner |
-| Search space | Ruang pencarian |
-| Lower bound | Batas bawah (posisi pertama ≥ x) |
-| Monotonic | Monoton — tidak berbalik arah |
-| Predicate | Predikat — kondisi benar/salah |
-| Rotated array | Larik yang diputar |
 
 ## 📚 Keep learning
 

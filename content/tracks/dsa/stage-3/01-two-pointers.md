@@ -18,29 +18,32 @@ tags: [dsa, two-pointers, patterns, sorting, interviews]
 - Handling duplicates without a set
 - 🧭 How to recognize a two-pointer problem
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Pointer** | A position you're currently looking at | Penunjuk posisi |
+| **Opposite ends** | One pointer at the start, one at the end, moving inward | Dari dua ujung |
+| **Same direction** | Both pointers moving forward at different speeds | Searah, beda kecepatan |
+| **Read/write pointers** | One reads every item, one writes the ones you keep | Penunjuk baca dan tulis |
+| **Sorted input** | Items in order — what makes the pattern work | Data terurut |
+| **Eliminate possibilities** | Each move rules out a whole group of pairs | Menyingkirkan banyak kemungkinan |
+| **In-place** | No extra list needed | Tanpa memori tambahan |
+| **Brute force** | Trying every pair — O(n²) | Coba semua pasangan |
+
 ## 🧠 The big idea
 
 Two people search a sorted bookshelf for two books whose page counts add up to exactly 1,000. One starts at the thinnest book, the other at the thickest. Too many pages in total? The person at the thick end steps inward. Too few? The person at the thin end steps inward. They never need to try every pair — each step **rules out** a whole group of pairs.
 
 That's the entire pattern: **each pointer move eliminates possibilities**, so n steps replace n² comparisons.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Brute force over pairs is O(n²): 100,000 items → 5 billion pairs. When the data has **order** (sorted values, or positions from both ends), two pointers exploit it to solve pair/partition problems in O(n) with O(1) extra memory — better than a hash map's O(n) memory.
+Checking every pair is O(n²): 100,000 items means 5 billion pairs. When the data has **order** — sorted values, or two ends you can walk toward each other — two pointers use that order to answer pair and partition questions in O(n), with no extra memory. A hash map also gets O(n) time here, but it needs O(n) memory; two pointers need none.
 
-## 💥 What happens if we DON'T use it?
+This is one of the highest-value patterns in interviews, because the brute-force version is so easy to write by accident.
 
-```python
-def pair_with_sum(sorted_prices, budget):
-    for i in range(len(sorted_prices)):
-        for j in range(i + 1, len(sorted_prices)):   # O(n²)
-            if sorted_prices[i] + sorted_prices[j] == budget:
-                return i, j
-```
-
-It passes the 10-item example and times out on the interviewer's 10⁵-item test. And you've ignored the most important hint in the problem: **sorted**.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Shape A — opposite ends
 
@@ -88,6 +91,8 @@ Merging sorted lists (the heart of merge sort), intersecting sorted lists, compa
 
 ### 4. Sort first, then two pointers
 
+Sorting costs O(n log n) — often worth paying, because afterwards each step can rule out a whole group of pairs instead of one.
+
 When input isn't sorted, sorting costs O(n log n) — often still far better than O(n²):
 
 **Three-sum**: sort, fix the first number `nums[i]`, then run opposite-end two pointers on the rest for `-nums[i]`. O(n²) instead of O(n³).
@@ -101,6 +106,8 @@ if i > 0 and nums[i] == nums[i - 1]:
 
 ### 5. Moving the "limiting" side
 
+The rule is: move the pointer that is holding you back. The other side can only make things worse, so skipping it loses nothing.
+
 In problems like the biggest banner or trapped rainwater, the **shorter** side limits the result. Moving the taller side can only shrink the width without raising the limit, so always move the shorter side. Rainwater extends this: the side with the smaller running maximum already knows its water level.
 
 :::tip[🧭 How to spot two pointers]
@@ -113,7 +120,9 @@ In problems like the biggest banner or trapped rainwater, the **shorter** side l
 Not sorted and order matters (you need original indices, sorting is forbidden)? Consider a **hash map** instead.
 :::
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Approach for "pair with sum" | Time | Extra space | Needs sorted? |
 |---|---|---|---|
@@ -122,11 +131,16 @@ Not sorted and order matters (you need original indices, sorting is forbidden)? 
 | Sort + two pointers | O(n log n) | O(1)–O(n) for sorting | sorts (loses original indices) |
 | Already sorted + two pointers | **O(n)** | **O(1)** | yes |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Sorted data, pair/triplet targets, in-place compaction, symmetric checks, merges.
 - 🚫 Unsorted data where you must return **original** indices → hash map.
 - 🚫 Contiguous subarray with a condition over a range → usually a **sliding window** (next lesson) or **prefix sums**.
+
+## ⚠️ Common mistakes
+
+- Using two pointers on **unsorted** data for a pair sum.
+- Infinite loops: a branch that moves no pointer.
+- Returning early in three-sum and missing other triplets, or skipping duplicates at the wrong time.
+- Off-by-one: `while left <= right` letting an item pair with itself.
 
 ## 🏆 Best practices
 
@@ -137,19 +151,6 @@ Not sorted and order matters (you need original indices, sorting is forbidden)? 
 - [ ] Handle duplicates by skipping equal neighbors after sorting.
 - [ ] Don't modify the caller's list when sorting unless allowed — `sorted(nums)` creates a copy.
 - [ ] Test: empty, one element, all equal, no answer, answer at the edges.
-
-## 🏭 How it's used in industry
-
-- **Merge** steps in databases (merge joins) and external sorting of huge files.
-- Diff tools and version comparison walk two sequences together.
-- Deduplicating sorted logs or event streams in place; compaction in storage engines.
-
-## ⚠️ Common mistakes
-
-- Using two pointers on **unsorted** data for a pair sum.
-- Infinite loops: a branch that moves no pointer.
-- Returning early in three-sum and missing other triplets, or skipping duplicates at the wrong time.
-- Off-by-one: `while left <= right` letting an item pair with itself.
 
 ::part[Explain & Design]{n="2"}
 
@@ -228,15 +229,6 @@ Three-sum with sorting and two pointers is O(n²). Where does each factor come f
 An outer loop fixes the first number (n choices), and for each one the two-pointer scan is O(n). Sorting's O(n log n) is smaller.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Two pointers | Dua penunjuk |
-| Invariant | Invarian — kondisi yang selalu benar selama loop |
-| In place | Di tempat (tanpa salinan) |
-| Merge | Menggabungkan (dua urutan terurut) |
-| Duplicate | Duplikat |
 
 ## 📚 Keep learning
 

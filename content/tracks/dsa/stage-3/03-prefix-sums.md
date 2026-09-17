@@ -19,26 +19,32 @@ tags: [dsa, prefix-sum, hash-map, patterns, 2d-arrays]
 - 2D prefix sums with inclusion–exclusion
 - 🧭 How to recognize a prefix sum problem
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Prefix sum** | A running total from the start up to each position | Total berjalan |
+| **Range query** | "What's the total between A and B?" | Pertanyaan rentang |
+| **Precompute** | Do the work once up front, answer fast later | Hitung sekali di awal |
+| **`prefix[j+1] - prefix[i]`** | The formula that gives any range total in one step | Rumus total rentang |
+| **Exact-sum subarray** | A stretch whose total equals a target | Rentang dengan total tertentu |
+| **Transform** | Rewriting values (0 → −1) so the question becomes "sum equals 0" | Mengubah bentuk soal |
+| **2D prefix sum** | The same trick over a grid rectangle | Versi dua dimensi |
+| **Difference array** | The reverse trick: many range updates, one final pass | Larik selisih |
+
 ## 🧠 The big idea
 
 Your bank statement shows a **running balance** after every transaction. To know how much you spent between the 5th and the 20th, you don't add 15 transactions — you subtract two balances: `balance_on_20th − balance_on_4th`.
 
 A prefix sum array **is** that running balance.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Dashboards, analytics and games answer "total between A and B" constantly: revenue between two dates, applications in a map rectangle, points in a range of levels. Summing each range is O(length) per query; with thousands of queries that's slow. Precompute once in O(n), answer every query in O(1).
+Dashboards, analytics and games ask "total between A and B" constantly: revenue between two dates, applications inside a map rectangle, points across a range of levels. Adding up each range is O(length) per question, and with thousands of questions that gets slow.
 
-## 💥 What happens if we DON'T use it?
+Precompute the running totals once in O(n), and every later question is a single subtraction — exactly like reading two balances on a bank statement instead of re-adding fifteen transactions.
 
-```python
-for start, end in queries:              # 100,000 dashboard queries
-    total = sum(daily_revenue[start:end + 1])   # up to 365 items each
-```
-
-~36 million additions — and it gets worse with minute-level data. With prefix sums: 100,000 subtractions.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Build it
 
@@ -63,6 +69,8 @@ range_sum(1, 3)  # prefix[4] - prefix[1] = 12 - 2 = 10  → 4 + 1 + 5 ✅
 
 ### 3. Exact-sum subarrays (with negatives): prefix + hash map
 
+This is the pairing to remember: sliding window handles "at most" questions on positive numbers, while prefix sums plus a hash map handle "exactly" questions, even with negatives.
+
 *How many subarrays sum to k?* A subarray `i..j` sums to `k` exactly when `prefix[j + 1] - prefix[i] == k`, i.e. `prefix[i] == prefix[j + 1] - k`. Walk once, counting earlier prefix sums in a dict:
 
 ```python
@@ -85,6 +93,8 @@ This works with **negative** numbers, where sliding windows fail. Variants:
 This move — **rewrite the question until it becomes a known pattern** — is the key interview skill.
 
 ### 5. 2D prefix sums
+
+Adding two rectangles and subtracting the overlap is the same idea as counting a wedding's guests by table: add the sections, then remove the people you counted twice.
 
 `P[r + 1][c + 1]` = sum of the rectangle from `(0, 0)` to `(r, c)`:
 
@@ -116,7 +126,9 @@ Many range **updates** ("add 5 to days 10–20") then one final read? Store `dif
 Data changes between queries all the time? → a Fenwick tree / segment tree (beyond this stage) or a database aggregate.
 :::
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Approach | Build | Query | Update | Memory |
 |---|---|---|---|---|
@@ -125,12 +137,17 @@ Data changes between queries all the time? → a Fenwick tree / segment tree (be
 | Fenwick / segment tree | O(n) | O(log n) | O(log n) | O(n) |
 | Prefix + hash map (exact k) | — | one pass O(n) | — | O(n) |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Read-heavy analytics over static arrays, time series, grids.
 - ✅ Subarray sum conditions with negative values.
 - 🚫 Frequent updates mixed with queries.
 - 🚫 Conditions that aren't sums (max/min of a range → sparse tables, deques, trees).
+
+## ⚠️ Common mistakes
+
+- `prefix[j] - prefix[i]` when the range is inclusive of `j` (should be `j + 1`).
+- Forgetting `{0: 1}` and missing subarrays that start at index 0.
+- Updating the hash map **before** looking up `prefix - k` (counts the empty subarray when k = 0).
+- Using a sliding window for exact sums with negatives.
 
 ## 🏆 Best practices
 
@@ -140,19 +157,6 @@ Data changes between queries all the time? → a Fenwick tree / segment tree (be
 - [ ] State the trade-off: O(n) memory for O(1) queries; rebuild cost on updates.
 - [ ] Watch integer overflow in other languages (Python ints are unbounded; Java/Go/SQL `INT` aren't).
 - [ ] In real systems, consider precomputing cumulative aggregates in the database (window functions, materialized views).
-
-## 🏭 How it's used in industry
-
-- SQL window functions: `SUM(amount) OVER (ORDER BY day)` computes running totals for dashboards.
-- Time-series databases and metrics systems keep counters that only increase; rates are differences between samples (Prometheus `rate()`).
-- Image processing (integral images), genomics, finance (cumulative returns).
-
-## ⚠️ Common mistakes
-
-- `prefix[j] - prefix[i]` when the range is inclusive of `j` (should be `j + 1`).
-- Forgetting `{0: 1}` and missing subarrays that start at index 0.
-- Updating the hash map **before** looking up `prefix - k` (counts the empty subarray when k = 0).
-- Using a sliding window for exact sums with negatives.
 
 ::part[Explain & Design]{n="2"}
 
@@ -223,15 +227,6 @@ What's `sum(nums[2..5])` inclusive in terms of `prefix` (with a leading 0)?
 `prefix[6] - prefix[2]`.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Prefix sum | Jumlah awalan / jumlah kumulatif |
-| Range query | Kueri rentang |
-| Preprocessing | Pra-pemrosesan |
-| Inclusion–exclusion | Prinsip inklusi–eksklusi |
-| Difference array | Larik selisih |
 
 ## 📚 Keep learning
 

@@ -18,31 +18,36 @@ tags: [dsa, sliding-window, patterns, hash-map, interviews]
 - When sliding window **fails** (negative numbers) and what to use instead
 - 🧭 How to recognize a sliding window problem
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Window** | A stretch of items next to each other that you're looking at | Rentang data berdampingan |
+| **Contiguous** | Items right next to each other, no gaps | Berurutan tanpa celah |
+| **Fixed-size window** | The window is always k items wide | Jendela ukuran tetap |
+| **Variable-size window** | It grows and shrinks to stay valid | Jendela yang berubah ukuran |
+| **Expand / shrink** | Add an item on the right / remove one on the left | Tambah kanan / buang kiri |
+| **Validity condition** | The rule the window must satisfy (no repeats, sum ≤ k) | Syarat jendela sah |
+| **Amortised O(n)** | Each item enters and leaves at most once | Tiap data masuk-keluar sekali |
+
 ## 🧠 The big idea
 
 You're on a train looking at the view through a window that shows exactly 3 houses. When the train moves one house forward, you don't re-count all 3 houses — **one house enters on the right, one leaves on the left**.
 
 A sliding window keeps a summary (sum, counts, set) of a contiguous range and **updates** it as the range moves, so each element is added once and removed once: O(n).
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Many real questions are about **contiguous stretches**:
-- highest revenue in any 7-day period,
-- longest session without repeated pages,
-- requests in the last 60 seconds (rate limiting — Stage 2!),
-- smallest text snippet containing all search terms.
+Many real questions are about **stretches that are next to each other**:
 
-Brute force checks every start and end: O(n²) ranges, often O(n³) with the inner sum.
+- the highest revenue in any 7-day period,
+- the longest session without a repeated page,
+- requests in the last 60 seconds (rate limiting — Stage 2),
+- the smallest snippet of text containing all the search terms.
 
-## 💥 What happens if we DON'T use it?
+Recomputing the whole stretch at every position is O(n·k). Sliding the window instead updates a running summary in O(1) per step, which turns the whole scan into O(n) — like the train passenger counting one house in and one house out instead of recounting the view.
 
-```python
-best = max(sum(sales[i:i + 7]) for i in range(len(sales) - 6))   # O(n · k)
-```
-
-For a year of per-minute metrics (525,600 values) and a 1-day window (1,440), that's ~750 million additions — per query.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Fixed-size window
 
@@ -64,6 +69,8 @@ for right in range(k, len(nums)):
 Works for sums, counts of vowels, "any duplicate within k positions" (a set of the last k items).
 
 ### 2. Variable-size window: the template
+
+The shape is always the same: expand to the right until the window breaks the rule, then shrink from the left until it's valid again, recording the best answer as you go.
 
 ```python
 left = 0
@@ -108,6 +115,8 @@ for right, char in enumerate(text):
 
 ### 5. Why positive numbers matter
 
+With negative numbers, shrinking the window can *increase* the sum, so "too big → shrink" stops being true. That's where prefix sums (next lesson) take over.
+
 Shrinking works because removing an element **always decreases** the sum, and adding always increases it. With negative numbers, a window over budget might become valid by **adding** more items, so "shrink when invalid" can skip the answer.
 
 - Subarray sum problems **with negatives** → **prefix sums + hash map** (next lesson).
@@ -126,7 +135,9 @@ The inner `while` looks like nesting, but `left` only moves forward and never pa
 Negative numbers and an exact sum? → prefix sums. Non-contiguous choices? → not a window (think DP or greedy).
 :::
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Approach | Time | Space | Works with negatives? |
 |---|---|---|---|
@@ -136,11 +147,16 @@ Negative numbers and an exact sum? → prefix sums. Non-contiguous choices? → 
 | Prefix sum + hash map | O(n) | O(n) | yes (exact sums) |
 | Deque for window max/min | O(n) | O(k) | yes |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Rolling metrics, moving averages, rate limits, contiguous string/array constraints.
 - 🚫 Subsequences or arbitrary subsets.
 - 🚫 Conditions that aren't monotonic with window size (sum with negatives).
+
+## ⚠️ Common mistakes
+
+- Using a window on data with negative numbers for an "at most sum" condition.
+- Moving `left` backwards in the "longest without repeats" problem (use `max` or check `last_seen >= left`).
+- Recomputing the window's sum or counts inside the loop.
+- Recording the answer in the wrong place (before shrinking for "longest").
 
 ## 🏆 Best practices
 
@@ -150,20 +166,6 @@ Negative numbers and an exact sum? → prefix sums. Non-contiguous choices? → 
 - [ ] Use `right - left + 1` for length and double-check off-by-one with a 1-element example.
 - [ ] Keep updates O(1): a counter or running sum, never `sum(window)` in the loop.
 - [ ] Explain the amortized O(n) argument — interviewers expect it.
-
-## 🏭 How it's used in industry
-
-- Monitoring: rolling error rates and p95 over the last 5 minutes (Week 6 Locust stats!), alert rules in Prometheus/CloudWatch.
-- Rate limiters and fraud detection ("more than 5 failed logins in 10 minutes").
-- Network protocols (TCP's sliding window for flow control).
-- Streaming analytics (Kafka Streams, Flink windowed aggregations).
-
-## ⚠️ Common mistakes
-
-- Using a window on data with negative numbers for an "at most sum" condition.
-- Moving `left` backwards in the "longest without repeats" problem (use `max` or check `last_seen >= left`).
-- Recomputing the window's sum or counts inside the loop.
-- Recording the answer in the wrong place (before shrinking for "longest").
 
 ::part[Explain & Design]{n="2"}
 
@@ -243,15 +245,6 @@ The variable window has a `while` inside a `for`. Why is it O(n)?
 `left` only moves forward and at most n times in total across the entire loop, so all shrink steps together cost O(n).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Sliding window | Jendela geser |
-| Contiguous | Berurutan tanpa celah |
-| Subarray / substring | Sub-larik / sub-string (bagian berurutan) |
-| Subsequence | Sub-urutan (boleh melompati elemen) |
-| Rolling metric | Metrik bergulir |
 
 ## 📚 Keep learning
 
