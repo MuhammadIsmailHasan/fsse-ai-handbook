@@ -21,23 +21,46 @@ tags: [aws, ecs, fargate, ecr, alb, containers, deployment]
 - **One-off tasks** for migrations; **ECS Exec** for debugging
 - **Service autoscaling**, **CloudWatch Logs**, networking choices (public IP vs NAT) and **cost**
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **ECS** | AWS's service for running containers for you | Pengelola container AWS |
+| **Fargate** | The option where AWS provides the servers too — you never see them | Tanpa mengurus server |
+| **Cluster** | The named place your tasks run in | Wadah tempat task berjalan |
+| **Task definition** | The recipe: image, CPU, memory, environment, secrets, logs | Resep menjalankan container |
+| **Task** | One running copy of that recipe | Satu container berjalan |
+| **Service** | The rule "keep N tasks running and replace unhealthy ones" | Penjaga jumlah task |
+| **ECR** | AWS's registry for your container images | Gudang image AWS |
+| **Execution role** | The badge ECS itself uses to pull the image, read secrets and write logs | Peran untuk menyiapkan task |
+| **Task role** | The badge your application code uses to call AWS (S3, SQS) | Peran untuk kode aplikasi |
+| **Target group** | The list of task addresses the load balancer sends traffic to | Daftar tujuan load balancer |
+| **Circuit breaker** | ECS noticing a deploy keeps failing and rolling it back | Pembatal deploy gagal |
+
 ## 🧠 The big idea
 
-Compose on EC2 is **you as the restaurant manager and the building caretaker**. ECS on Fargate is **renting a food-court stall**: you bring the recipe (image) and the staffing plan (task definition + service: "always two cooks, replace anyone who faints, bring new cooks in before the old ones leave"); the mall handles electricity, floors and security guards (servers, patching, placement).
+Compose on EC2 makes you **both the restaurant manager and the building caretaker**.
 
-## ❓ Why does this matter?
+ECS on Fargate is **renting a stall in a food court**:
 
-Everything you built by hand in lesson 02 — multiple copies, health-based replacement, rolling deploys with rollback, secrets injection, central logs, scaling — is what ECS services do by configuration. It's one of the most common ways companies run containers on AWS, and a natural next step after Compose.
+- you bring the recipe (the image) and the staffing plan — the task definition and service say "always two cooks, replace anyone who faints, and bring new cooks in before the old ones leave",
+- the mall handles electricity, floors and security guards (servers, patching, where things run).
 
-## 💥 What happens if we DON'T understand the pieces?
+You still own the recipe and the menu; you stop owning the building.
 
-- The task can't start: `ResourceInitializationError: unable to pull secrets` (the **execution** role lacks `ssm:GetParameters`).
-- The app gets `AccessDenied` from S3 (permissions were added to the execution role instead of the **task** role).
-- Tasks cycle forever: the ALB health check path returns 404, so ECS keeps replacing healthy containers.
-- Migrations run in every task at startup; two tasks race on `ALTER TABLE`.
+## ❓ Why it matters
+
+Everything you built by hand in lesson 02 — several copies, replacing unhealthy ones, rolling deploys with rollback, secrets injection, central logs, scaling — is what an ECS service does from configuration. It's one of the most common ways companies run containers on AWS, and the natural next step after Compose.
+
+When the pieces aren't clear, these are the errors you meet:
+
+- The task won't start: `ResourceInitializationError: unable to pull secrets` — the **execution** role lacks `ssm:GetParameters`.
+- The app gets `AccessDenied` from S3, because the permission was added to the execution role instead of the **task** role.
+- Tasks cycle forever: the load balancer health check path returns 404, so ECS keeps replacing perfectly healthy containers.
+- Migrations run inside every task at startup, and two tasks race on the same `ALTER TABLE`.
 - Tasks in private subnets without NAT can't pull images from ECR or reach Midtrans.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The building blocks
 
@@ -77,6 +100,8 @@ Fargate pulls from ECR through the execution role. You can also pull from GHCR (
 
 ### 3. Two roles
 
+The simplest way to remember them: the **execution role** belongs to the delivery crew that sets the stall up (image, secrets, logs); the **task role** is the badge worn by the staff actually working there (your code calling S3 or SQS).
+
 | Role | Used by | Typical permissions |
 |---|---|---|
 | **Task execution role** | the ECS agent, *before and around* your container | `AmazonECSTaskExecutionRolePolicy` (ECR pull, CloudWatch Logs) + `ssm:GetParameters` / `secretsmanager:GetSecretValue` for injected secrets (+ `kms:Decrypt`) |
@@ -113,6 +138,8 @@ Fargate pulls from ECR through the execution role. You can also pull from GHCR (
 
 ### 5. Load balancer
 
+A health check is the mall guard knocking on the stall door before sending customers in. Point it at a cheap endpoint that doesn't touch the database, or one slow query will empty your whole food court.
+
 | Setting | Value |
 |---|---|
 | ALB | internet-facing, public subnets, `sg-alb` (80/443 from world) |
@@ -137,6 +164,8 @@ Fargate pulls from ECR through the execution role. You can also pull from GHCR (
 - ECS also supports blue/green deployments natively (with ALB listener rules) for instant traffic shifts and bake time.
 
 ### 7. Migrations as one-off tasks
+
+A migration is rearranging the kitchen: do it once, before the new staff start serving — not by every cook at the same time.
 
 ```bash
 TASK_ARN=$(aws ecs run-task --cluster revoshop --launch-type FARGATE --task-definition revoshop-api-production:12 \
@@ -163,7 +192,9 @@ aws ecs describe-tasks --cluster revoshop --tasks "$TASK_ARN" --query 'tasks[0].
 
 Fargate is billed per vCPU-second and GB-second while tasks run; the ALB has an hourly minimum; logs per GB ingested and stored. **Fargate Spot** can cut costs for interruptible work (not your only production API task).
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -172,31 +203,10 @@ Fargate is billed per vCPU-second and GB-second while tasks run; the ALB has an 
 | App Runner | simplest "container → HTTPS URL" | fewer knobs; check networking and feature fit |
 | EKS (Kubernetes) | portable ecosystem, huge tooling | control plane cost and much more complexity (Week 6) |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Stateless HTTP APIs, workers and scheduled container jobs on AWS.
 - ✅ Teams without dedicated platform engineers who still want rolling deploys and autoscaling.
 - 🚫 Don't run PostgreSQL in Fargate tasks — use RDS.
 - 🚫 Don't bake secrets into task definition `environment`.
-
-## 🏆 Best practices
-
-- [ ] Immutable ECR repos with scanning and lifecycle policies; deploy by digest.
-- [ ] Separate execution and task roles, both least privilege.
-- [ ] Secrets via `secrets` (SSM/Secrets Manager ARNs), never plain `environment`.
-- [ ] Read-only root filesystem, `/tmp` volume, init process, non-root image.
-- [ ] Container health check + ALB health check on a cheap liveness endpoint; sensible grace periods.
-- [ ] Circuit breaker with rollback; `minimumHealthyPercent: 100` for user-facing services.
-- [ ] Migrations as one-off tasks before `update-service`.
-- [ ] At least 2 tasks in 2 AZs; target tracking autoscaling.
-- [ ] Log groups with retention; alarms on 5xx, unhealthy targets and task restarts.
-- [ ] Understand the networking cost choice (public IP vs NAT vs endpoints).
-
-## 🏭 How it's used in industry
-
-- ECS on Fargate is widely used for microservices and APIs on AWS, especially by teams that don't want to run Kubernetes.
-- CI/CD pipelines render a new task definition per commit and roll it out with circuit breakers or CodeDeploy blue/green.
-- Cost-conscious teams mix Fargate for APIs, Fargate Spot for batch jobs and EC2 capacity providers at scale.
 
 ## ⚠️ Common mistakes
 
@@ -212,6 +222,19 @@ Fargate is billed per vCPU-second and GB-second while tasks run; the ALB has an 
 4. **Health checks.** The ALB should use `/api/v1/health/live` (no database) — but you also want to know when the DB is down. Where does `/api/v1/health` (with the DB check) belong instead? (Hint: an alarm or synthetic check, not the load balancer.)
 5. **Midtrans on ECS.** Tasks in public subnets with public IPs reach `app.sandbox.midtrans.com` through the internet gateway. Which security group rule makes sure nobody on the internet can hit port 5000 on those public IPs directly?
 :::
+
+## 🏆 Best practices
+
+- [ ] Immutable ECR repos with scanning and lifecycle policies; deploy by digest.
+- [ ] Separate execution and task roles, both least privilege.
+- [ ] Secrets via `secrets` (SSM/Secrets Manager ARNs), never plain `environment`.
+- [ ] Read-only root filesystem, `/tmp` volume, init process, non-root image.
+- [ ] Container health check + ALB health check on a cheap liveness endpoint; sensible grace periods.
+- [ ] Circuit breaker with rollback; `minimumHealthyPercent: 100` for user-facing services.
+- [ ] Migrations as one-off tasks before `update-service`.
+- [ ] At least 2 tasks in 2 AZs; target tracking autoscaling.
+- [ ] Log groups with retention; alarms on 5xx, unhealthy targets and task restarts.
+- [ ] Understand the networking cost choice (public IP vs NAT vs endpoints).
 
 ::part[Explain & Design]{n="2"}
 
@@ -270,16 +293,6 @@ What does `minimumHealthyPercent: 100` with `maximumPercent: 200` mean during a 
 ECS may start up to 2 new tasks (4 total) and keeps at least 2 healthy tasks at all times, stopping old tasks only after new ones are healthy — no capacity drop.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Task definition | Definisi tugas (resep kontainer) |
-| Service | Layanan (menjaga jumlah tugas tetap berjalan) |
-| Fargate | Kapasitas kontainer tanpa server |
-| Target group | Grup target load balancer |
-| Circuit breaker | Pemutus sirkuit (hentikan deploy gagal) |
-| Execution role | Peran eksekusi (untuk agen ECS) |
 
 ## 📚 Keep learning
 
