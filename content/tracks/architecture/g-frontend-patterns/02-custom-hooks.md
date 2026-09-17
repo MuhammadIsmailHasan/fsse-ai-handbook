@@ -20,23 +20,36 @@ tags: [architecture, react, hooks, headless-ui, controlled-components, testing]
 - **Headless** components: behavior in hooks, markup chosen by the caller
 - Testing hooks with `renderHook`
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Custom hook** | A function starting with `use` that holds reusable behaviour | Fungsi perilaku yang dipakai ulang |
+| **Pure function** | Same input, same output, no side effects | Fungsi murni |
+| **Hook API** | What the hook takes in and gives back | Masukan dan keluaran hook |
+| **Stable callback** | A function that keeps the same identity between renders | Fungsi yang tidak berubah identitas |
+| **Controlled** | The parent owns the value and passes it down | Nilai dikendalikan induk |
+| **Uncontrolled** | The component keeps its own value | Nilai disimpan sendiri |
+| **Headless component** | Behaviour without markup; the caller supplies the looks | Perilaku tanpa tampilan |
+| **`renderHook`** | The testing helper that runs a hook on its own | Alat menguji hook |
+
 ## 🧠 The big idea
 
 Components are **LEGO bricks you can see**; hooks are the **motors and gears inside**. The same motor can drive a car, a crane or a windmill — each with a different body. `usePagination` can power a numbered pager, a "Load more" button or a mobile swipe view.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Before hooks, sharing stateful logic meant higher-order components or render props (wrapper hell). Hooks let you extract "open/close", "pagination", "value with optional control", "debounced search" into functions that any component can call — each call with its **own** state.
+Before hooks, sharing behaviour with state meant higher-order components or render props — layers of wrappers around wrappers. Hooks let you pull out "open/close", "pagination", "value with optional control", "debounced search" into functions any component can call, each call keeping its **own** state.
 
-## 💥 What happens if we DON'T?
+The motor picture is the point: the same motor drives a car, a crane or a windmill, and each has a completely different body. `usePagination` can drive a numbered pager, a "Load more" button or a swipe view.
 
-- Five pagers in the app, five slightly different page-number algorithms, three with off-by-one bugs.
-- Every dialog re-implements `isOpen/open/close`, and some create new functions each render, breaking memoized children.
-- A `Select` component that only works uncontrolled; the form library needs it controlled → a fork.
+Not everything needs one, though: if the logic has no state and no effects, a plain function is clearer than a hook.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Pure first, hook second
+
+Work out the maths in a plain function first, then let the hook hold the state around it. Pure logic is far easier to test — no React needed at all.
 
 ```ts
 // pagination.ts — pure, testable with a table of cases
@@ -78,6 +91,8 @@ export function useDisclosure(initial = false) {
 Stable functions can be passed to memoized children and used in effect dependencies without re-running effects. (The React Compiler can memoize automatically — library hooks should still be explicit.)
 
 ### 4. Controlled or uncontrolled — support both
+
+Supporting both is what makes a component feel professional: it works out of the box, and it gets out of the way when the parent wants control.
 
 ```ts
 export function useControllableState<T>({ value, defaultValue, onChange }: Options<T>) {
@@ -137,7 +152,9 @@ const { result, rerender } = renderHook((page) => usePagination({ total: 95, pag
 act(() => result.current.next());
 ```
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | | ✅ | ❌ |
 |---|---|---|
@@ -146,12 +163,17 @@ act(() => result.current.next());
 | Headless component library | accessible behavior for free | learning its API; less control |
 | Copy-paste | fast today | divergence and bugs tomorrow |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ The same stateful behavior in 2+ components, or complex behavior worth testing alone.
 - ✅ Wrapping browser APIs and subscriptions.
 - 🚫 Code with no hooks inside — make it a function.
 - 🚫 "God hooks" returning 20 values for one page — split them or keep code in the component.
+
+## ⚠️ Common mistakes
+
+- Calling hooks conditionally or inside loops.
+- Returning new functions each render and breaking memoized consumers.
+- Switching a component between controlled and uncontrolled after mount (`value` from `undefined` to a string).
+- Hooks that secretly depend on a context without a helpful error when the provider is missing.
 
 ## 🏆 Best practices
 
@@ -162,19 +184,6 @@ act(() => result.current.next());
 - [ ] Keep hooks focused; compose small hooks into bigger ones.
 - [ ] Test pure functions with tables of cases and hooks with `renderHook`.
 - [ ] Don't return JSX from hooks — return data and handlers.
-
-## 🏭 How it's used in industry
-
-- UI libraries are built as hooks + headless primitives: React Aria (`useButton`, `useTabs`), Downshift, TanStack Table, Radix's internal `useControllableState`.
-- Teams keep a `hooks/` folder of shared behavior (`useDebouncedValue`, `useMediaQuery`, `useDisclosure`) with tests.
-- Interview exercises often ask candidates to implement `useDebounce`, `usePrevious` or a pagination hook.
-
-## ⚠️ Common mistakes
-
-- Calling hooks conditionally or inside loops.
-- Returning new functions each render and breaking memoized consumers.
-- Switching a component between controlled and uncontrolled after mount (`value` from `undefined` to a string).
-- Hooks that secretly depend on a context without a helpful error when the provider is missing.
 
 ::part[Explain & Design]{n="2"}
 
@@ -248,16 +257,6 @@ Why should `setValue` from `useControllableState` not change identity when `onCh
 Consumers put it in effect dependencies or pass it to memoized children; a new function each render would re-run effects and re-render children needlessly.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Custom hook | Hook buatan sendiri |
-| Headless component | Komponen tanpa tampilan bawaan |
-| Controlled component | Komponen yang nilainya dikendalikan induk |
-| Uncontrolled component | Komponen yang menyimpan nilainya sendiri |
-| Stable reference | Referensi yang tidak berubah antar render |
-| Prop getter | Fungsi pemberi props siap pakai |
 
 ## 📚 Keep learning
 
