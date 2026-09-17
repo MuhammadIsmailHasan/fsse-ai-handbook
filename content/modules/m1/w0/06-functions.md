@@ -19,6 +19,20 @@ tags: [python, functions, testing, clean-code]
 - **Pure functions** vs functions with **side effects**, and why it matters for testing
 - Docstrings and type hints
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Function** | A named block of code you can run again | Blok kode bernama |
+| **Parameter / argument** | The name in the definition / the value you pass | Nama di definisi / nilai dikirim |
+| **`return`** | Hand a value back to whoever called | Mengembalikan nilai |
+| **`print`** | Show something on the screen (not the same as returning) | Menampilkan ke layar |
+| **Default value** | Used when the caller doesn't pass one | Nilai bawaan |
+| **Scope** | Which variables a piece of code can see | Jangkauan variabel |
+| **Pure function** | Same input → same output, changes nothing outside | Fungsi murni |
+| **Side effect** | Anything it changes outside itself (files, database, screen) | Efek ke luar |
+| **Docstring** | A short text explaining what the function does | Keterangan fungsi |
+
 ## 🧠 The big idea
 
 A :term[function]{bahasa="fungsi — blok kode bernama yang menerima input dan menghasilkan output"} is a **recipe card**. It has a name ("Fried Rice"), ingredients you pass in (parameters), steps, and a dish that comes out (the return value). Once written, anyone can cook it again by name — without rereading the steps.
@@ -30,34 +44,15 @@ def format_rupiah(amount: int) -> str:
 print(format_rupiah(1500000))   # Rp 1.500.000
 ```
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-- **Don't repeat yourself**: write the logic once, use it everywhere. Fix a bug once, it's fixed everywhere.
-- **Give ideas a name**: `is_valid_email(text)` is easier to read than the 6 lines inside it.
-- **Test in isolation**: a function with clear inputs and outputs can be tested alone — you've been doing exactly that in every exercise so far.
-- **Divide work**: big programs are built from small functions, like LEGO.
+Without functions, the same logic gets pasted in five places — and fixed in four of them. With them you name a piece of behaviour once, test it once, and use it anywhere.
 
-## 💥 What happens if we DON'T use them?
+The recipe card picture holds all the way: the name is on the card, the ingredients come in, and a dish comes out. Somebody can cook it without reading every step again.
 
-```python
-# Checkout page
-total = 0
-for item in cart:
-    total += item["price"] * item["qty"]
-if total >= 500_000:
-    total = total * 90 // 100
+The single most common beginner mix-up is `print` versus `return`. `print` shows something to a human; `return` hands a value back to the program. A function that only prints can't be reused, tested or combined with anything else.
 
-# Invoice email (copy-pasted...)
-total2 = 0
-for item in cart:
-    total2 += item["price"] * item["qty"]
-if total2 > 500_000:          # 🐛 someone changed >= to > here only
-    total2 = total2 * 90 // 100
-```
-
-The two copies drifted apart. The checkout page and the invoice now show **different totals** for the same cart. With one `cart_total(cart)` function, that's impossible.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Defining and calling
 
@@ -119,6 +114,8 @@ low, high = min_max([4, 9, 1])   # "unpacking"
 
 ### 5. Scope: what a function can see
 
+A function is a kitchen with its own counter: what you put there disappears when you leave, which is exactly why functions are safe to reuse.
+
 ```python
 tax_rate = 11            # global variable
 
@@ -135,6 +132,8 @@ Variables created inside a function are **local**: they appear when the function
 Relying on globals makes functions harder to test and reuse. Prefer passing values as parameters: `def with_tax(price, tax_rate=11)`.
 
 ### 6. Pure functions vs side effects
+
+Pure functions are the easiest code in the world to test: no database, no setup, just input and expected output. Keep the rules pure, and push the messy parts (files, network, printing) to the edges.
 
 | Pure function | Function with side effects |
 |---|---|
@@ -167,7 +166,9 @@ def page_count(total_items: int, per_page: int = 20) -> int:
 
 Type hints (`: int`, `-> int`) and the docstring tell readers — and editors — how to use the function without reading its body.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -177,18 +178,11 @@ Type hints (`: int`, `-> int`) and the docstring tell readers — and editors �
 | Globals | Quick to write | Hidden dependencies, surprising bugs |
 | Default parameters | Convenient API | Too many options make functions confusing |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Extract a function when you copy code a **second** time, or when a block deserves a **name**.
 - ✅ Aim for functions that do **one thing** (if the name needs "and", consider splitting).
 - 🚫 Don't create a function for a single obvious line used once (`def add_one(x): return x + 1`).
 - 🚫 Don't hide side effects in functions whose names sound pure (`get_total()` that also saves to the database).
 
-## 🏭 How it's used in industry
-
-- Every API endpoint is a function that receives a request and returns a response.
-- Code review comments like *"extract this into a function"* and *"this function does too much"* are among the most common.
-- Business rules live in pure "service" functions with hundreds of unit tests; database and email code stays thin. (You'll see this **layered architecture** in Module 2 — and in your RevoShop project.)
 
 ## ⚠️ Common mistakes
 
@@ -283,16 +277,6 @@ Is `def total_with_tax(price): return price * (100 + TAX) // 100` pure if `TAX` 
 Practically yes — same input always gives the same output. It becomes impure (and harder to test) if `TAX` can change at runtime. Passing it as a parameter makes the dependency explicit.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Parameter / Argument | Parameter (nama input) / Argumen (nilai yang dikirim) |
-| Return value | Nilai kembalian |
-| Scope | Cakupan — di mana variabel bisa diakses |
-| Pure function | Fungsi murni — hasil hanya bergantung pada input |
-| Side effect | Efek samping — mengubah sesuatu di luar fungsi |
-| Refactor | Merapikan struktur kode tanpa mengubah perilakunya |
 
 ## 📚 Keep learning
 

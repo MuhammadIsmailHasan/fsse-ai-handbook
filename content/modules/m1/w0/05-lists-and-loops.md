@@ -18,6 +18,21 @@ tags: [python, lists, loops, iteration]
 - The **accumulator pattern** (total, count, max, collect)
 - `break`, `continue`, and how to avoid infinite loops
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **List** | Many values in order, under one name | Kumpulan nilai berurutan |
+| **Index** | The position of an item, starting at 0 | Nomor posisi |
+| **Slice** | Taking a piece of a list (`items[1:4]`) | Potongan daftar |
+| **Loop** | Doing the same work for each item | Perulangan |
+| **`for` loop** | Walk through every item | Ulangi untuk tiap item |
+| **`while` loop** | Keep going while a condition is true | Ulangi selama syarat benar |
+| **`range()`** | A sequence of numbers to loop over | Deret angka |
+| **Accumulator** | A variable that builds up a result (total, count, list) | Penampung hasil |
+| **`break` / `continue`** | Stop the loop / skip to the next item | Hentikan / lewati |
+| **Infinite loop** | A `while` whose condition never becomes false | Perulangan tak berujung |
+
 ## 🧠 The big idea
 
 A :term[list]{bahasa="list/daftar — kumpulan nilai yang berurutan dalam satu variabel"} is a **train**: one name, many carriages in order, each with a number starting from **0**.
@@ -26,29 +41,13 @@ A :term[loop]{bahasa="perulangan — menjalankan blok kode yang sama berkali-kal
 
 Real apps are mostly lists and loops: a list of products → show each; a list of orders → sum totals; a list of messages → find unread ones.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Data comes in groups: 30 students, 1,000 transactions, 50 job listings. You can't make 1,000 variables (`price1`, `price2`, …), and you can't copy-paste the same line 1,000 times — especially when you don't know **how many** there will be until the program runs.
+Data arrives in groups: 30 students, 1,000 transactions, 50 job listings. You can't create a thousand variables (`price1`, `price2`, …), and you can't paste the same line a thousand times — especially when you don't know **how many** there will be until the program runs.
 
-## 💥 What happens if we DON'T use them?
+Lists hold the group; loops do the same job to each member. Almost every screen you'll build later is this: a list of products → show each one; a list of orders → add up the totals; a list of messages → find the unread ones.
 
-```python
-price1 = 45_000
-price2 = 120_000
-price3 = 30_000
-total = price1 + price2 + price3
-```
-
-Now the cart has 4 items. Or 0. Or 250. This code can't adapt. With a list and a loop, the same 3 lines work for **any** number of items:
-
-```python
-prices = [45_000, 120_000, 30_000]
-total = 0
-for price in prices:
-    total += price
-```
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Lists
 
@@ -105,6 +104,8 @@ for i in range(2, 10, 2): # 2, 4, 6, 8   (start, stop, step)
 ```
 
 ### 3. The accumulator pattern
+
+This is the shape behind most "reports": start with an empty basket, walk the list, put things in. Total, count, largest, or a new filtered list — same pattern, different basket.
 
 Almost every loop does one of these four jobs. Learn the shapes:
 
@@ -169,6 +170,8 @@ for order in orders:
 
 ### 6. Don't change a list while looping over it
 
+Removing carriages while walking the train makes you skip some. Build a new list instead, or loop over a copy.
+
 ```python
 numbers = [1, 2, 2, 3]
 for n in numbers:
@@ -179,7 +182,9 @@ print(numbers)              # [1, 2, 3]  — one 2 survived!
 
 Build a **new** list instead: `numbers = [n for n in numbers if n != 2]` (that's a *list comprehension* — you'll use them a lot in Week 1).
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -189,18 +194,11 @@ Build a **new** list instead: `numbers = [n for n in numbers if n != 2]` (that's
 | Built-ins (`sum`, `max`) | Short and fast | Hide the logic while learning |
 | Modify in place | Saves memory | Surprising bugs when looping |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ `for` when you're going through a collection or a known number of steps.
 - ✅ `while` for "until something happens": retries, reading until the end, game loops.
 - 🚫 Don't use a list when you need to look things up by name — that's a `dict` (Week 1).
 - 🚫 Don't nest loops over big lists without thinking: 10,000 × 10,000 = 100 million steps (you'll learn *Big-O* in the DSA track).
 
-## 🏭 How it's used in industry
-
-- Rendering: a frontend loops over a list of products to create cards.
-- Batch jobs: loop over millions of rows to send emails or compute reports — often in **chunks** (`items[i:i+500]`) to avoid overloading systems.
-- Retry loops: `while attempts < 3` when calling an unreliable external API.
 
 ## ⚠️ Common mistakes
 
@@ -295,15 +293,6 @@ When should you prefer `while` over `for`?
 When you don't know how many repetitions you need in advance — you repeat until a condition changes (retries, reading input until "quit", paying off a balance).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Index | Indeks — posisi item, mulai dari 0 |
-| Slice | Potongan list |
-| Iterate | Mengulang untuk setiap item |
-| Accumulator | Variabel penampung hasil sementara |
-| Infinite loop | Perulangan tanpa akhir |
 
 ## 📚 Keep learning
 

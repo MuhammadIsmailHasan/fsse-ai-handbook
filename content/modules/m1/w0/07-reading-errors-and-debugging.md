@@ -18,6 +18,21 @@ tags: [python, debugging, errors, bonus]
 - Tools: `print`, `breakpoint()`, your editor's debugger
 - How to use AI for debugging **without** losing the learning
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Error / exception** | Python stopping because something went wrong | Kesalahan yang menghentikan program |
+| **Traceback** | The report showing where it happened, step by step | Laporan jejak kesalahan |
+| **`SyntaxError`** | Python couldn't even read your code | Salah tata tulis |
+| **`NameError`** | A name that doesn't exist (often a typo) | Nama tidak dikenal |
+| **`TypeError`** | Doing something the type doesn't allow | Salah jenis data |
+| **`IndexError` / `KeyError`** | That position / that key isn't there | Posisi / kunci tidak ada |
+| **Reproduce** | Making the bug happen on purpose, every time | Memunculkan bug sesuai kehendak |
+| **Hypothesis** | Your guess about the cause, which you then test | Dugaan penyebab |
+| **`breakpoint()`** | Pausing the program to look around | Menjeda program |
+| **Rubber duck** | Explaining the problem out loud until you spot it | Menjelaskan keras-keras |
+
 ## 🧠 The big idea
 
 An error message is not the computer shouting at you. It's a **doctor's report**: it tells you *what* went wrong, *where*, and often *why*. Beginners close the report and guess. Professionals read it first.
@@ -26,17 +41,19 @@ An error message is not the computer shouting at you. It's a **doctor's report**
 Senior engineers don't make fewer bugs. They find them **faster**, because they follow a method.
 :::
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Every program has bugs — including ones written by experts and by AI. Debugging is how software actually gets finished. In real jobs you'll spend a large part of your time reading errors, logs and other people's code. It's a skill you can train, just like writing code.
+Debugging is most of programming. Not the writing — the finding out why what you wrote doesn't do what you meant.
 
-## 💥 What happens if we DON'T debug methodically?
+An error message isn't the computer shouting at you; it's a **doctor's report** saying what went wrong, where, and often why. Beginners close the report and start changing things at random. Professionals read it, form one guess, and test that guess.
 
-"Shotgun debugging": change a line, run, still broken, change another line, run… After an hour you have **new** bugs, you don't know which change did what, and if it finally works you don't know **why** — so the bug comes back next week.
+The difference isn't talent, it's method — and a method is exactly what this lesson gives you.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Read a traceback bottom-up
+
+The last line is the diagnosis; the lines above are how you got there. Read the bottom first, then walk up until you reach a file you wrote.
 
 ```text
 Traceback (most recent call last):
@@ -73,6 +90,8 @@ The #1 confusing error. It means a variable you expected to hold something is `N
 :::
 
 ### 3. The debugging method
+
+Reproduce → read → guess one cause → test that guess → fix → confirm. Changing three things at once and hoping is the slow way, even when it occasionally works.
 
 ```mermaid
 flowchart LR
@@ -133,7 +152,9 @@ A good question includes:
 Spend **15–20 minutes** on the method above first. Then ask AI to *explain the error* or *give a hint* — not to rewrite your code. Afterwards, make sure you can explain the fix in your own words.
 :::
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Tool | ✅ | ❌ |
 |---|---|---|
@@ -143,18 +164,11 @@ Spend **15–20 minutes** on the method above first. Then ask AI to *explain the
 | Logging (Module 2) | Stays in production, has levels | More setup than print |
 | Asking AI immediately | Fast answer | You don't build the skill; answers can be wrong |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Read the error **before** changing anything, every time.
 - ✅ Reach for the debugger when you'd need more than ~3 prints.
 - 🚫 Don't silence errors with bare `except:` / `except Exception: pass`.
 - 🚫 Don't change several things at once — you won't know which one mattered.
 
-## 🏭 How it's used in industry
-
-- Production errors are collected by tools like **Sentry**, which show the same traceback you see locally — plus how many users hit it.
-- Bug tickets are expected to include **steps to reproduce**.
-- After fixing, teams add a **regression test** so the bug can't silently come back.
 
 ## ⚠️ Common mistakes
 
@@ -246,16 +260,6 @@ Why add a test after fixing a bug?
 So the same bug can't come back unnoticed later (a *regression test*), and to prove the fix works.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Bug | Kesalahan dalam program |
-| Debugging | Proses mencari dan memperbaiki bug |
-| Traceback | Jejak error — urutan panggilan fungsi saat error |
-| Reproduce | Mengulang kondisi sampai bug muncul lagi |
-| Hypothesis | Dugaan yang bisa diuji |
-| Regression test | Tes untuk memastikan bug lama tidak muncul lagi |
 
 ## 📚 Keep learning
 
