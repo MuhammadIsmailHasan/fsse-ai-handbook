@@ -10,7 +10,9 @@ tags: [revoshop, ci-cd, github-actions, ghcr, testing, project]
 
 ## 🎯 Goal
 
-After Lab 1, RevoShop *can* run in production mode. After this lab, **every change proves it**: no merge without green checks, every commit on `main` produces a scanned image in GHCR, and a deploy job waits only for the server you'll create in Week 3–4.
+After Lab 1, RevoShop *can* run in production mode. After this lab, **every change has to prove it**: nothing merges without green checks, every commit on `main` produces an image in GHCR, and a deploy job sits ready, waiting only for the server you'll create in Week 3–4.
+
+Think of it as hiring a quality inspector who never gets tired: the same checks run on every change, in the same order, without you remembering them.
 
 ```text
 Before                                          After this lab
@@ -24,6 +26,19 @@ images built on the server                      ghcr.io/<you>/revoshop@sha256:�
 anyone can push to main                         rulesets: PR + required checks; environments ready
 ```
 
+## 🔤 Key words
+
+| Word | In simple words |
+|---|---|
+| **Pipeline job** | One part of the workflow that runs on its own fresh machine (lint, test, build…) |
+| **bcrypt cost** | How much work password hashing does; high is safe for production, slow for tests |
+| **Migration check** | Proving the database scripts can run forward, backward and forward again |
+| **Service container** | A helper container (PostgreSQL) started only for that job |
+| **Digest** | An image's fingerprint (`sha256:…`), so the deploy uses exactly the tested build |
+| **Ruleset** | GitHub rules for a branch: require a PR, require green checks, block force pushes |
+| **Dependabot** | A bot that opens PRs to update pinned actions, packages and base images |
+| **Smoke test** | A few quick checks against a running app to prove a deploy works |
+
 :::note[Prerequisites]
 Lab 1 merged in your **personal** copy of RevoShop (Dockerfile targets, `gunicorn.conf.py`, `compose.prod.yaml`, Caddyfile, liveness endpoint, rate limiter). Work on a new branch: `git switch -c ci/pipeline`.
 :::
@@ -32,7 +47,7 @@ Lab 1 merged in your **personal** copy of RevoShop (Dockerfile targets, `gunicor
 
 ### C1 · Make the tests fast (45 min)
 
-Every test user is hashed with bcrypt's default cost (`bcrypt.gensalt()` in `app/auth.py`). That's correct for production and far too slow for 467 tests.
+Every test user's password is hashed with bcrypt's default cost (`bcrypt.gensalt()` in `app/auth.py`). Strong hashing is deliberately slow — that's the point in production, and a disaster when you do it 467 times in a test run. It's like using a bank vault door for a storage box you open a hundred times a day.
 
 ```python
 # app/auth.py
@@ -54,9 +69,9 @@ os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
 os.environ.setdefault('BCRYPT_ROUNDS', '4')   # fast hashing in tests only
 ```
 
-Measure before and after with `time python -m pytest -q`. On a clean copy of RevoShop this took the suite from **7 min 27 s to 9 s** with identical results. Write your numbers in the PR description — that's your first measurable pipeline improvement.
+Measure before and after with `time python -m pytest -q`. On a clean copy of RevoShop this took the suite from **7 min 27 s to 9 s**, with identical results. Put your own numbers in the PR description — that's your first measurable pipeline improvement.
 
-Guard production: add a test that `hash_password` uses cost 12 when `BCRYPT_ROUNDS` isn't set (`bcrypt` hashes start with `$2b$12$`), and never set `BCRYPT_ROUNDS` in `compose.prod.yaml`.
+Then guard production: add a test proving `hash_password` uses cost 12 when `BCRYPT_ROUNDS` isn't set (bcrypt hashes start with `$2b$12$`), and never set `BCRYPT_ROUNDS` in `compose.prod.yaml`. A speed-up that quietly weakens production passwords would be a bad trade.
 
 ### C2 · Make the suite green (1 h)
 
@@ -70,13 +85,13 @@ tests/integration/test_product_images.py::TestListProductImages::test_list_no_au
 tests/integration/test_products.py::TestGetProducts::test_get_products_no_auth
 ```
 
-1. **Four `*_no_auth` tests** expect `401`, but the listing endpoints return `200` without a token. For a shop, browsing products and categories without logging in is normal. Decide deliberately: if public is intended, rename them to `test_*_is_public` expecting `200`, and add tests proving the **write** endpoints (`POST /products/`, `DELETE /categories/<id>`, …) still return `401` without a token. Record the decision in the PR.
-2. **The cart availability test**: run it alone (`-k test_cancel_restores_cart_item_availability -vv`), then inside its file, then with the whole suite. Does it fail alone? Read `OrderService` cancellation and how cart `available` is computed. Fix the bug or the test — don't mark it skipped without an issue explaining why.
+1. **Four `*_no_auth` tests** expect `401`, but those listing endpoints return `200` without a token. For a shop, browsing products and categories without logging in is normal — a customer shouldn't need a membership card to look at the shelves. So decide on purpose: if public is intended, rename them to `test_*_is_public` expecting `200`, and add tests proving the **write** endpoints (`POST /products/`, `DELETE /categories/<id>`, …) still return `401` without a token. Record the decision in the PR.
+2. **The cart availability test**: run it alone (`-k test_cancel_restores_cart_item_availability -vv`), then inside its own file, then with the whole suite. Does it fail alone? If it only fails with the others, the tests are sharing state. Read the `OrderService` cancellation code and how cart `available` is computed, then fix the bug or the test — don't skip it without an issue explaining why.
 3. Commit when `python -m pytest -q` is fully green locally **without** your `.env` loaded (`env -u JWT_SECRET_KEY -u DATABASE_URL python -m pytest -q`), because CI won't have it.
 
 ### C3 · Smoke tests live in the repo (15 min)
 
-Copy the smoke tests from the handbook (`exercises/m5/w1/05-revoshop-smoke/test_revoshop_smoke.py`) to `tests/smoke/test_smoke.py`. They **skip** without `REVOSHOP_URL`, so the normal test run stays unchanged.
+Copy the smoke tests from the handbook (`exercises/m5/w1/05-revoshop-smoke/test_revoshop_smoke.py`) to `tests/smoke/test_smoke.py`. They **skip** themselves when `REVOSHOP_URL` isn't set, so your normal test run doesn't change.
 
 ### C4 · The workflows (2 h)
 
@@ -348,7 +363,7 @@ jobs:
           python -m pytest tests/smoke -v
 ```
 
-`/opt/revoshop/deploy.sh` on the server and the SSH/OIDC setup come in Week 4. When you move to ECS, only this file changes.
+`/opt/revoshop/deploy.sh` on the server, and the SSH/OIDC setup, come in Week 4. Because the deploy steps live in one reusable file, moving to ECS later changes only this file — not the whole pipeline.
 
 ### C5 · Repository settings (45 min)
 
@@ -378,7 +393,7 @@ updates:
 ### C6 · Prove the pipeline (45 min)
 
 - Open the PR `ci/pipeline` → all checks green; download the `test-reports` artifact.
-- Break something on a throwaway branch (e.g. change a migration's column type, or return `500` from `/api/v1/health/live`) and confirm the right job fails.
+- Break something on purpose in a throwaway branch (change a migration's column type, or return `500` from `/api/v1/health/live`) and confirm the *right* job fails. A pipeline you've never seen fail is a smoke alarm you've never tested.
 - Merge → a `sha-…` image appears under **Packages** in your profile/repository. Pull it on your laptop: `docker pull ghcr.io/<you>/revoshop@sha256:…` (log in with a PAT with `read:packages` if the package is private).
 - Record in `docs/pipeline.md`: job durations, total PR feedback time, and the DORA baseline you wrote in lesson 01.
 
