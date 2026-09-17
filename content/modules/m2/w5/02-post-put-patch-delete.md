@@ -20,6 +20,21 @@ tags: [rest, api-design, idempotency, flask, crud]
 - Rejecting **unknown fields** and **read-only fields** (`id`, `created_at`, `user_id`)
 - **Mass assignment** vulnerabilities and how to avoid them
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **`POST`** | Create something new | Membuat data baru |
+| **`PUT`** | Replace the whole resource with what you send | Mengganti seluruhnya |
+| **`PATCH`** | Change only the fields you send | Mengubah sebagian |
+| **`DELETE`** | Remove it | Menghapus |
+| **`201 Created` / `Location`** | The status and header that say "created, and here it is" | Status dan alamat hasil |
+| **`204 No Content`** | Success, with nothing to send back | Berhasil tanpa isi |
+| **Soft delete** | Marking a row as deleted instead of removing it | Hapus secara penanda |
+| **Idempotency key** | A client-supplied id so a retry doesn't create a second copy | Kunci anti-duplikat |
+| **Mass assignment** | Letting the client set fields it shouldn't (like `is_admin`) | Mengisi kolom terlarang |
+| **Read-only field** | A field only the server may set (`id`, `created_at`) | Kolom yang tidak boleh diisi klien |
+
 ## 🧠 The big idea
 
 Writing data is where APIs break things. Each method is a different **promise** to the client:
@@ -31,13 +46,13 @@ Writing data is where APIs break things. Each method is a different **promise** 
 | `PATCH /notes/7` | "Change **only** these fields of note 7." |
 | `DELETE /notes/7` | "Note 7 should not exist afterwards." |
 
-Keeping those promises precisely is what lets mobile apps retry safely on bad connections, and frontends update their state correctly.
+Keeping those promises exactly is what lets a mobile app on a bad connection retry safely, and lets a frontend update its screen correctly.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Networks fail at the worst moment: the server created the order, but the response never reached the phone. The app retries. Did it just create **two** orders? Clear method semantics plus idempotency keys answer that question — the difference between a trustworthy product and a support nightmare.
+Networks fail at the worst moment: the server created the order, but the response never reached the phone, so the app retries. Did it just create **two** orders? Clear method meanings plus idempotency keys answer that question — the difference between a product people trust and a support nightmare.
 
-## 💥 What happens if we DON'T get it right?
+Get it wrong and you hand out powers you never meant to:
 
 ```python
 @bp.post("/notes")
@@ -45,17 +60,9 @@ def create():
     note = Note(**request.get_json())      # mass assignment: client can send user_id, id, is_admin…
     db.session.add(note); db.session.commit()
     return {"ok": True}, 200               # no id, no Location, wrong status
-
-@bp.put("/notes/<int:id>")
-def update(id):
-    note = Note.query.get(id)              # no ownership check
-    for k, v in request.get_json().items():
-        setattr(note, k, v)                # PUT that behaves like a PATCH, accepts any attribute
 ```
 
-A user sets `user_id` to someone else's id and "steals" the note; a flaky connection creates duplicate notes; the frontend can't tell what changed.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. POST: create
 
@@ -82,6 +89,8 @@ PUT /api/v1/notes/7
 PUT is idempotent: sending it 5 times leaves the same final state.
 
 ### 3. PATCH: partial update
+
+The tricky part is `null`: "don't touch this field" and "set this field to empty" look the same in JSON unless you decide — and document — which one you mean.
 
 Only the fields present change. With **JSON Merge Patch** semantics (RFC 7396) — the most common for JSON APIs:
 
@@ -127,6 +136,8 @@ This prevents :term[mass assignment]{bahasa="mass assignment — celah keamanan 
 
 ### 6. Idempotency keys for POST
 
+The key is a **booking reference**: send the same reference twice and you get the same booking back, not a second one.
+
 ```mermaid
 sequenceDiagram
     participant App as Mobile app
@@ -152,7 +163,9 @@ Payment APIs (Stripe, Xendit, Midtrans-style flows) rely on this pattern.
 
 Two tabs edit the same note. To avoid the second silently overwriting the first, include a `version` (or `updated_at`) and require it on update: `UPDATE … WHERE id = :id AND version = :version` → `0` rows → `409 Conflict` ("someone else changed this"). HTTP's `If-Match` + `ETag` headers are the standard way.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -164,30 +177,11 @@ Two tabs edit the same note. To avoid the second silently overwriting the first,
 | Idempotency keys | safe retries | storage, expiry, extra logic |
 | Rejecting unknown fields | catches client bugs early | stricter for evolving clients (use versioning) |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ `POST` for creation and non-idempotent actions; add idempotency keys for money, orders and anything users would hate duplicated.
 - ✅ `PATCH` for typical "edit form" updates; `PUT` when clients naturally hold the full object.
 - ✅ Dedicated action endpoints for transitions with rules (`POST /applications/42/status`).
 - 🚫 Don't copy request bodies onto models with `setattr` for every key.
 - 🚫 Don't take ownership (`user_id`) from the request body.
-
-## 🏆 Best practices
-
-- [ ] `POST` → **`201` + `Location` + created resource**; `DELETE` → **`204`**; updates → `200` with the updated resource.
-- [ ] Validate with **explicit schemas** per operation (create, replace, patch) — allow only editable fields.
-- [ ] **Reject unknown and read-only fields** with `422`.
-- [ ] Take `user_id` / tenant from the **authenticated identity**, and check ownership on every write.
-- [ ] Implement **PATCH merge semantics** correctly (missing vs `null`).
-- [ ] Support an **`Idempotency-Key`** header for creation of important resources; store keys with a unique constraint and expiry.
-- [ ] Use **optimistic concurrency** (`version`/`ETag` + `If-Match`) where lost updates matter.
-- [ ] Document per endpoint whether repeated `DELETE` returns `404` or `204`.
-
-## 🏭 How it's used in industry
-
-- Payment and order APIs require idempotency keys; mobile clients generate them automatically.
-- OWASP's **API Security Top 10** lists broken object-level authorization and mass assignment ("broken object property level authorization") among the top risks.
-- Frontend data libraries (TanStack Query, Module 4) update caches using the resource returned by POST/PATCH — which is why returning it matters.
 
 ## ⚠️ Common mistakes
 
@@ -200,6 +194,17 @@ Two tabs edit the same note. To avoid the second silently overwriting the first,
 :::revoshop
 In RevoShop, open the cart and address routes (`app/routes/carts.py`, `app/routes/user_addresses.py`) and their schemas. (1) Which methods do updates use — `PUT` or `PATCH`? Do they behave as replacement or partial update? (2) Can a client send `user_id` or `is_default` in the body, and what happens? (3) What does `POST` to create an order return — `201` with the order and a `Location`? (4) If the checkout request is retried after a timeout, can a buyer end up with **two orders**? Sketch how an `Idempotency-Key` would prevent it.
 :::
+
+## 🏆 Best practices
+
+- [ ] `POST` → **`201` + `Location` + created resource**; `DELETE` → **`204`**; updates → `200` with the updated resource.
+- [ ] Validate with **explicit schemas** per operation (create, replace, patch) — allow only editable fields.
+- [ ] **Reject unknown and read-only fields** with `422`.
+- [ ] Take `user_id` / tenant from the **authenticated identity**, and check ownership on every write.
+- [ ] Implement **PATCH merge semantics** correctly (missing vs `null`).
+- [ ] Support an **`Idempotency-Key`** header for creation of important resources; store keys with a unique constraint and expiry.
+- [ ] Use **optimistic concurrency** (`version`/`ETag` + `If-Match`) where lost updates matter.
+- [ ] Document per endpoint whether repeated `DELETE` returns `404` or `204`.
 
 ::part[Explain & Design]{n="2"}
 
@@ -270,16 +275,6 @@ What should happen when a client reuses an idempotency key with a different requ
 Reject it (e.g. `422` or `409`) — the key identifies one specific operation; reusing it for different data is a client bug and must not create or return a mismatched resource.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Partial update | Pembaruan sebagian |
-| Full replacement | Penggantian penuh |
-| Idempotency key | Kunci unik agar permintaan ulang tidak membuat duplikat |
-| Mass assignment | Pengisian field sembarangan dari input klien |
-| Soft delete | Hapus lunak (ditandai) |
-| Optimistic concurrency | Kontrol bentrok edit dengan nomor versi |
 
 ## 📚 Keep learning
 

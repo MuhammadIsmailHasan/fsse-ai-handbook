@@ -20,19 +20,34 @@ tags: [rest, api-design, pagination, filtering, flask]
 - **Filtering**, **sorting** (with whitelists), **pagination** (offset and keyset) and response **envelopes**
 - Versioning and caching basics
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **REST** | A style where data is resources with URLs, used through standard HTTP methods | Gaya desain API |
+| **Resource** | One thing your API exposes (a job, a user) | Objek yang disediakan API |
+| **Endpoint** | One URL + method your API answers | Satu alamat API |
+| **Safe method** | A request that changes nothing (`GET`) | Tidak mengubah data |
+| **Idempotent** | Doing it twice has the same result as once (`PUT`, `DELETE`) | Diulang hasilnya sama |
+| **Stateless** | The server keeps no memory between requests; each one carries what it needs | Tanpa ingatan antar permintaan |
+| **Envelope** | The fixed shape every response uses (`data`, `meta`, `error`) | Bentuk balasan seragam |
+| **Pagination** | Returning results page by page | Membagi hasil per halaman |
+| **Keyset pagination** | Paging with "after this item" instead of "skip 5,000 rows" | Paging berbasis penanda |
+| **Whitelist** | The fixed list of values you allow (sort fields) | Daftar nilai yang diizinkan |
+
 ## 🧠 The big idea
 
-:term[REST]{bahasa="REST — gaya desain API yang memodelkan data sebagai resource dengan URL, dimanipulasi lewat method HTTP standar"} treats your API like a **library catalog**:
+:term[REST]{bahasa="REST — gaya desain API yang memodelkan data sebagai resource dengan URL, dimanipulasi lewat method HTTP standar"} treats your API like a **library catalogue**:
 
-- Every thing (a book, a member) is a **resource** with an address (URL): `/books/42`.
-- You use a small set of **standard verbs** (HTTP methods) on those addresses: look (`GET`), add (`POST`), replace (`PUT`), change (`PATCH`), remove (`DELETE`).
-- Anyone who knows HTTP can guess how to use a well-designed API **without reading your code**.
+- Every thing — a book, a member — is a **resource** with an address: `/books/42`.
+- You act on those addresses with a small set of **standard verbs**: look (`GET`), add (`POST`), replace (`PUT`), change (`PATCH`), remove (`DELETE`).
+- Anyone who knows HTTP can then guess how to use your API **without reading your code**.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Frontends, mobile apps, partners and other services all need to talk to your backend. A predictable design means fewer bugs, less documentation, easier caching, and clients that can be built in parallel with the backend.
+Frontends, mobile apps, partners and other services all talk to your backend. A predictable design means fewer bugs, less documentation to write, easier caching, and clients that can be built at the same time as the backend.
 
-## 💥 What happens if we DON'T design consistently?
+Inconsistent design looks like this:
 
 ```text
 GET  /getJobs?cityName=Jakarta
@@ -42,9 +57,9 @@ POST /deleteJobById
 GET  /jobs/list?page=1&pageSize=100000
 ```
 
-Every endpoint needs its own documentation, clients guess wrong, `GET` requests change data (and get cached or pre-fetched by browsers!), and someone requests 100,000 rows at once.
+Every endpoint now needs its own documentation, clients guess wrong, `GET` requests change data — and browsers happily cache or pre-fetch those — and someone asks for 100,000 rows at once.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Resources and URLs
 
@@ -58,6 +73,8 @@ Every endpoint needs its own documentation, clients guess wrong, `GET` requests 
 | Actions that don't fit CRUD | `POST /applications/42/status` or `POST /payments/9/refund` | `GET /refund?id=9` |
 
 ### 2. Methods: safe and idempotent
+
+These two promises are what let networks retry safely: a lift button you can press twice without calling two lifts.
 
 | Method | Use | Safe (no changes)? | Idempotent (same effect if repeated)? |
 |---|---|---|---|
@@ -141,6 +158,8 @@ total = db.session.scalar(select(func.count()).select_from(base.subquery()))
 
 ### 8. Keyset (cursor) pagination
 
+Offset paging is asking the librarian to count past 5,000 books every time; keyset paging is saying "continue from this book" — much faster, and nothing is skipped when new rows arrive.
+
 ```text
 GET /api/v1/jobs?limit=20                      → ..., "next_cursor": "eyJwIjoiMjAyNi0wOS0xMCIsImkiOjQyfQ"
 GET /api/v1/jobs?limit=20&cursor=eyJwIjoiMjAy…
@@ -175,7 +194,9 @@ def get_job(job_id: int):
 
 `GET` responses can include `Cache-Control` and `ETag` so clients and CDNs avoid re-downloading unchanged data (`304 Not Modified`). Never cache private, per-user responses publicly.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -186,13 +207,23 @@ def get_job(job_id: int):
 | Keyset pagination | fast, stable | no random page access |
 | Envelopes (`data/meta/error`) | consistent clients | slightly bigger payloads |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ REST for most CRUD-style business APIs.
 - ✅ Keyset pagination for large or append-heavy collections (feeds, logs, listings).
 - 🚫 Don't return unbounded collections — always paginate.
 - 🚫 Don't use `GET` for anything that changes state.
 - 🚫 Don't expose database column names or internal ids you may want to change without versioning.
+
+## ⚠️ Common mistakes
+
+- Verbs in URLs; singular/plural mix.
+- `ORDER BY` built from raw query strings (SQL injection + crashes).
+- No maximum `per_page`.
+- Pagination without a unique tie-breaker → rows repeat or disappear between pages.
+- Returning `200` with `{"error": ...}`.
+
+:::revoshop
+In RevoShop's `app/routes/products.py`, the list endpoint reads `ProductQuerySchema` query params (`name`, `category_id`, `seller_id`, `min_price`, `max_price`, `sort_by`, `order`, `page`, `limit`) and returns `make_response(..., pagination=paginate_meta(paginated))`. Open `app/schemas/product_schema.py` and `app/utils/http.py`: (1) Is `sort_by` restricted to a whitelist (e.g. `validate.OneOf`)? (2) Is `limit` capped? (3) What does your pagination metadata contain? (4) Is there a unique tie-breaker in the ordering? Compare your envelope (`make_response`) with this lesson's — would a frontend developer find it consistent across every endpoint?
+:::
 
 ## 🏆 Best practices
 
@@ -206,24 +237,6 @@ def get_job(job_id: int):
 - [ ] Index columns used in filters and sort orders (Week 2 lesson 06).
 - [ ] Return **404** for resources that don't exist **or** aren't visible to the caller.
 - [ ] Document parameters and responses with OpenAPI (lesson 07).
-
-## 🏭 How it's used in industry
-
-- Public APIs (Stripe, GitHub, Xendit/Midtrans in Indonesia) follow these conventions — reading their docs is great design practice.
-- Cursor pagination is standard for feeds and large lists (GitHub, Slack, Stripe use cursor-style parameters).
-- Frontend teams depend on stable envelopes to build shared data-fetching hooks (Module 4: TanStack Query).
-
-## ⚠️ Common mistakes
-
-- Verbs in URLs; singular/plural mix.
-- `ORDER BY` built from raw query strings (SQL injection + crashes).
-- No maximum `per_page`.
-- Pagination without a unique tie-breaker → rows repeat or disappear between pages.
-- Returning `200` with `{"error": ...}`.
-
-:::revoshop
-In RevoShop's `app/routes/products.py`, the list endpoint reads `ProductQuerySchema` query params (`name`, `category_id`, `seller_id`, `min_price`, `max_price`, `sort_by`, `order`, `page`, `limit`) and returns `make_response(..., pagination=paginate_meta(paginated))`. Open `app/schemas/product_schema.py` and `app/utils/http.py`: (1) Is `sort_by` restricted to a whitelist (e.g. `validate.OneOf`)? (2) Is `limit` capped? (3) What does your pagination metadata contain? (4) Is there a unique tie-breaker in the ordering? Compare your envelope (`make_response`) with this lesson's — would a frontend developer find it consistent across every endpoint?
-:::
 
 ::part[Explain & Design]{n="2"}
 
@@ -301,16 +314,6 @@ Why whitelist sort fields instead of passing `?sort=` into the query?
 User input in `ORDER BY` enables SQL injection or crashes, and exposes columns (or unindexed sorts) you never intended to support.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Resource | Sumber daya — objek yang punya URL |
-| Idempotent | Hasil akhirnya sama walau diulang |
-| Pagination | Pembagian hasil per halaman |
-| Keyset / cursor pagination | Paginasi berbasis posisi terakhir |
-| Envelope | Struktur pembungkus respons standar |
-| Whitelist | Daftar nilai yang diizinkan |
 
 ## 📚 Keep learning
 

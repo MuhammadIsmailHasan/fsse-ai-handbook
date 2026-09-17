@@ -20,17 +20,31 @@ tags: [validation, marshmallow, http-status-codes, api-design, security]
 - Turning validation errors into a **consistent 422 response** with field paths
 - A decision table for **HTTP status codes**
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Validation** | Checking incoming data before your code uses it | Pemeriksaan data masuk |
+| **Syntactic check** | Is it the right shape and type? | Bentuk dan tipe benar? |
+| **Semantic check** | Does it make sense for the business? | Masuk akal secara aturan? |
+| **Schema** | A written description of what valid data looks like | Deskripsi data yang sah |
+| **marshmallow** | The Python library used here for schemas | Pustaka validasi |
+| **`load` / `dump`** | Reading incoming data / preparing outgoing data | Membaca masuk / menyiapkan keluar |
+| **Cross-field rule** | A rule involving two fields (`max >= min`) | Aturan antar kolom |
+| **`422`** | "I understood the request, but the data is invalid" | Data tidak valid |
+| **Field errors** | Errors listed per field, so the UI can show them in place | Kesalahan per kolom |
+
 ## 🧠 The big idea
 
-Validation is the **security guard at the entrance**. Everything that comes in — JSON bodies, query strings, headers, uploaded files — is checked **before** it reaches your business logic. Once inside, services can trust that `salary_min` is a non-negative integer and `applied_on` is a real date.
+Validation is the **security guard at the entrance**. Everything arriving — JSON bodies, query strings, headers, uploaded files — is checked **before** it reaches your business logic. Once inside, your services can trust that `salary_min` really is a non-negative integer and `applied_on` really is a date.
 
-:term[Schema validation]{bahasa="validasi skema — memeriksa bentuk, tipe dan aturan data masuk berdasarkan definisi yang jelas"} replaces dozens of hand-written `if` checks with one clear, reusable description of valid data.
+:term[Schema validation]{bahasa="validasi skema — memeriksa bentuk, tipe dan aturan data masuk berdasarkan definisi yang jelas"} replaces dozens of hand-written `if` checks with one clear, reusable description of what valid data looks like.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Clients send anything: missing fields, wrong types, `"12jt"` instead of `12000000`, 5 MB strings, dates like `31/02/2026`, extra fields (sometimes malicious). Without validation you get crashes (`500`), corrupted data, or security holes. With good validation, the client gets a clear `422` telling them **exactly** what to fix.
+Clients send anything: missing fields, wrong types, `"12jt"` instead of `12000000`, 5 MB strings, dates like `31/02/2026`, extra fields (sometimes on purpose). Without validation you get crashes (`500`), corrupted data, or security holes. With it, the client gets a clear `422` saying **exactly** what to fix.
 
-## 💥 What happens if we DON'T validate properly?
+Without it:
 
 ```python
 @bp.post("/applications")
@@ -41,11 +55,11 @@ def create():
     application = Application(**data)                     # mass assignment
 ```
 
-- Missing fields crash with `500 Internal Server Error` (and alert your on-call engineer at night).
-- Frontend developers get vague errors and guess.
-- Values that break later (negative salary, future dates) end up in the database.
+- Missing fields crash with `500 Internal Server Error`, waking your on-call engineer at night.
+- Frontend developers get vague errors and start guessing.
+- Values that break things later (negative salary, future dates) reach the database.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Two kinds of validation
 
@@ -131,6 +145,8 @@ Errors come back nested too: `{"salary": {"max": ["…"]}, "tags": {"1": ["…"]
 
 ### 5. Separate input and output schemas
 
+Incoming and outgoing data are different documents: the client may not set `id` or `user_id`, and must never receive `password_hash`. One schema for both always leaks something eventually.
+
 ```python
 class ApplicationSchema(Schema):          # output
     id = fields.Integer(dump_only=True)
@@ -176,6 +192,8 @@ def flatten(messages, prefix=""):
 
 ### 7. Choosing status codes
 
+Quick guide: 400 the request is malformed, 401 you're not logged in, 403 you're logged in but not allowed, 404 it doesn't exist, 409 it conflicts with what's there, 422 it's well-formed but invalid.
+
 ```mermaid
 flowchart TD
     A[Request arrives] --> B{Body parseable JSON?}
@@ -214,7 +232,9 @@ flowchart TD
 
 Many teams use `400` for all client validation errors instead of `422` — the important part is to be **consistent** and document it.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -227,30 +247,10 @@ Many teams use `400` for all client validation errors instead of `422` — the i
 
 Use **all layers**: schema (friendly, complete errors) → service (business rules) → database constraints (last line of defense).
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Validate **every** input source: body, query, path, headers, files.
 - ✅ Separate schemas for create, update (partial) and output.
 - 🚫 Don't do semantic checks that need the database inside schema field validators — keep schemas fast and pure; do those in services.
 - 🚫 Don't return raw exception messages or stack traces as validation errors.
-
-## 🏆 Best practices
-
-- [ ] Validate at the boundary with **schemas**; convert to proper types (dates, ints, enums) once.
-- [ ] **Reject unknown fields** on writes; mark server-generated fields `dump_only`.
-- [ ] Return **all** field errors at once, with **stable field paths** and a machine-readable `code`.
-- [ ] Limit sizes: string lengths, list lengths, request body size (`MAX_CONTENT_LENGTH`), upload size.
-- [ ] Use **output schemas** so internal/sensitive fields never leak.
-- [ ] Keep business-rule validation in **services**, backed by **database constraints**.
-- [ ] Pick status codes with the decision table and apply them **consistently** across the API.
-- [ ] Normalize input deliberately (trim strings, lowercase emails) and document it.
-- [ ] Test invalid inputs as thoroughly as valid ones (parametrized tests).
-
-## 🏭 How it's used in industry
-
-- Flask APIs commonly use **marshmallow** (with flask-smorest or webargs — RevoShop does); FastAPI uses **Pydantic** (Module 3). The concepts transfer 1:1.
-- Frontends map `fields` paths directly onto form inputs to show inline errors.
-- Security reviews check input validation and size limits; missing validation is a frequent root cause of incidents.
 
 ## ⚠️ Common mistakes
 
@@ -263,6 +263,18 @@ Use **all layers**: schema (friendly, complete errors) → service (business rul
 :::revoshop
 Open `app/schemas/product_schema.py` (and one more, like `user_schema.py`). For `CreateProductSchema`: which fields are `required`? Are there `Length`/`Range` limits on name, description and price? Is there a separate **response** schema (`ProductResponseSchema`) so internal fields can't leak? Then look at how flask-smorest turns a `ValidationError` into a response (`@blp.arguments(...)` → a `422` by default): what does your error body look like, and does it match your *Response Format* section in the README?
 :::
+
+## 🏆 Best practices
+
+- [ ] Validate at the boundary with **schemas**; convert to proper types (dates, ints, enums) once.
+- [ ] **Reject unknown fields** on writes; mark server-generated fields `dump_only`.
+- [ ] Return **all** field errors at once, with **stable field paths** and a machine-readable `code`.
+- [ ] Limit sizes: string lengths, list lengths, request body size (`MAX_CONTENT_LENGTH`), upload size.
+- [ ] Use **output schemas** so internal/sensitive fields never leak.
+- [ ] Keep business-rule validation in **services**, backed by **database constraints**.
+- [ ] Pick status codes with the decision table and apply them **consistently** across the API.
+- [ ] Normalize input deliberately (trim strings, lowercase emails) and document it.
+- [ ] Test invalid inputs as thoroughly as valid ones (parametrized tests).
 
 ::part[Explain & Design]{n="2"}
 
@@ -347,16 +359,6 @@ A client sends a well-formed JSON body where `salary_max` is smaller than `salar
 `422 Unprocessable Content` (or `400` if your API uses 400 for all validation errors) — with a field error on `salary_max`.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Validation | Validasi — pemeriksaan data masuk |
-| Schema | Skema — definisi bentuk data yang valid |
-| Serialization (dump) | Mengubah objek menjadi JSON |
-| Deserialization (load) | Mengubah JSON menjadi data Python yang tervalidasi |
-| Cross-field validation | Validasi yang melibatkan beberapa field |
-| Status code | Kode status HTTP |
 
 ## 📚 Keep learning
 

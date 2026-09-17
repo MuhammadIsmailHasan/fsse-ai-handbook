@@ -19,20 +19,33 @@ tags: [error-handling, crud, logging, request-id, api-design]
 - **Logging** unexpected errors with context — without leaking details to clients
 - A complete **CRUD review checklist**: what every create, read, update and delete endpoint must handle
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Central error handler** | One place that turns any exception into a proper response | Penangan kesalahan terpusat |
+| **Domain error** | Your own error type with a clear meaning ("not found", "not allowed") | Kesalahan aturan aplikasi |
+| **`IntegrityError`** | The database refusing a write because a rule was broken | Pelanggaran aturan database |
+| **`409 Conflict`** | "This clashes with data that already exists" | Bentrok dengan data yang ada |
+| **Request ID** | A reference number attached to one request and its logs | Nomor rujukan permintaan |
+| **Error envelope** | The fixed JSON shape of every error response | Bentuk balasan kesalahan |
+| **Stack trace** | The internal error detail — for your logs, never for clients | Jejak kesalahan internal |
+| **Idempotent delete** | Deleting twice still ends with "it's gone" | Hapus berulang tetap aman |
+
 ## 🧠 The big idea
 
-Errors are part of your API's **user interface**. A good error response is like a good doctor's note: it says clearly **what's wrong** (a code), **what to do** (a message, field errors), and gives a **reference number** (request id) so the specialist (you, reading logs) can find the full history.
+Errors are part of your API's **user interface**. A good error response is like a good doctor's note: it says clearly **what's wrong** (a code), **what to do** (a message and field errors), and gives a **reference number** (the request id) so the specialist — you, reading logs — can find the full history.
 
-Meanwhile, the scary internal details — stack traces, SQL, file paths — stay in the medical records (logs), never on the note handed to the patient.
+The frightening internal details (stack traces, SQL, file paths) stay in the medical records, never on the note handed to the patient.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-- Clients need to react differently to "not found", "duplicate", "invalid field" and "server broke".
-- Support needs to connect "the app said something went wrong at 10:32" to the exact server log line.
+- Clients must react differently to "not found", "duplicate", "invalid field" and "the server broke".
+- Support needs to connect "the app said something went wrong at 10:32" to one exact log line.
 - Security: raw exceptions reveal table names, library versions and file paths that help attackers.
 - Consistency: one error format across 80 endpoints means one error handler in the frontend.
 
-## 💥 What happens if we DON'T design it?
+Without a design, this is what a client sees:
 
 ```text
 POST /api/v1/companies  →  500
@@ -41,9 +54,9 @@ psycopg.errors.UniqueViolation: duplicate key value violates unique constraint "
 DETAIL: Key (lower(name))=(kopi data) already exists.
 ```
 
-The client gets HTML (not JSON), a `500` for a perfectly normal "already exists" situation, and your database schema in the message. Support can't find the log line because there's no reference. Every endpoint handles errors differently.
+HTML instead of JSON, a `500` for a perfectly normal "already exists", and your database structure in the message. Support can't find the log line because there's no reference number, and every endpoint fails differently.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Three kinds of errors, three handlers
 
@@ -104,6 +117,8 @@ When one table can violate **several** constraints, inspect `error.orig.diag.con
 
 ### 3. Request IDs
 
+Think of it as the queue ticket at a bank: the customer quotes the number, and you can find exactly what happened at that counter.
+
 ```python
 import re, uuid
 from flask import g, request
@@ -153,6 +168,8 @@ Week 6 adds structured (JSON) logging.
 
 ### 6. CRUD review checklist
 
+Run this list over every endpoint you write. It's the same idea as a pilot's checklist — boring, fast, and it catches the thing you were about to forget.
+
 For **every** resource, walk through this before calling it done:
 
 | Operation | Must handle |
@@ -164,7 +181,9 @@ For **every** resource, walk through this before calling it done:
 | **Delete** | `404` · referenced by other data → `409` or soft delete · `204` · cascade rules intended |
 | **All** | `401`/`403` · JSON errors with request id · parameterized queries · one commit per use case · tests for happy and error paths |
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -175,29 +194,10 @@ For **every** resource, walk through this before calling it done:
 | Detailed error messages | easier client debugging | may leak info (e.g. "email exists" enables account enumeration) |
 | Generic messages | safer | harder for clients — balance per endpoint |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Central handlers + domain errors in every API.
 - ✅ Constraint-backed conflict detection for anything that must be unique.
 - 🚫 Don't turn every error into `500`, or every error into `400`.
 - 🚫 Don't reveal whether a specific email/username exists on login or password reset endpoints (use generic messages there).
-
-## 🏆 Best practices
-
-- [ ] Register **three handlers**: domain `AppError`, `HTTPException`, and a catch-all `Exception` → generic `500`.
-- [ ] Every error body has a stable **`code`**, a human **`message`**, optional **`fields`**, and the **`request_id`**.
-- [ ] Generate or accept (validated) **`X-Request-ID`**; return it in responses and include it in logs.
-- [ ] **Translate `IntegrityError`** in repositories (after `rollback()`) into `409` domain errors, using named constraints.
-- [ ] Log unexpected errors **once** with `logger.exception`; never log secrets or tokens.
-- [ ] Never expose stack traces, SQL or internal paths to clients; disable debug mode outside development.
-- [ ] Use the **CRUD checklist** in code review, and test error paths for every endpoint.
-- [ ] Return `503` (not `500`) when a dependency is known to be unavailable, so clients and load balancers can react.
-
-## 🏭 How it's used in industry
-
-- Error tracking (Sentry, Datadog) groups `500`s by stack trace and attaches the request id and user.
-- API style guides (Google, Microsoft, Zalando) define standard error objects; RFC 9457 "Problem Details" is a formal standard some APIs adopt (`application/problem+json`).
-- Customer support dashboards search logs by request id copied from the app.
 
 ## ⚠️ Common mistakes
 
@@ -210,6 +210,17 @@ For **every** resource, walk through this before calling it done:
 :::revoshop
 Open `app/errors.py` and `app/utils/http.py` in RevoShop. (1) Which exception types have handlers, and is there a catch-all that hides internal details? (2) Do error bodies include a **request id**? If not, sketch where `before_request`/`after_request` would go in `create_app()`. (3) Find a place where a duplicate could happen (user email, product slug, category name): is `IntegrityError` translated into a clean `409`, and is the session rolled back? (4) Check `app/logging_config.py`: would a `500` log line tell you **which request and user** caused it?
 :::
+
+## 🏆 Best practices
+
+- [ ] Register **three handlers**: domain `AppError`, `HTTPException`, and a catch-all `Exception` → generic `500`.
+- [ ] Every error body has a stable **`code`**, a human **`message`**, optional **`fields`**, and the **`request_id`**.
+- [ ] Generate or accept (validated) **`X-Request-ID`**; return it in responses and include it in logs.
+- [ ] **Translate `IntegrityError`** in repositories (after `rollback()`) into `409` domain errors, using named constraints.
+- [ ] Log unexpected errors **once** with `logger.exception`; never log secrets or tokens.
+- [ ] Never expose stack traces, SQL or internal paths to clients; disable debug mode outside development.
+- [ ] Use the **CRUD checklist** in code review, and test error paths for every endpoint.
+- [ ] Return `503` (not `500`) when a dependency is known to be unavailable, so clients and load balancers can react.
 
 ::part[Explain & Design]{n="2"}
 
@@ -285,16 +296,6 @@ What's the purpose of including a request id in error responses?
 It lets users and support reference the exact request, so engineers can find the matching log lines (with stack traces) quickly.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Error handler | Penangan error terpusat |
-| Request ID | Nomor referensi unik per permintaan |
-| Constraint violation | Pelanggaran aturan database |
-| Logging | Pencatatan kejadian aplikasi |
-| Stack trace | Jejak tumpukan pemanggilan saat error |
-| Account enumeration | Menebak akun yang terdaftar dari pesan error |
 
 ## 📚 Keep learning
 
