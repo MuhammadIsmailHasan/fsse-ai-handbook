@@ -15,28 +15,45 @@ tags: [github-actions, ci-cd, docker, ghcr, deployment, security]
 - Designing a **job graph** with `needs`, conditions and **job outputs**
 - **Service containers** (PostgreSQL, Redis) for integration tests
 - Caching (`setup-python`, Docker `type=gha`), **matrices** and path filters
-- Building and pushing to **GHCR** with `docker/metadata-action` and passing the **digest** forward
+- Building and pushing to **GHCR** with `docker/metadata-action`, and passing the **digest** forward
 - **Reusable workflows** (`workflow_call`) for deployment
-- Deploy targets: **a VM over SSH** (Week 3–4 EC2) and **AWS APIs with OIDC**
-- Post-deploy **smoke tests**, deployment history and **rollback** workflows
+- Deploy targets: **a server over SSH** (Week 3–4 EC2) and **AWS APIs with OIDC**
+- **Smoke tests** after deploy, deployment history and **rollback** workflows
 - Workflow **security**: permissions, SHA pinning, script injection, `pull_request_target`
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Workflow** | A YAML file describing automatic steps GitHub runs for you | Alur kerja otomatis |
+| **Job** | One part of a workflow, running on its own fresh machine | Satu bagian pekerjaan |
+| **Runner** | The temporary machine GitHub gives a job | Mesin sementara |
+| **Job output** | A small piece of text one job passes to the next | Keluaran antar job |
+| **Service container** | A helper container (PostgreSQL, Redis) started just for the tests | Kontainer pendukung tes |
+| **GHCR** | GitHub Container Registry — where your images are stored | Gudang image GitHub |
+| **Reusable workflow** | One workflow file that other workflows call, instead of copy-paste | Alur kerja yang dipakai ulang |
+| **OIDC** | Logging in to AWS with a short-lived token instead of stored keys | Login token sesaat |
+| **Script injection** | Text written by a stranger ending up inside your shell command | Teks asing masuk ke perintah |
+| **Concurrency group** | A rule so two runs of the same thing never overlap | Aturan anti-tumpang-tindih |
 
 ## 🧠 The big idea
 
-A workflow is a **relay race with a clipboard**. Each runner (job) starts on a fresh track (a new VM), does one leg, and writes results on the clipboard (job outputs, artifacts) for the next runner. The most important thing on the clipboard is the **image digest**: every later leg must carry exactly that one, not "whatever `latest` is now".
+A workflow is a **relay race with a clipboard**. Each runner (job) starts on a fresh track (a new machine), runs one leg, and writes the result on the clipboard (job outputs, artifacts) for the next runner.
 
-## ❓ Why does this matter?
+The most important thing on the clipboard is the **image digest**: every later leg must carry exactly that build, not "whatever `latest` happens to be now".
 
-In Module 2 your CI proved that code works. Now the pipeline must also **deliver** it: push an image, deploy it to staging, check it's alive, and let you promote the same image to production with one approval — safely, even when strangers open pull requests on your public repo.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T?
+In Module 2 your CI proved the code works. Now the pipeline must also **deliver** it: push an image, deploy it to staging, check it's alive, and let you promote that same image to production with one approval — safely, even when strangers open pull requests on your public repo.
 
-- The deploy job builds the image again → staging and production run different bits.
-- `run: ssh deploy@server "docker pull app:latest"` — `latest` changed between staging and production.
-- A PR from a fork edits the workflow to print `secrets.DEPLOY_KEY`.
+Without this care:
+
+- The deploy job builds the image again → staging and production run different code.
+- `run: ssh deploy@server "docker pull app:latest"` — and `latest` changed between staging and production.
+- A pull request from a fork edits the workflow to print `secrets.DEPLOY_KEY`.
 - A deploy is cancelled halfway because a newer commit arrived (`cancel-in-progress: true` on deploys).
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The job graph
 
@@ -64,8 +81,8 @@ jobs:
     secrets: inherit
 ```
 
-- Jobs run on **separate machines**; share data with **outputs** (small strings) and **artifacts** (files).
-- A job-level `if` skips the job. When a job listed in `needs` is skipped or fails, its dependents are skipped too — unless their `if` uses a status function like `!cancelled()` or `always()`. Keep conditions simple.
+- Jobs run on **separate machines**, so nothing is shared automatically: pass small strings with **outputs** and files with **artifacts**.
+- A job-level `if` skips the job. If a job in `needs` is skipped or fails, the jobs after it are skipped too — unless their `if` uses `!cancelled()` or `always()`. Keep the conditions simple.
 
 ### 2. Integration tests with services
 
@@ -87,7 +104,7 @@ test:
     REDIS_URL: redis://localhost:6379/0
 ```
 
-Match the **production database engine and major version** — SQLite tests miss PostgreSQL behavior (constraints, JSON, time zones, locking).
+Use the **same database engine and major version as production**. Testing on SQLite is like rehearsing a wedding in your living room: the steps fit, but the real hall behaves differently (constraints, JSON, time zones, locking).
 
 ### 3. Speed: caching, matrices, filters
 
@@ -134,7 +151,7 @@ build:
         cache-to: type=gha,mode=max
 ```
 
-`GITHUB_TOKEN` with `packages: write` pushes to GHCR — no personal token needed. Pull requests build (to catch Dockerfile errors) but don't push.
+`GITHUB_TOKEN` with `packages: write` is enough to push to GHCR — no personal token needed. Pull requests still build the image (to catch Dockerfile errors) but don't push it.
 
 ### 5. A reusable deploy workflow
 
@@ -156,11 +173,11 @@ jobs:
     steps: [...]
 ```
 
-One implementation, called for staging and production — the only difference is the environment's variables, secrets and protection rules.
+One recipe, cooked for staging and for production — only the environment's variables, secrets and approval rules differ. `cancel-in-progress: false` matters here: cancelling a deploy halfway can leave migrations applied but the old code running.
 
 ### 6. Deploy targets
 
-**A VM with Docker Compose (your EC2 in Week 4)**:
+**A server with Docker Compose (your EC2 in Week 4)**:
 
 ```yaml
 - name: Deploy over SSH
@@ -175,7 +192,9 @@ One implementation, called for staging and production — the only difference is
     ssh -i ~/.ssh/deploy_key "deploy@$HOST" "API_IMAGE=$IMAGE /opt/revoshop/deploy.sh"
 ```
 
-On the server, `deploy.sh` pulls the digest, runs the `migrate` service, recreates `api`, waits for health, and records the digest for rollback.
+Writing `known_hosts` yourself means your pipeline only talks to the server it already knows — like checking the driver's plate number before getting in.
+
+On the server, `deploy.sh` pulls the digest, runs the `migrate` service, recreates `api`, waits for health, and records the digest so you can roll back.
 
 **AWS APIs (ECS, App Runner) with OIDC** — no SSH, no long-lived keys (lesson 04):
 
@@ -194,65 +213,50 @@ On the server, `deploy.sh` pulls the digest, runs the `migrate` service, recreat
   run: python -m pytest tests/smoke -q
 ```
 
-- GitHub records deployments per environment (URL, commit, status) — your deployment history.
-- Add a manual **rollback** workflow (`workflow_dispatch` with an `image` input) that calls the same `deploy.yml` with a previous digest.
-- If smoke tests fail after a production deploy, fail the job loudly; automatic rollback is a good next step once smoke tests are reliable.
+- GitHub records deployments per environment (URL, commit, status) — that's your deployment history.
+- Add a manual **rollback** workflow (`workflow_dispatch` with an `image` input) that calls the same `deploy.yml` with an older digest.
+- If smoke tests fail after a production deploy, fail the job loudly. Automatic rollback is a good next step once you trust the smoke tests.
 
 ### 8. Workflow security
 
-| Risk | Defense |
+| Risk | Defence |
 |---|---|
-| Compromised third-party action (e.g. a moved tag) | pin **full commit SHAs** (with version comments); Dependabot/Renovate to update |
-| Over-privileged `GITHUB_TOKEN` | `permissions: contents: read` at top; add scopes per job |
-| **Script injection** from PR titles, branch names, issue bodies | never `${{ github.event.* }}` inside `run:`; pass via `env:` and quote `"$VAR"` |
-| `pull_request_target` running untrusted PR code with secrets | avoid it; never check out the PR head in it |
-| Secrets exposed to forks | secrets aren't passed to workflows triggered from forks — don't work around it |
-| Leaked credentials in logs | `::add-mask::` for dynamic secrets; prefer OIDC over stored keys |
-| Deploys from unreviewed branches | environments with required reviewers and deployment branch rules |
+| A third-party action gets compromised (e.g. a tag moved to new code) | pin **full commit SHAs** with a version comment; let Dependabot/Renovate update them |
+| `GITHUB_TOKEN` with too many rights | `permissions: contents: read` at the top; add more only in the job that needs it |
+| **Script injection** from PR titles, branch names, issue bodies | never put `${{ github.event.* }}` inside `run:`; pass it via `env:` and quote `"$VAR"` |
+| `pull_request_target` running a stranger's code with your secrets | avoid it; never check out the PR's own code in it |
+| Secrets reaching forks | GitHub doesn't give secrets to fork workflows — don't try to work around that |
+| Credentials printed in logs | `::add-mask::` for values you create at runtime; prefer OIDC over stored keys |
+| Deploys from unreviewed branches | environments with required reviewers and branch/tag rules |
 
-Tools: **actionlint** (syntax and expression errors) and **zizmor** (security audit for workflows) in CI.
+Tools: **actionlint** (syntax and expression mistakes) and **zizmor** (security review of workflows) in CI.
 
-## ⚖️ Trade-offs
+### Choosing your setup
 
-| Choice | ✅ | ❌ |
-|---|---|---|
-| Reusable workflows | one deploy implementation | debugging across files; input/secret plumbing |
-| Composite actions | reusable steps | can't define jobs/environments |
-| SSH deploys to a VM | simple, cheap | key management, less auditable than cloud APIs |
-| Cloud-native deploy (ECS/App Runner) | IAM/OIDC, rollbacks, scaling | more AWS concepts and cost |
-| GitHub-hosted runners | zero maintenance | minutes limits on private repos; no private network access |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ This shape (verify → build once → deploy staging → approve → production) for any service.
-- ✅ Reusable workflows once two environments or two services deploy the same way.
-- 🚫 Don't give PR workflows write permissions or deploy secrets.
-- 🚫 Don't deploy by tag names like `latest` or branch names — use digests.
-
-## 🏆 Best practices
-
-- [ ] Job graph with explicit `needs`; share the digest through outputs.
-- [ ] Integration tests against the production database engine via services.
-- [ ] Cache dependencies and Docker layers; keep PR runs fast.
-- [ ] Push images only from trusted events; tag with SHA; deploy by digest.
-- [ ] One reusable deploy workflow; environments hold config, secrets and approvals.
-- [ ] Deploy concurrency groups without cancellation; `timeout-minutes` everywhere.
-- [ ] Smoke tests after every deploy; a rollback workflow you've tried once.
-- [ ] Least privilege, SHA-pinned actions, no expressions in `run:`, no `pull_request_target` with PR code.
-- [ ] Lint workflows (actionlint, zizmor) in CI.
-
-## 🏭 How it's used in industry
-
-- The Docker metadata + build-push + GHCR/ECR pattern is standard for container services on GitHub.
-- Organizations publish internal reusable workflows ("golden paths") so every repository deploys the same way.
-- High-profile supply-chain incidents involving compromised or retagged GitHub Actions led many companies to require SHA pinning and workflow security scanning.
+- ✅ This shape — verify → build once → deploy staging → approve → production — fits almost any service.
+- ✅ Move deploy steps into a reusable workflow as soon as two environments or two services deploy the same way.
+- 🚫 Never give pull request workflows write permissions or deploy secrets.
+- 🚫 Never deploy by `latest` or a branch name — deploy digests.
+- SSH to a server is simple and cheap but you manage keys; cloud-native deploys (ECS/App Runner) give IAM, rollbacks and scaling but add AWS concepts and cost.
 
 ## ⚠️ Common mistakes
 
 - Using the image **tag** as the job output instead of the digest.
-- Service containers with no health options → tests start before PostgreSQL is ready.
-- `needs.build.outputs.image` empty because the output wasn't declared at job level.
+- Service containers without health options → tests start before PostgreSQL is ready.
+- `needs.build.outputs.image` is empty because the output wasn't declared at job level.
 - Forgetting `packages: write` → "denied: installation not allowed to Create organization package".
+
+## 🏆 Best practices
+
+- [ ] A job graph with explicit `needs`; pass the digest through outputs.
+- [ ] Integration tests against the production database engine, using services.
+- [ ] Cache dependencies and Docker layers; keep PR runs fast.
+- [ ] Push images only from trusted events; tag with the SHA; deploy by digest.
+- [ ] One reusable deploy workflow; environments hold config, secrets and approvals.
+- [ ] Deploy concurrency groups that don't cancel; `timeout-minutes` on every job.
+- [ ] Smoke tests after every deploy; a rollback workflow you have actually tried once.
+- [ ] Least privilege, SHA-pinned actions, no expressions inside `run:`, no `pull_request_target` with PR code.
+- [ ] Lint the workflows themselves (actionlint, zizmor) in CI.
 
 :::revoshop
 1. **SQLite vs PostgreSQL.** `tests/conftest.py` sets `os.environ['DATABASE_URL'] = 'sqlite:///:memory:'` and uses `db.create_all()`. So your 467 tests never exercise **Alembic migrations** or PostgreSQL constraints (the test output even prints your `ck_payments_status_valid` CHECK constraint DDL for SQLite). Design a separate CI job that starts a `postgres:16-alpine` service, runs `flask db upgrade` from an empty database, and then boots the app against it.
@@ -270,27 +274,27 @@ Explain the relay race with a clipboard, and why the clipboard should carry a di
 
 ## 📐 Design it
 
-Write the job list (names, triggers, `needs`, permissions, outputs) for a repository with **two services** — RevoShop API (Python) and a Next.js storefront — that deploy independently to staging on main and to production on tags. Include path filters, caching and how you avoid duplicating deploy logic.
+Write the job list (names, triggers, `needs`, permissions, outputs) for a repository with **two services** — the RevoShop API (Python) and a Next.js storefront — that deploy independently to staging on main and to production on tags. Include path filters, caching and how you avoid duplicating the deploy logic.
 
 :::quiz
 Show a possible design
 
-- **Triggers:** PR + push main + tags `api-v*` and `web-v*` (independent releases).
+- **Triggers:** PR + push to main + tags `api-v*` and `web-v*` (independent releases).
 - **changes** job: `dorny/paths-filter` (SHA-pinned) → outputs `api`, `web` booleans (or native `paths` filters in two workflows).
 - **api-verify** (`if: needs.changes.outputs.api == 'true'`): pip cache, ruff, pytest on PostgreSQL + Redis services.
 - **web-verify**: npm cache, lint, typecheck, Vitest; Playwright against a production build.
-- **api-build** / **web-build**: `packages: write` only on non-PR events; outputs `image` digests.
+- **api-build** / **web-build**: `packages: write` only on non-PR events; each outputs its `image` digest.
 - **deploy-api-staging** / **deploy-web-staging** (`main`): `uses: ./.github/workflows/deploy.yml` with `service`, `environment: staging`, `image`; `id-token: write` only here.
 - **deploy-*-production** on `api-v*` / `web-v*` tags with the `production` environment (required reviewers, tag rules).
-- **rollback.yml**: `workflow_dispatch` inputs `service`, `environment`, `image` → same reusable workflow.
-- Top-level `permissions: contents: read`; concurrency `deploy-${service}-${environment}` without cancellation; SHA-pinned actions; zizmor + actionlint job.
+- **rollback.yml**: `workflow_dispatch` with inputs `service`, `environment`, `image` → the same reusable workflow.
+- Top-level `permissions: contents: read`; concurrency `deploy-${service}-${environment}` without cancellation; SHA-pinned actions; a zizmor + actionlint job.
 :::
 
 ### 📝 Self-review checklist
 
-- [ ] One deploy implementation reused
+- [ ] One deploy implementation, reused
 - [ ] Secrets and OIDC only in deploy jobs
-- [ ] Unchanged service isn't rebuilt or redeployed
+- [ ] An unchanged service isn't rebuilt or redeployed
 
 ::ai-review{task="design"}
 
@@ -302,34 +306,23 @@ Write a `ci-cd.yml` (lint, test on PostgreSQL and Redis, build and push by diges
 
 :::hints
 - YAML reads `on:` as the boolean `True` — the test handles it, but remember it when you debug with Python.
-- A job that `uses:` a reusable workflow can't have `steps` or `runs-on`.
+- A job that `uses:` a reusable workflow can't also have `steps` or `runs-on`.
 - Pass `${{ inputs.image }}` through `env:` and quote `"$IMAGE"` in the script.
 :::
 
 ## ✅ Quick check
 
 :::quiz
-Why can't `deploy-staging` in a reusable-workflow call have a `timeout-minutes`?
+Why can't the `deploy-staging` job that calls a reusable workflow have its own `timeout-minutes`?
 
-Jobs that call reusable workflows only accept a limited set of keys (`needs`, `if`, `with`, `secrets`, `permissions`, `concurrency`, `strategy`); timeouts are set on the jobs inside the called workflow.
+A job that calls a reusable workflow only accepts a few keys (`needs`, `if`, `with`, `secrets`, `permissions`, `concurrency`, `strategy`). Timeouts belong to the jobs inside the called workflow.
 :::
 
 :::quiz
-A PR from a fork changes `ci-cd.yml` to print `secrets.DEPLOY_SSH_KEY`. What happens with `pull_request` triggers?
+A pull request from a fork changes `ci-cd.yml` to print `secrets.DEPLOY_SSH_KEY`. What happens with a `pull_request` trigger?
 
-Workflows from forks run without repository secrets (and with a read-only token), so the secret isn't available. Using `pull_request_target` and checking out the PR code would break that protection.
+Fork workflows run without your repository secrets and with a read-only token, so the secret simply isn't there. Using `pull_request_target` and checking out the PR's code would break that protection.
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Workflow | Alur kerja otomatis |
-| Job output | Keluaran job untuk job berikutnya |
-| Service container | Kontainer layanan pendukung (DB, Redis) |
-| Reusable workflow | Alur kerja yang dapat dipakai ulang |
-| Script injection | Injeksi skrip |
-| Smoke test | Uji asap (cek cepat pasca-deploy) |
 
 ## 📚 Keep learning
 
