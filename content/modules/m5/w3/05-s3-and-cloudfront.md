@@ -21,22 +21,40 @@ tags: [aws, s3, cloudfront, cdn, uploads, security]
 - Serving user-uploaded images safely (content types, sizes, image processing)
 - Costs: storage, requests, data transfer, CloudFront
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **S3 bucket** | A container for files in AWS, with unlimited space | Wadah penyimpanan file |
+| **Key / prefix** | A file's full name in the bucket; the folder-like part in front of it | Nama file / awalan folder |
+| **Block Public Access** | The switch that stops a bucket becoming readable by everyone | Pencegah akses publik |
+| **Bucket policy** | A rule on the bucket saying who may use it | Aturan pada bucket |
+| **Versioning** | Keeping older copies of a file when it's overwritten or deleted | Menyimpan versi lama |
+| **Lifecycle rule** | An automatic rule to move or delete old files | Aturan otomatis umur file |
+| **Presigned URL** | A temporary link that lets a browser upload or download one file directly | Tautan sementara |
+| **CORS** | Browser rules for which websites may call another domain | Izin lintas domain |
+| **CloudFront** | AWS's CDN: copies of your files kept close to users | Jaringan pengantar konten |
+| **Origin Access Control** | The setting that lets only CloudFront read your private bucket | Akses khusus CDN |
+| **Invalidation** | Telling CloudFront to forget a cached file | Menghapus cache CDN |
+
 ## 🧠 The big idea
 
-S3 is a **warehouse with numbered shelves** (keys) that never runs out of space; you don't put a storefront on the warehouse. **CloudFront** is the chain of **convenience stores near every neighborhood**: it keeps popular items on nearby shelves, the warehouse only opens its back door to the store's delivery trucks (Origin Access Control), and customers never walk into the warehouse.
+S3 is a **warehouse with numbered shelves** (keys) that never runs out of space. You don't let customers walk into a warehouse, and you don't put a shopfront on it.
 
-## ❓ Why does this matter?
+**CloudFront** is the chain of **minimarkets in every neighbourhood**: popular items sit on a nearby shelf, so customers get them fast. The warehouse opens its back door only to the minimarket's delivery trucks (that's Origin Access Control) — never to the public.
 
-RevoShop stores product images as URL strings (`product_images.url`). Where do those files live? On the API server's disk, they vanish when the instance is replaced and slow the API when served. S3 + CloudFront is the standard answer for uploads, static assets and backups — and public buckets are one of the most famous sources of data leaks.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T?
+RevoShop stores product images as URL strings (`product_images.url`). But where do those files actually live? On the API server's disk they disappear when the instance is replaced, and serving them slows down the API. S3 + CloudFront is the standard answer for uploads, static files and backups — and public buckets are one of the most famous causes of data leaks.
+
+Done carelessly:
 
 - Uploads stream through gunicorn workers: 20 sellers uploading 5 MB photos block every checkout request.
-- A bucket made public "for images" also exposes `exports/users.csv` someone uploaded later.
-- Users upload `evil.html` served from your domain with `text/html` → stored XSS.
-- Every product page downloads full-size 4 MB images from the Singapore region to phones in Makassar.
+- A bucket made public "for images" also exposes the `exports/users.csv` somebody uploaded later.
+- A user uploads `evil.html`, and your domain serves it as `text/html` → stored XSS.
+- Every product page sends full-size 4 MB images from Singapore to phones in Makassar.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. S3 basics
 
@@ -62,6 +80,8 @@ RevoShop stores product images as URL strings (`product_images.url`). Where do t
 - **Lifecycle rules**: expire noncurrent versions after N days, abort incomplete multipart uploads, move old logs/backups to cheaper classes, delete temporary uploads.
 
 ### 4. Presigned uploads: the browser talks to S3
+
+A presigned URL is a **one-time delivery slip**: it says which shelf, which file type and which maximum size, and it expires in minutes. The seller's browser hands the box straight to the warehouse, so your API never carries it.
 
 ```mermaid
 sequenceDiagram
@@ -133,6 +153,8 @@ Only your frontend origins; never `*` for upload buckets.
 
 ### 7. Caching and invalidation
 
+Caching is the minimarket keeping stock on the shelf. An invalidation is telling every branch "throw that item away, we changed it" — which costs time and money, so a better habit is to give changed files a new name (a hash in the file name) instead.
+
 - Use **immutable keys** (a new UUID or content hash per upload) and long `Cache-Control: public, max-age=31536000, immutable` → no invalidations needed.
 - For files that keep their name (e.g. `index.html`), use short TTLs or **invalidations** (`/index.html`); a monthly number of invalidation paths is free, beyond that they cost.
 - The **cache key** (URL + chosen headers/cookies/query strings) decides what's shared — never cache per-user responses under a shared key.
@@ -146,7 +168,9 @@ Only your frontend origins; never `*` for upload buckets.
 | Data transfer | S3 → internet is billed; S3 → CloudFront is free; CloudFront → users billed per GB (CloudFront has an always-free monthly allowance — check current terms) |
 | Versioning | old versions are stored objects too — use lifecycle rules |
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -156,29 +180,10 @@ Only your frontend origins; never `*` for upload buckets.
 | Public bucket website | quick | no HTTPS on custom domains, leaks risk, no caching control |
 | SSE-KMS | key policies, audit | KMS request costs, more configuration |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ User uploads, static assets, backups, exports, logs.
 - ✅ CloudFront for anything browsers download repeatedly.
 - 🚫 Don't use S3 as a database or for files that need POSIX file locking.
 - 🚫 Don't make buckets public; don't serve user-uploaded HTML/SVG from your main domain.
-
-## 🏆 Best practices
-
-- [ ] Block Public Access on; ACLs disabled; encryption on; TLS-only bucket policy.
-- [ ] Least-privilege IAM for the app (only its prefixes); OAC for CloudFront.
-- [ ] Server-generated keys; presigned POST with type and size conditions; short expiry.
-- [ ] Confirm uploads; process/re-encode user images; strip metadata.
-- [ ] Versioning + lifecycle rules (noncurrent versions, incomplete multipart uploads).
-- [ ] Immutable object keys with long cache headers; invalidations only for mutable paths.
-- [ ] Tight CORS origins.
-- [ ] Separate buckets per purpose/environment (images, backups, logs).
-
-## 🏭 How it's used in industry
-
-- Marketplaces and social apps upload media directly to object storage with presigned URLs, then process asynchronously into thumbnails and formats.
-- CDNs (CloudFront, Cloudflare, Fastly) serve most static and media traffic on the web.
-- Accidentally public S3 buckets have caused many publicized data exposures, which is why AWS turned on Block Public Access for new buckets by default.
 
 ## ⚠️ Common mistakes
 
@@ -194,6 +199,17 @@ Only your frontend origins; never `*` for upload buckets.
 4. **Delivery.** Product listings (`ProductList` in `app/routes/products.py`) return image URLs for many products. With CloudFront + immutable keys, what `Cache-Control` do the images get, and why will you never need an invalidation when a seller replaces an image?
 5. **Safety.** A seller uploads `photo.jpg` that is really an HTML file. Which parts of your design stop it from becoming stored XSS?
 :::
+
+## 🏆 Best practices
+
+- [ ] Block Public Access on; ACLs disabled; encryption on; TLS-only bucket policy.
+- [ ] Least-privilege IAM for the app (only its prefixes); OAC for CloudFront.
+- [ ] Server-generated keys; presigned POST with type and size conditions; short expiry.
+- [ ] Confirm uploads; process/re-encode user images; strip metadata.
+- [ ] Versioning + lifecycle rules (noncurrent versions, incomplete multipart uploads).
+- [ ] Immutable object keys with long cache headers; invalidations only for mutable paths.
+- [ ] Tight CORS origins.
+- [ ] Separate buckets per purpose/environment (images, backups, logs).
 
 ::part[Explain & Design]{n="2"}
 
@@ -251,16 +267,6 @@ What does Origin Access Control change about the S3 bucket?
 The bucket stays private: its policy allows `s3:GetObject` only to the CloudFront service principal for your specific distribution, so users can't bypass the CDN to read objects directly.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Object storage | Penyimpanan objek |
-| Presigned URL | URL bertanda tangan sementara |
-| CDN | Jaringan pengiriman konten |
-| Origin | Sumber asli konten di belakang CDN |
-| Cache invalidation | Pembatalan cache |
-| Lifecycle rule | Aturan siklus hidup objek |
 
 ## 📚 Keep learning
 
