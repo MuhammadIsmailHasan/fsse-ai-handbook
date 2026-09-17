@@ -89,12 +89,23 @@ Counts are lessons (files), from `npm run -s i18n`.
 | Module 4 (frontend) | 50 | 50 | 50 | ✅ done |
 | Module 5 (deployment) | 27 | 27 | 5 | ✅ English done · Indonesian pending |
 | Module 1 | 14 | 0 | 0 | ⬜ |
-| Module 2 | 52 | 0 | 0 | ⬜ |
+| Module 2 (backend) | 52 | 45 | 0 | ✅ English done (7 placement checks were already plain) |
 | Module 8 | 12 | 0 | 0 | ⬜ low priority |
 | Tracks: architecture | 19 | 0 | 0 | ⬜ |
 | Tracks: DSA | 12 | 0 | 0 | ⬜ |
 | Projects (careerpilot, studymind, supportdesk-ai) | 6 | 0 | 0 | ⬜ |
 | Guides | 2 | 0 | 0 | ⬜ |
+
+### Module 2 checklist — English pass ✅ complete
+
+- [x] w1 (7 lessons): software engineering, editor & Markdown, terminal, Git, collaboration, uv, Docker basics
+- [x] w2 (7): PostgreSQL setup, schema design, SQL queries, relationships, joins, indexes, transactions
+- [x] w3 (9): Python syntax, control flow, generators, functions, data structures, OOP, type hints, exceptions, project layout
+- [x] w4 (6): Flask structure, SQLAlchemy, models, migrations, relationships, layered architecture
+- [x] w5 (8): REST & GET, writes, validation, error handling, JWT, RBAC, OpenAPI, webhooks
+- [x] w6 (9): pytest, API tests, Locust, secrets, deployment, Docker for production, GitHub Actions, logging, Defend Your RevoShop
+
+The 7 placement checks were left as they were: short, already plain, and mostly question-and-answer.
 
 ### Module 5 checklist — English pass ✅ complete
 
@@ -105,7 +116,7 @@ Counts are lessons (files), from `npm run -s i18n`.
 
 Indonesian versions exist only for w1 00–04; the rest are a later pass (see section 0 and template C2).
 
-Next in the English pass: Module 2 (largest, 52), Module 1, tracks, projects, guides; Module 8 last. Then new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) — written in the new style in both languages from the start.
+Next in the English pass: Module 1 (14), tracks (architecture 19, DSA 12), projects and guides (8); Module 8 last. Then new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) — written in the new style in both languages from the start.
 
 ---
 
