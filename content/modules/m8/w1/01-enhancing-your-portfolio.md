@@ -20,21 +20,32 @@ tags: [career, portfolio, github, readme, projects]
 - Presenting **CareerPilot**, **RevoShop** and bootcamp work honestly — including AI assistance
 - A portfolio checklist you'll reuse for every future project
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Portfolio** | The few projects you show as proof of what you can do | Kumpulan karya |
+| **Flagship project** | Your best project, presented properly | Proyek unggulan |
+| **README** | The first page of a repo: what it is, how to run it | Halaman perkenalan proyek |
+| **Proof signal** | Something that shows the work is real (live link, tests, CI) | Bukti nyata |
+| **Demo** | A short video or GIF of the app working | Peragaan singkat |
+| **Architecture diagram** | A picture of the parts and how they connect | Gambar susunan sistem |
+| **Decision log** | Short notes on why you chose X over Y | Catatan alasan keputusan |
+| **AI-assisted** | Work where AI helped, stated honestly | Dibantu AI, disebut terbuka |
+
 ## 🧠 The big idea
 
 A portfolio is a **property listing**, not a storage unit. Buyers don't want to see every box you own — they want 3 great photos, the floor plan, the location and proof the plumbing works. For a junior developer, that means: a few projects, each with a clear **what**, **how**, **proof** and **why**.
 
-## ❓ Why does this matter?
+## ❓ Why it matters
 
-Juniors compete with many applicants who all list "React, Node, Python". A portfolio is the cheapest way for a hiring team to reduce risk: *can this person build something real, finish it, test it, deploy it and explain it?* In Indonesia's market, many companies (especially startups) look at GitHub and deployed projects before or instead of degrees.
+Juniors compete with many applicants who all list "React, Node, Python". A portfolio is the cheapest way for a hiring team to lower their risk: *can this person build something real, finish it, test it, deploy it and explain it?*
 
-## 💥 What happens if we DON'T?
+That matters in Indonesia, where many companies — especially startups — look at GitHub and a deployed link before a degree. It matters even more for **remote roles abroad**, including US companies: they can't meet you, so your repo, your README and a working link are most of what they have to judge.
 
-- GitHub with 40 repos named `todo-app`, `learn-react-2`, `test123`, no READMEs.
-- A deployed link that returns a Heroku error page from 2022.
-- A project you can't explain in the interview because an AI tool wrote most of it — the portfolio becomes a liability.
+Without it, you're asking a stranger to take your word for it — and they have twenty other applications open.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. How reviewers read
 
@@ -58,6 +69,8 @@ Design for all three: a scannable top, a deep middle, and stories you can tell.
 For you right now: **CareerPilot** (Phases 1, 2, 4 → full-stack story), **RevoShop** (backend with payments — after the *Defend Your RevoShop* work), and optionally one smaller project that shows a different skill (a DSA/CLI tool or a UI component library). **Pin** these on GitHub.
 
 ### 3. The README that sells
+
+Assume the reader has 30 seconds and no context. What it does, a screenshot, how to run it, and what's interesting technically — in that order.
 
 ```markdown
 # CareerPilot — AI job-hunt assistant
@@ -106,11 +119,15 @@ Order matters: **what + proof first** (live link, screenshot), details later.
 
 ### 5. Honesty about AI and bootcamp work
 
+Saying "AI generated the first draft; I redesigned the payment flow and wrote the tests" is stronger than pretending otherwise. Companies expect AI use in 2026; they're checking whether you understand the result.
+
 - Using AI tools is normal. Say how: *"I used an AI agent to scaffold the Docker and CI config and reviewed every line; the pipeline rules, session handling and tests are mine."*
 - Bootcamp projects are fine; make them yours: improve something measurable (add tests, fix an N+1 query, add rate limiting) and document the change.
 - Never claim team work as solo work. Write "team of 4 — I built the payment webhook and order service".
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -118,6 +135,14 @@ Order matters: **what + proof first** (live link, screenshot), details later.
 | Many small projects | breadth, keywords | looks unfinished, nothing to discuss deeply |
 | Personal site | branding, control | time to build/maintain; GitHub + LinkedIn often enough for juniors |
 | Deployed on free tiers | real proof | sleeps/limits; mention cold starts or keep a demo video |
+
+## ⚠️ Common mistakes
+
+- Screenshots of the default Next.js page; placeholder READMEs.
+- Broken live links, demo credentials that don't work.
+- Tech-stack lists without saying what the app does.
+- Committing `.env` files or API keys.
+- Hiding the fact that a project was a team or tutorial project.
 
 ## 🏆 Best practices
 
@@ -128,20 +153,6 @@ Order matters: **what + proof first** (live link, screenshot), details later.
 - [ ] Clear commit history and a license; `.env.example` provided.
 - [ ] State your role and AI assistance honestly.
 - [ ] You can explain any file in a flagship project for 2 minutes.
-
-## 🏭 How it's used in industry
-
-- Many engineering managers open the GitHub link on a CV before the first call; startups in Jakarta and remote-first companies often weigh projects heavily for juniors.
-- Take-home assignments are often reviewed with the same lens: README, tests, structure, decisions.
-- Interviewers frequently start with "walk me through a project you're proud of" — your README is the script.
-
-## ⚠️ Common mistakes
-
-- Screenshots of the default Next.js page; placeholder READMEs.
-- Broken live links, demo credentials that don't work.
-- Tech-stack lists without saying what the app does.
-- Committing `.env` files or API keys.
-- Hiding the fact that a project was a team or tutorial project.
 
 ::part[Explain & Design]{n="2"}
 

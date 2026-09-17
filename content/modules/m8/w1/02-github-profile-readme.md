@@ -19,21 +19,31 @@ tags: [career, github, profile, open-source, personal-brand]
 - Commit messages and history that tell a story
 - Small, real **open-source contributions** for juniors
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Profile README** | The page shown on your GitHub profile (`<you>/<you>` repo) | Halaman perkenalan profil |
+| **Pinned repository** | The up-to-six projects you choose to show first | Repo yang disematkan |
+| **Repository hygiene** | The basics: README, license, `.gitignore`, no secrets | Kerapian repo |
+| **Topics** | Tags that make a repo findable | Label pencarian |
+| **Commit message** | The note explaining one change | Pesan perubahan |
+| **Contribution graph** | The squares showing your activity over time | Grafik aktivitas |
+| **Open source contribution** | A change you made to someone else's project | Kontribusi ke proyek lain |
+
 ## 🧠 The big idea
 
 Your GitHub profile is a **shop window**. People walking past decide in seconds whether to come in. A clean window with three well-lit products (pinned projects) and a small sign saying what you sell (profile README) beats a window piled with everything in the warehouse.
 
-## ❓ Why does this matter?
+## ❓ Why it matters
 
-Your CV and LinkedIn link to GitHub. For developers without years of experience, GitHub is where claims become evidence: real code, tests, commit habits and how you write documentation.
+Your CV and LinkedIn both link to GitHub. For someone without years of experience, GitHub is where claims turn into evidence: real code, real tests, commit habits and how you write documentation.
 
-## 💥 What happens if we DON'T?
+For remote applications this is even more important — a US company hiring across time zones often opens your GitHub before your CV, because it's the fastest way to see how you actually work.
 
-- Profile shows six forks and a "hello world" repo pinned.
-- A profile README full of animated banners, 30 technology badges and stat cards — but no link to a single project.
-- An old repo with a committed `.env` file containing a real API key (bots scan GitHub for these within minutes).
+The shop window comparison is the whole lesson: three well-lit products beat a window piled with everything in the warehouse.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The profile README
 
@@ -63,6 +73,8 @@ Keep it short: who you are, what you build, 2–3 links, how to reach you. One s
 
 ### 3. Repository hygiene checklist
 
+Run this list on every repo you pin. One leaked `.env` or a README that says only `# project` undoes the rest of the work.
+
 | File / setting | Why |
 |---|---|
 | `README.md` | what, why, how to run and test |
@@ -76,6 +88,8 @@ Keep it short: who you are, what you build, 2–3 links, how to reach you. One s
 If you ever committed a secret: **rotate it first** (revoke the key), then remove it from history. Deleting the file in a new commit doesn't remove it from history.
 
 ### 4. Commits that tell a story
+
+Reviewers skim your history to see how you work. Small commits with clear messages say "this person can work on a team" more convincingly than any line in a CV.
 
 ```text
 feat(api): add status transition rules with history
@@ -92,7 +106,9 @@ docs: add architecture diagram and decisions to README
 
 Realistic first contributions: fix a typo or unclear step in docs you used, add a missing test, reproduce a bug with a minimal example, translate docs to Bahasa Indonesia. Look for `good first issue` labels, read `CONTRIBUTING.md`, and keep PRs small.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | | ✅ | ❌ |
 |---|---|---|
@@ -100,6 +116,13 @@ Realistic first contributions: fix a typo or unclear step in docs you used, add 
 | Heavy stat cards/badges | colorful | slow, noisy, says little about ability |
 | All repos public | transparency | exposes unfinished/embarrassing work; archive instead |
 | Contribution graph focus | shows consistency | easy to game; not a hiring signal on its own |
+
+## ⚠️ Common mistakes
+
+- A profile README longer than any project README.
+- Forks of popular repos pinned as if they were your work.
+- Private flagship repos while the CV says "see my GitHub".
+- Personal phone number and home address in a public README.
 
 ## 🏆 Best practices
 
@@ -110,19 +133,6 @@ Realistic first contributions: fix a typo or unclear step in docs you used, add 
 - [ ] Clear commit messages; PRs for features; tags for milestones.
 - [ ] Same name, photo and headline as LinkedIn for recognisability.
 - [ ] Use a professional email for commits (or GitHub's noreply address for privacy).
-
-## 🏭 How it's used in industry
-
-- Hiring managers often open 1–2 repos and read the README, a test file and a core module.
-- Some companies source candidates by searching GitHub for technologies and locations.
-- Open-source maintainers' PR reviews are public — thoughtful discussion there is visible evidence of collaboration skills.
-
-## ⚠️ Common mistakes
-
-- A profile README longer than any project README.
-- Forks of popular repos pinned as if they were your work.
-- Private flagship repos while the CV says "see my GitHub".
-- Personal phone number and home address in a public README.
 
 ::part[Explain & Design]{n="2"}
 

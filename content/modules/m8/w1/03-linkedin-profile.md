@@ -19,23 +19,36 @@ tags: [career, linkedin, personal-brand, networking, recruiters]
 - Skills, custom URL, photo and banner basics
 - **Open to Work** options and connecting with a message that gets replies
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Headline** | The one line under your name — your main advert | Judul singkat profil |
+| **About** | A short story of who you are and what you build | Ringkasan diri |
+| **Featured** | Pinned links: projects, articles, demos | Karya yang disorot |
+| **Keywords** | The words recruiters actually search for | Kata kunci pencarian |
+| **Open to Work** | The setting telling recruiters you're available | Penanda terbuka untuk kerja |
+| **Sourcing** | Recruiters searching for candidates themselves | Pencarian kandidat aktif |
+| **Referral** | Someone inside the company recommending you | Rekomendasi orang dalam |
+| **Connection request** | An invite — better with a short, specific note | Permintaan terhubung |
+
 ## 🧠 The big idea
 
 LinkedIn is a **search engine with a handshake**. First you must be **findable** (keywords recruiters type), then **credible** in 15 seconds (headline, photo, Featured proof), then **approachable** (clear availability and contact).
 
-## ❓ Why does this matter?
+## ❓ Why it matters
 
-In Indonesia, LinkedIn is one of the main channels recruiters and tech companies use for sourcing, alongside job portals like JobStreet, Glints and Kalibrr. Many junior roles are filled through referrals and recruiter outreach that start with a profile view.
+LinkedIn is one of the main channels recruiters use to find people, alongside job portals like JobStreet, Glints and Kalibrr in Indonesia — and it's the **primary** channel for remote roles at foreign and US companies, where nobody will bump into you at an event.
 
-## 💥 What happens if we DON'T?
+Three things have to happen in order: you must be **findable** (the keywords they type), **credible** within about 15 seconds (headline, photo, Featured proof), and **approachable** (clear availability, easy contact).
 
-- Headline: "Student at the bootcamp" → you don't appear for "Backend Developer Python".
-- About: "Passionate, hardworking, fast learner" — the same words as thousands of profiles.
-- No link to projects; experience section only lists a non-tech job without transferable skills.
+If you're targeting remote work outside Indonesia, say so explicitly in the headline and About — recruiters filter on it, and "open to remote (UTC+7, overlap with US hours)" answers their first question before they ask.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Headline (≤ 220 characters)
+
+Think of it as a market stall sign: role, stack, and one piece of proof. "Backend Engineer · Python/Flask/AWS · open to remote" beats "Aspiring developer | Passionate about tech".
 
 Formula: **Target role | core stack | proof or focus**
 
@@ -78,6 +91,8 @@ Specific > impressive. Numbers (tests, users, response times) make claims concre
 
 ### 5. Networking that works
 
+One specific sentence about their work beats fifty copy-pasted invites. Messages that show you read something they wrote get answered; mass requests get ignored.
+
 Connection request note (≤ 200 characters for many accounts):
 
 ```text
@@ -86,7 +101,9 @@ Hi Rina — I read your post on migrating to Next.js at Kopi Data. I'm a junior 
 
 Rules: be specific, give before you ask, never send a CV in the first message, follow up once. Engage with posts from engineers at companies you like — thoughtful comments are visible to their network.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | | ✅ | ❌ |
 |---|---|---|
@@ -94,6 +111,13 @@ Rules: be specific, give before you ask, never send a CV in the first message, f
 | Broad headline ("Software Engineer") | flexible | fewer keyword matches |
 | Specific headline | appears in precise searches, credible | may exclude adjacent roles — use About for breadth |
 | Posting often | visibility | time; low-quality posts hurt |
+
+## ⚠️ Common mistakes
+
+- Buzzword About sections without projects or numbers.
+- Listing 50 skills including ones you've touched once.
+- Different job titles and dates on LinkedIn vs CV.
+- Messaging strangers "Please refer me" with no context.
 
 ## 🏆 Best practices
 
@@ -105,19 +129,6 @@ Rules: be specific, give before you ask, never send a CV in the first message, f
 - [ ] Open to Work configured with realistic titles and locations.
 - [ ] Personalised connection notes; no spam, no copy-paste mass messages.
 - [ ] Keep it truthful — interviews will test every claim.
-
-## 🏭 How it's used in industry
-
-- Recruiters use LinkedIn Recruiter filters (title keywords, skills, location, open-to-work) to build shortlists.
-- Hiring managers often check a candidate's LinkedIn and GitHub before the first interview.
-- Referrals — often started through LinkedIn conversations — have much higher response rates than cold applications.
-
-## ⚠️ Common mistakes
-
-- Buzzword About sections without projects or numbers.
-- Listing 50 skills including ones you've touched once.
-- Different job titles and dates on LinkedIn vs CV.
-- Messaging strangers "Please refer me" with no context.
 
 ::part[Explain & Design]{n="2"}
 
