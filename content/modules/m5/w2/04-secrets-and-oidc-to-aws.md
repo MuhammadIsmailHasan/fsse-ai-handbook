@@ -1,6 +1,6 @@
 ---
 title: "Secrets & OIDC to AWS"
-summary: Handle credentials professionally — secret types and lifecycles, GitHub secrets and their limits, scanning and leak response, and OIDC from GitHub Actions to AWS with a tightly scoped trust policy.
+summary: Handle credentials professionally — kinds of secrets and their lifecycle, GitHub secrets and their limits, scanning and what to do after a leak, and OIDC login from GitHub Actions to AWS with a tightly scoped trust policy.
 type: lesson
 source: original
 roles: { be: recommended, fe: optional, fs: recommended, ai: recommended, ops: core }
@@ -12,43 +12,60 @@ tags: [secrets, oidc, aws, iam, github-actions, security]
 
 ## 🎯 What you'll learn
 
-- Kinds of secrets and a **secret's lifecycle**: create, store, deliver, rotate, revoke
+- Kinds of secrets and a secret's **lifecycle**: create, store, deliver, rotate, revoke
 - Where secrets should live at each stage (laptop, CI, runtime)
-- **GitHub secrets and variables**: scopes, masking, fork behavior, limits
-- **Secret scanning**, push protection and what to do after a **leak**
+- **GitHub secrets and variables**: scopes, masking, fork behaviour, limits
+- **Secret scanning**, push protection, and what to do after a **leak**
 - Why **long-lived cloud keys** in CI are dangerous
 - How **OIDC federation** works: token claims (`iss`, `aud`, `sub`), IAM identity provider, role, **trust policy**
-- Least-privilege **permission policies** for deploy roles
+- **Least-privilege** permission policies for deploy roles
 - Runtime secrets on AWS: **SSM Parameter Store** and **Secrets Manager** (preview of Weeks 3–4)
+
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Secret** | A value that gives access and must stay hidden (password, API key) | Rahasia / kredensial |
+| **Rotation** | Replacing a secret with a new one on a schedule or after a leak | Penggantian berkala |
+| **Revoke** | Making an existing credential stop working | Mencabut akses |
+| **Masking** | GitHub replacing a secret with `***` in the logs | Menyensor di log |
+| **IAM role** | An identity in AWS that something can borrow temporarily | Identitas yang dipinjam |
+| **OIDC** | A standard where GitHub proves who the job is, and AWS hands out a short-lived pass | Login lewat token bertanda tangan |
+| **Claim** | One fact inside that signed token (`sub` = which repo and environment) | Isi keterangan token |
+| **Trust policy** | The AWS rule saying *who* may borrow a role | Aturan siapa yang boleh |
+| **Permission policy** | The AWS rule saying *what* that role may do | Aturan boleh apa saja |
+| **Least privilege** | Give only the access the job really needs | Hak seminimal mungkin |
 
 ## 🧠 The big idea
 
-A long-lived access key is a **house key you copy and give to the cleaner**: it works forever, you don't know how many copies exist, and changing locks is painful. OIDC is a **hotel keycard issued at the front desk**: the desk checks your ID (a signed token saying "I'm the `main` branch of `you/revoshop`"), gives you a card that opens only your room, and the card stops working in an hour.
+A long-lived access key is a **house key you copy and hand to the cleaner**: it works forever, you don't know how many copies exist, and changing the locks is painful.
 
-## ❓ Why does this matter?
+OIDC is a **hotel keycard issued at the front desk**: the desk checks your ID (a signed token saying "I'm the `production` environment of `you/revoshop`"), gives you a card that opens only your room, and the card stops working in an hour.
 
-Your pipeline needs to push images and deploy to AWS. Leaked AWS keys are routinely found and abused by bots within minutes of reaching a public repository — for crypto mining that can create large bills quickly. Most breaches in small projects are not clever hacks; they're credentials in the wrong place.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T?
+Your pipeline must push images and deploy to AWS. Leaked AWS keys are found and abused by bots within minutes of reaching a public repository — often for crypto mining, which creates a large bill fast. Most break-ins in small projects are not clever attacks; they are credentials in the wrong place.
 
-- `AWS_SECRET_ACCESS_KEY` in a GitHub secret, never rotated, belonging to an admin IAM user.
-- A debug step `env | sort` prints a derived token that GitHub's masking doesn't know about.
-- The `.env` with Midtrans server keys is committed once and "deleted" in the next commit — it stays in Git history.
-- A trust policy `"repo:you/*"` lets any of your repositories — including an old experimental one with weak protections — deploy to production.
+Done carelessly:
 
-## 📖 How it works, step by step
+- `AWS_SECRET_ACCESS_KEY` sits in a GitHub secret, never rotated, belonging to an admin IAM user.
+- A debug step `env | sort` prints a token GitHub's masking doesn't recognise.
+- The `.env` with Midtrans server keys is committed once and "deleted" in the next commit — it stays in Git history forever.
+- A trust policy of `"repo:you/*"` lets *any* of your repositories — including an old experiment — deploy to production.
+
+## 📖 Step by step
 
 ### 1. Kinds of secrets
 
 | Kind | RevoShop examples | Rotation |
 |---|---|---|
-| Signing keys | `JWT_SECRET_KEY` | rotate carefully (invalidates tokens) or support two keys during rotation |
-| Database credentials | `POSTGRES_PASSWORD` | periodic; managed rotation with Secrets Manager |
-| Third-party API keys | `MIDTRANS_SERVER_KEY` | on staff changes or leaks |
+| Signing keys | `JWT_SECRET_KEY` | rotate carefully (it invalidates tokens) or accept two keys during the switch |
+| Database credentials | `POSTGRES_PASSWORD` | on a schedule; managed rotation with Secrets Manager |
+| Third-party API keys | `MIDTRANS_SERVER_KEY` | when staff change or after a leak |
 | Deploy credentials | SSH deploy key, cloud credentials | prefer short-lived (OIDC) |
 | Encryption keys | KMS keys | managed by the cloud KMS |
 
-Not secrets (can be variables): URLs, region names, role ARNs, Midtrans **client** key (it's used in browsers).
+Not secrets (they can be plain variables): URLs, region names, role ARNs, and the Midtrans **client** key — that one runs in browsers.
 
 ### 2. Where secrets live
 
@@ -70,31 +87,34 @@ flowchart LR
     TASK --> SM
 ```
 
-Rules: never in Git, images, build args, logs, URLs, tickets or chat. Runtime apps should read secrets from the platform (injected env vars from Secrets Manager/SSM, or files) using an **IAM role**, not a key baked into the server.
+Rules: never in Git, images, build args, logs, URLs, tickets or chat. At runtime the app should get secrets from the platform (environment variables filled from Secrets Manager/SSM, or files) using an **IAM role** — not a key baked into the server.
 
 ### 3. GitHub secrets and variables
 
 | Level | Visible to |
 |---|---|
-| Repository secrets | all workflows in the repo (not forks' PRs) |
-| **Environment secrets** | only jobs that declare that `environment:` (and pass its protection rules) |
+| Repository secrets | all workflows in the repo (not pull requests from forks) |
+| **Environment secrets** | only jobs that declare that `environment:` and pass its protection rules |
 | Organization secrets | selected repositories |
 | Variables (`vars.*`) | non-secret config, shown in logs |
 
-- Values are **masked** in logs when printed exactly — not when transformed (base64, substrings, JSON). Don't print them at all.
-- Secrets aren't available to workflows triggered by pull requests from **forks**.
-- Use `secrets: inherit` or explicit `secrets:` mapping for reusable workflows.
+- Values are **masked** in logs when printed exactly — but not when transformed (base64, a substring, inside JSON). So don't print them at all.
+- Secrets are not given to workflows triggered by pull requests from **forks**.
+- Reusable workflows get secrets via `secrets: inherit` or an explicit `secrets:` mapping.
 
 ### 4. Scanning and leaks
 
-- Enable **secret scanning** and **push protection** (GitHub blocks pushes containing recognized secret formats).
-- Run **gitleaks** locally (pre-commit) and in CI for patterns GitHub doesn't know.
+- Turn on **secret scanning** and **push protection** (GitHub blocks a push containing a recognised secret format).
+- Run **gitleaks** locally (as a pre-commit hook) and in CI for patterns GitHub doesn't know.
 
-**If a secret leaks** (in order):
-1. **Revoke/rotate it immediately** at the provider (AWS key deactivate, new Midtrans key, new DB password).
-2. Check provider logs for misuse (CloudTrail, Midtrans dashboard).
-3. Remove it from history (`git filter-repo`) and force-push *after* rotating — assume it's already copied.
-4. Write down what happened and add a control that prevents the repeat.
+**If a secret leaks**, in this order:
+
+1. **Revoke or rotate it immediately** at the provider (deactivate the AWS key, new Midtrans key, new DB password).
+2. Check the provider's logs for misuse (CloudTrail, the Midtrans dashboard).
+3. Remove it from history (`git filter-repo`) and force-push — *after* rotating; assume it's already copied.
+4. Write down what happened and add a control that stops it happening again.
+
+Treat it like a lost ATM card: block the card first, argue about how it was lost later.
 
 ### 5. OIDC federation, step by step
 
@@ -114,9 +134,10 @@ sequenceDiagram
     J->>J: aws ecr / ecs / ssm … with those credentials
 ```
 
-**One-time AWS setup** (Week 3 walks through it in the console and Week 7 in Terraform):
-1. IAM → Identity providers → add **OpenID Connect** provider `https://token.actions.githubusercontent.com` with audience `sts.amazonaws.com`.
-2. Create a **role** with a trust policy:
+**One-time AWS setup** (Week 3 does it in the console, Week 7 in Terraform):
+
+1. IAM → Identity providers → add an **OpenID Connect** provider `https://token.actions.githubusercontent.com` with audience `sts.amazonaws.com`.
+2. Create a **role** with this trust policy:
 
 ```json
 {
@@ -148,18 +169,18 @@ steps:
   - run: aws sts get-caller-identity       # prove it works
 ```
 
-**The `sub` claim decides who gets in.**
+**The `sub` claim decides who gets in** — it's the name on the guest list.
 
 | `sub` format | When |
 |---|---|
-| `repo:OWNER/REPO:environment:NAME` | job uses `environment: NAME` (recommended for deploy roles) |
-| `repo:OWNER/REPO:ref:refs/heads/BRANCH` | job without environment on a branch |
+| `repo:OWNER/REPO:environment:NAME` | the job uses `environment: NAME` (best for deploy roles) |
+| `repo:OWNER/REPO:ref:refs/heads/BRANCH` | a job without an environment, on a branch |
 | `repo:OWNER/REPO:ref:refs/tags/TAG` | tag builds |
 | `repo:OWNER/REPO:pull_request` | PR workflows — **never** trust these for deploy roles |
 
-Use **separate roles** per environment (`revoshop-deploy-staging`, `revoshop-deploy-production`) with their own permissions.
+Use **separate roles** per environment (`revoshop-deploy-staging`, `revoshop-deploy-production`), each with its own permissions.
 
-### 6. Least-privilege permission policy (example)
+### 6. A least-privilege permission policy
 
 ```json
 {
@@ -175,57 +196,42 @@ Use **separate roles** per environment (`revoshop-deploy-staging`, `revoshop-dep
 }
 ```
 
-Start narrow and add permissions when a deploy fails with `AccessDenied` — reading the denied action in the error or CloudTrail.
+Start narrow, like giving a delivery driver the gate code but not the house keys. When a deploy fails with `AccessDenied`, read the denied action in the error (or CloudTrail) and add exactly that.
 
-## ⚖️ Trade-offs
+### Choosing your setup
 
-| Choice | ✅ | ❌ |
-|---|---|---|
-| OIDC roles | no stored cloud keys, short-lived, auditable | initial IAM setup; trust policy mistakes are dangerous |
-| Stored access keys | quick to start | long-lived, leak-prone, rotation burden |
-| GitHub environment secrets | simple, scoped | secrets copied into GitHub; rotation manual |
-| AWS Secrets Manager | rotation, audit, fine-grained IAM | cost per secret; more setup |
-| SSM Parameter Store (SecureString) | cheap/free standard tier | fewer rotation features |
-
-## ✅ When to use it / 🚫 When NOT to use it
-
-- ✅ OIDC for every CI → cloud connection that supports it (AWS, GCP, Azure, many SaaS).
+- ✅ OIDC for every CI → cloud connection that supports it (AWS, GCP, Azure, many SaaS tools).
 - ✅ Environment secrets for things OIDC can't replace (SSH keys, third-party API keys).
 - 🚫 Never IAM users with access keys for pipelines when OIDC is possible.
-- 🚫 Never `sub` wildcards across repositories or `pull_request` subjects on deploy roles.
-
-## 🏆 Best practices
-
-- [ ] Inventory secrets; know owner, location and rotation plan for each.
-- [ ] Nothing secret in Git, images, build args, logs or `NEXT_PUBLIC_`/client code.
-- [ ] Environment-scoped secrets; separate values per environment.
-- [ ] Secret scanning + push protection + gitleaks; pre-commit hook locally.
-- [ ] Leak response: **rotate first**, then investigate and clean history.
-- [ ] OIDC to AWS with `aud` equals `sts.amazonaws.com` and `sub` pinned to repo + environment.
-- [ ] One role per environment with least-privilege permissions; `id-token: write` only in deploy jobs.
-- [ ] Runtime apps use IAM roles + Secrets Manager/SSM, not keys on disks.
-- [ ] Review CloudTrail for the role's activity; alert on unusual use.
-
-## 🏭 How it's used in industry
-
-- GitHub, GitLab, CircleCI and others publish OIDC providers; AWS, Google Cloud and Azure recommend federation over stored keys for CI.
-- Security teams scan repositories and CI logs continuously; many companies block merges when a secret is detected.
-- Public reports of leaked cloud keys leading to cryptomining bills are common — cloud providers even proactively quarantine keys they find exposed.
+- 🚫 Never `sub` wildcards across repositories, and never `pull_request` subjects on deploy roles.
+- For runtime secrets, **SSM Parameter Store** (SecureString) is cheap and simple; **Secrets Manager** costs per secret but adds automatic rotation and finer audit.
 
 ## ⚠️ Common mistakes
 
 - Forgetting `permissions: id-token: write` → "Credentials could not be loaded".
-- Trust policy using `StringEquals` with a wildcard `sub` (wildcards need `StringLike`) — or `StringLike` with `*` everywhere.
-- A job with `environment: production` but a trust policy expecting `ref:refs/heads/main` (the `sub` changes when an environment is used).
-- Rotating a leaked secret *after* cleaning history (the window stays open).
+- A trust policy using `StringEquals` with a wildcard `sub` (wildcards need `StringLike`) — or `StringLike` with `*` everywhere.
+- A job with `environment: production` but a trust policy expecting `ref:refs/heads/main` (using an environment changes the `sub`).
+- Rotating a leaked secret *after* cleaning history — the window stays open the whole time.
+
+## 🏆 Best practices
+
+- [ ] Keep a list of secrets: owner, location and rotation plan for each.
+- [ ] Nothing secret in Git, images, build args, logs, or client-side code (`NEXT_PUBLIC_`).
+- [ ] Environment-scoped secrets; different values per environment.
+- [ ] Secret scanning + push protection + gitleaks; a pre-commit hook locally.
+- [ ] Leak response: **rotate first**, then investigate and clean history.
+- [ ] OIDC to AWS with `aud` = `sts.amazonaws.com` and `sub` pinned to repo + environment.
+- [ ] One role per environment, least privilege; `id-token: write` only in deploy jobs.
+- [ ] At runtime use IAM roles + Secrets Manager/SSM, never keys on disk.
+- [ ] Review CloudTrail for what each role did; alert on unusual use.
 
 :::revoshop
-1. **Good news first.** `git log --all --oneline -- .env .env.docker` returns nothing in your repo, and `git check-ignore -v .env .env.docker` confirms both are ignored — your real keys were never committed. Keep it that way: add a pre-commit `gitleaks protect --staged` hook and enable push protection on your personal copy.
-2. **Scan history anyway.** Run `gitleaks detect --source . --redact` on the repository. The Midtrans examples use `SB-Mid-server-xxxx…` placeholders — confirm nothing real was ever committed in Postman collections (`postman/`) or docs.
-3. **Inventory.** List every secret RevoShop uses (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `MIDTRANS_SERVER_KEY`, …) and mark which are *not* secrets (`MIDTRANS_CLIENT_KEY` is used by clients; `MIDTRANS_IS_PRODUCTION` is config). For each secret: where it lives locally, in CI, in staging and in production.
-4. **The silent fallback.** `config/base.py` still contains `JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'super-secret-key-change-in-production')`. After W1·05 production refuses to start without a real key — but what about a `development` container accidentally exposed to the internet? Would you remove the default entirely?
+1. **Good news first.** `git log --all --oneline -- .env .env.docker` returns nothing in your repo, and `git check-ignore -v .env .env.docker` confirms both are ignored — your real keys were never committed. Keep it that way: add a pre-commit `gitleaks protect --staged` hook and turn on push protection in your personal copy.
+2. **Scan history anyway.** Run `gitleaks detect --source . --redact` on the repository. The Midtrans examples use `SB-Mid-server-xxxx…` placeholders — confirm nothing real was ever committed in the Postman collections (`postman/`) or docs.
+3. **Inventory.** List every secret RevoShop uses (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `MIDTRANS_SERVER_KEY`, …) and mark which ones are *not* secrets (`MIDTRANS_CLIENT_KEY` is used by clients; `MIDTRANS_IS_PRODUCTION` is config). For each secret: where it lives locally, in CI, in staging and in production.
+4. **The silent fallback.** `config/base.py` still has `JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'super-secret-key-change-in-production')`. After W1·05 production refuses to start without a real key — but what about a `development` container accidentally exposed to the internet? Would you remove the default completely?
 5. **Rotation drill.** Plan how you would rotate `JWT_SECRET_KEY` without logging every user out at once (hint: sign new tokens with the new key but keep verifying with the old one during a transition window — Flask-JWT-Extended lets you choose the verification key per token with `@jwt.decode_key_loader`).
-6. **Your first trust policy.** With the exercise's `trust_policy()`, generate RevoShop's staging and production policies for your personal repository name, and write the `sub` values your jobs will present.
+6. **Your first trust policy.** With the exercise's `trust_policy()`, generate RevoShop's staging and production policies for your personal repository name, and write down the `sub` values your jobs will present.
 :::
 
 ::part[Explain & Design]{n="2"}
@@ -236,30 +242,31 @@ Explain the house-key vs hotel-keycard analogy, and why the `sub` condition is t
 
 ## 📐 Design it
 
-Design RevoShop's secrets plan: list every secret, where it lives for local/CI/staging/production, who or what can read it, and how it's rotated. Then design the IAM roles for GitHub Actions (names, trust `sub`, permissions) for staging and production deploys to ECS with images in ECR and secrets in SSM.
+Design RevoShop's secrets plan: list every secret, where it lives for local/CI/staging/production, who or what may read it, and how it's rotated. Then design the IAM roles for GitHub Actions (names, trust `sub`, permissions) for staging and production deploys to ECS, with images in ECR and secrets in SSM.
 
 :::quiz
 Show a possible plan
 
 | Secret | Local | CI | Staging / Production runtime | Rotation |
 |---|---|---|---|---|
-| `JWT_SECRET_KEY` | `.env` (random per dev) | test value in workflow env | SSM SecureString `/revoshop/{env}/jwt_secret_key` → ECS task secret | yearly or on incident; support a previous key during rollover |
+| `JWT_SECRET_KEY` | `.env` (random per developer) | a test value in the workflow env | SSM SecureString `/revoshop/{env}/jwt_secret_key` → ECS task secret | yearly or after an incident; accept the previous key during the switch |
 | DB password | Compose default | service container default | Secrets Manager (RDS-managed rotation) | automatic |
-| `MIDTRANS_SERVER_KEY` | sandbox key in `.env` | not needed (mocked) | SSM per env (sandbox vs production) | on staff change / leak |
-| Deploy credentials | — | **OIDC roles** (no stored keys) | — | n/a (temporary) |
-| SSH key (EC2 phase only) | your key | environment secret `DEPLOY_SSH_KEY` | authorized_keys for a `deploy` user only | when EC2 phase ends |
+| `MIDTRANS_SERVER_KEY` | sandbox key in `.env` | not needed (mocked) | SSM per environment (sandbox vs production) | on staff change / leak |
+| Deploy credentials | — | **OIDC roles** (no stored keys) | — | not needed (temporary) |
+| SSH key (EC2 phase only) | your key | environment secret `DEPLOY_SSH_KEY` | `authorized_keys` for a `deploy` user only | when the EC2 phase ends |
 
 **Roles**
-- `revoshop-gha-staging` · trust `sub = repo:you/revoshop:environment:staging` · permissions: push to ECR `revoshop-api`, `ecs:UpdateService`/`DescribeServices` on `api-staging`, `ecs:RunTask` for the migrate task definition, `iam:PassRole` limited to the staging task roles, `ssm:GetParameters` not needed (ECS reads them with its execution role).
-- `revoshop-gha-production` · trust `sub = repo:you/revoshop:environment:production` · same actions on production resources only; the `production` GitHub environment requires a reviewer and allows only `v*` tags.
-- ECS **task execution role** reads `/revoshop/{env}/*` SSM parameters; **task role** has only what the app needs at runtime (e.g. S3 bucket for product images).
+
+- `revoshop-gha-staging` · trust `sub = repo:you/revoshop:environment:staging` · may push to ECR `revoshop-api`, call `ecs:UpdateService`/`DescribeServices` on `api-staging`, `ecs:RunTask` for the migrate task definition, and `iam:PassRole` limited to the staging task roles.
+- `revoshop-gha-production` · trust `sub = repo:you/revoshop:environment:production` · the same actions on production resources only; the `production` GitHub environment requires a reviewer and allows only `v*` tags.
+- The ECS **task execution role** reads `/revoshop/{env}/*` SSM parameters; the **task role** has only what the app needs while running (for example the S3 bucket for product images).
 :::
 
 ### 📝 Self-review checklist
 
 - [ ] No long-lived cloud keys anywhere
-- [ ] Separate staging and production roles and values
-- [ ] Rotation plan per secret
+- [ ] Separate roles and values for staging and production
+- [ ] A rotation plan per secret
 
 ::ai-review{task="design"}
 
@@ -270,9 +277,9 @@ Generate an IAM trust policy scoped to a repository's environments and branches 
 :::
 
 :::hints
-- Convert `StringLike` patterns to a regex by escaping everything except `*` and `?`.
+- Turn a `StringLike` pattern into a regex by escaping everything except `*` and `?`.
 - The principal must match the token issuer's host.
-- Unknown condition operators must deny, not allow.
+- An unknown condition operator must deny, not allow.
 :::
 
 ## ✅ Quick check
@@ -280,25 +287,14 @@ Generate an IAM trust policy scoped to a repository's environments and branches 
 :::quiz
 A job uses `environment: staging`. Which `sub` will its OIDC token have?
 
-`repo:OWNER/REPO:environment:staging` — the environment replaces the ref in the subject, so the trust policy must allow that exact subject.
+`repo:OWNER/REPO:environment:staging` — the environment replaces the ref in the subject, so the trust policy must allow exactly that subject.
 :::
 
 :::quiz
 You find `AKIA…` in a public commit from last week. What's your first action?
 
-Deactivate/rotate the key in AWS immediately, then check CloudTrail and billing for misuse, then clean the history and add prevention (push protection, OIDC).
+Deactivate or rotate the key in AWS immediately, then check CloudTrail and the bill for misuse, then clean the history and add prevention (push protection, OIDC).
 :::
-
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Secret | Rahasia (kredensial) |
-| Rotation | Rotasi / penggantian berkala |
-| OpenID Connect (OIDC) | Protokol identitas berbasis token |
-| Trust policy | Kebijakan kepercayaan IAM |
-| Least privilege | Hak akses seminimal mungkin |
-| Temporary credentials | Kredensial sementara |
 
 ## 📚 Keep learning
 
