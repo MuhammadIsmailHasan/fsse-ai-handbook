@@ -20,22 +20,43 @@ tags: [aws, lambda, sqs, eventbridge, serverless, background-jobs]
 - Reaching **RDS from Lambda**: VPC placement, connection limits, **RDS Proxy**
 - Packaging (zip vs container image, layers), configuration, **Powertools**, logs, metrics and cost
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Lambda function** | Code AWS runs on demand; you never manage a server | Kode yang jalan saat dipanggil |
+| **Handler** | The function AWS calls, with the event as its argument | Fungsi yang dipanggil AWS |
+| **Trigger / event** | What starts the function: a schedule, a queue message, a file upload | Pemicu |
+| **Cold start** | The extra delay when a brand-new copy has to start up | Jeda saat baru dinyalakan |
+| **SQS queue** | A safe waiting line for jobs | Antrean pesan |
+| **At-least-once** | A message may be delivered twice, never zero times | Minimal sekali kirim |
+| **Idempotent** | Running it twice has the same effect as once | Diulang pun hasilnya sama |
+| **Partial batch response** | Telling SQS which messages in a batch failed, so only those retry | Laporan pesan gagal saja |
+| **Dead-letter queue (DLQ)** | Where messages go after failing too many times | Tempat pesan yang gagal terus |
+| **RDS Proxy** | A connection pool in front of the database, for many small functions | Pengumpul koneksi database |
+
 ## 🧠 The big idea
 
-A Lambda function is an **on-call specialist**: nobody sits at a desk waiting (no idle servers); when a job ticket arrives (event), a specialist shows up, does one focused task within a time limit, and leaves. A queue (SQS) is the **ticket rack**: tickets wait safely if specialists are busy, and a ticket that fails too many times goes to the **"needs a human" tray** (dead-letter queue).
+A Lambda function is an **on-call specialist**. Nobody sits at a desk waiting (no idle servers): when a job ticket arrives, a specialist appears, does one focused task within a time limit, and leaves.
 
-## ❓ Why does this matter?
+A queue (SQS) is the **ticket rack** next to the door:
 
-RevoShop has work that shouldn't happen inside HTTP requests or depend on a webhook arriving: expiring unpaid payments, sending emails, processing uploaded images, nightly reports. Running a worker server 24/7 for a job that takes seconds every five minutes wastes money; Lambda runs only when needed.
+- tickets wait safely while the specialists are busy,
+- each ticket is handed to exactly one specialist at a time,
+- and a ticket that keeps failing goes into the **"needs a human" tray** — the dead-letter queue.
 
-## 💥 What happens if we DON'T (or do it naively)?
+## ❓ Why it matters
 
-- A cron job on the API instance runs twice when you scale to two instances — double emails.
-- Payments with expired Midtrans transactions keep stock reserved forever because the webhook never came.
-- A Lambda processes 10 SQS messages, fails on message 7 and throws → all 10 retry → customers get duplicate emails.
-- 500 concurrent Lambda invocations each open a PostgreSQL connection → `too many connections`.
+RevoShop has work that shouldn't happen inside an HTTP request, and shouldn't depend on a webhook arriving: expiring unpaid payments, sending emails, processing uploaded images, nightly reports. Keeping a worker server running 24/7 for a job that takes seconds every five minutes wastes money — Lambda runs only when there's something to do.
 
-## 📖 How it works, step by step
+Done naively:
+
+- A cron job on the API instance runs twice once you scale to two instances → duplicate emails.
+- Payments whose Midtrans transaction expired keep stock reserved forever, because the webhook never came.
+- A Lambda handles 10 SQS messages, fails on number 7 and raises → all 10 are retried → customers get duplicate emails.
+- 500 functions run at once, each opening a PostgreSQL connection → `too many connections`.
+
+## 📖 Step by step
 
 ### 1. Handler and lifecycle
 
@@ -74,6 +95,8 @@ Initialization code outside the handler runs on a **cold start** and is reused o
 
 ### 3. The scan → queue → worker pattern
 
+One function looks for work and writes tickets; other copies do the tickets. Like a supervisor who walks the shop, writes down what needs doing, and hands the slips to whoever is free — much safer than one long job that must finish everything before its time limit.
+
 ```mermaid
 flowchart LR
     SCH[EventBridge Scheduler<br/>every 5 min] --> SCAN[scan Lambda<br/>find expired pending payments]
@@ -87,6 +110,8 @@ flowchart LR
 - Duplicates happen (scan runs again before workers finish; retries) → the worker must be **idempotent**: a conditional update `UPDATE payments SET status='expired' WHERE id=:id AND status='pending'` succeeds once, later attempts do nothing.
 
 ### 4. Partial batch responses
+
+Without this setting, one bad ticket sends the whole batch back to the rack. With it, you hand back only the tickets that failed.
 
 ```python
 def handler(event, context):
@@ -104,6 +129,8 @@ Enable **ReportBatchItemFailures** on the event source mapping. Poison messages 
 Set the queue's **visibility timeout** to at least **6×** the function timeout (AWS guidance for SQS event sources), and stop starting new records when `get_remaining_time_in_millis()` is low.
 
 ### 5. Reaching RDS
+
+Each function copy opening its own database connection is like every courier asking for their own parking space. A proxy (RDS Proxy) keeps a small shared car park instead.
 
 | Choice | Notes |
 |---|---|
@@ -126,7 +153,9 @@ For a small learning setup: run the scan/expire logic as a **scheduled ECS task*
 - Alarms: DLQ `ApproximateNumberOfMessagesVisible > 0`, `Errors > 0`, oldest message age.
 - Cost: requests + GB-seconds (Lambda has an always-free monthly allowance — check current terms) + SQS requests + logs; in-VPC access patterns may add NAT/endpoint/RDS Proxy costs that dwarf Lambda itself.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -135,29 +164,10 @@ For a small learning setup: run the scan/expire logic as a **scheduled ECS task*
 | Worker process on the API host (RQ/Celery) | simple locally | runs 24/7, duplicates on scale-out, dies with the host |
 | Step Functions | long workflows, retries, visual history | extra service to learn |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Short, event-driven or scheduled work: webhooks fan-out, image processing, notifications, cleanup jobs.
 - ✅ Spiky workloads that sit idle most of the time.
 - 🚫 Long-running jobs over 15 minutes, or steady high-throughput processing (containers can be cheaper).
 - 🚫 Don't open unbounded database connections from high-concurrency functions.
-
-## 🏆 Best practices
-
-- [ ] One focused responsibility per function; timeouts and memory tuned with measurements.
-- [ ] Idempotent handlers; conditional database updates; idempotency keys for side effects.
-- [ ] SQS with DLQ, visibility timeout ≥ 6× function timeout, partial batch responses.
-- [ ] Reserved concurrency to protect downstream systems; RDS Proxy for Lambda → RDS.
-- [ ] Initialize clients outside the handler; cache configuration.
-- [ ] Least-privilege execution role per function.
-- [ ] Structured logs with request IDs, log retention, alarms on errors, throttles and DLQ depth.
-- [ ] Infrastructure as code for functions, schedules, queues and permissions (Week 7).
-
-## 🏭 How it's used in industry
-
-- Event-driven architectures commonly use SQS/SNS/EventBridge with Lambda for fan-out and asynchronous processing.
-- Media platforms process uploads with S3-triggered functions; payment and e-commerce systems use scheduled reconciliation jobs.
-- Powertools for AWS Lambda is widely adopted to standardize logging, tracing and idempotency.
 
 ## ⚠️ Common mistakes
 
@@ -173,6 +183,17 @@ For a small learning setup: run the scan/expire logic as a **scheduled ECS task*
 4. **Webhook vs job race.** Midtrans sends `settlement` at the same moment your job expires the payment. Using the `payment.status` checks you already have in `handle_notification`, what does each side do, and which conditional updates guarantee a paid order is never cancelled?
 5. **Alarms.** Which CloudWatch alarm tells you the job silently stopped running (hint: a custom metric like `ExpiredPaymentsScanned` with "missing data = breaching")?
 :::
+
+## 🏆 Best practices
+
+- [ ] One focused responsibility per function; timeouts and memory tuned with measurements.
+- [ ] Idempotent handlers; conditional database updates; idempotency keys for side effects.
+- [ ] SQS with DLQ, visibility timeout ≥ 6× function timeout, partial batch responses.
+- [ ] Reserved concurrency to protect downstream systems; RDS Proxy for Lambda → RDS.
+- [ ] Initialize clients outside the handler; cache configuration.
+- [ ] Least-privilege execution role per function.
+- [ ] Structured logs with request IDs, log retention, alarms on errors, throttles and DLQ depth.
+- [ ] Infrastructure as code for functions, schedules, queues and permissions (Week 7).
 
 ::part[Explain & Design]{n="2"}
 
@@ -230,16 +251,6 @@ Your worker takes up to 50 seconds. What SQS visibility timeout should the queue
 At least 6× the function timeout (e.g. function timeout 60 s → visibility timeout 360 s), so messages aren't redelivered while still being processed, including retries of the batch.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Serverless | Tanpa server (dikelola penyedia) |
-| Cold start | Mulai dingin (inisialisasi pertama) |
-| Event source mapping | Pemetaan sumber peristiwa |
-| Dead-letter queue | Antrean surat mati (pesan gagal) |
-| Idempotent | Aman diulang tanpa efek ganda |
-| Reserved concurrency | Konkurensi yang dicadangkan/dibatasi |
 
 ## 📚 Keep learning
 
