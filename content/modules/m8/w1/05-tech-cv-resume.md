@@ -19,21 +19,32 @@ tags: [career, cv, resume, ats, job-search]
 - **Tailoring** a CV to each job post in 15 minutes
 - Indonesian conventions: photo, personal data, language, file format
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **CV / resume** | The one-page document that gets you an interview | Dokumen lamaran singkat |
+| **ATS** | Software that reads CVs and ranks them against the job post | Sistem penyaring lamaran |
+| **Keyword match** | Using the same words as the job description | Kecocokan kata kunci |
+| **Impact bullet** | A line showing result, measure and method | Poin berisi hasil nyata |
+| **XYZ formula** | "Accomplished X, measured by Y, by doing Z" | Rumus menulis poin |
+| **Tailoring** | Adjusting the CV for each job | Menyesuaikan per lamaran |
+| **One-pager** | Everything on a single page — standard for juniors | Satu halaman saja |
+| **Parseable format** | A layout the software can read (no columns or images) | Format yang terbaca mesin |
+
 ## 🧠 The big idea
 
 A CV is a **movie trailer**, not the movie. In 30 seconds it must show the best scenes (projects and results), the genre (target role) and make the viewer want to watch (invite you to interview). Everything that doesn't serve that goal gets cut.
 
-## ❓ Why does this matter?
+## ❓ Why it matters
 
-Popular junior roles get many applications. Recruiters skim quickly, and many companies use applicant tracking systems (ATS) that parse your CV and rank it against the job description. A CV that can't be parsed or doesn't use the job's language may never reach a human.
+Popular junior roles get hundreds of applications. Recruiters skim, and many companies use software (an ATS) that reads your CV and ranks it against the job description. A CV that can't be read, or doesn't use the job's own words, may never reach a human at all.
 
-## 💥 What happens if we DON'T?
+For remote roles at US companies, two extra rules apply: keep it to **one page in English**, and drop the photo, date of birth, marital status and full address that are normal in Indonesian CVs — US recruiters expect them to be absent, and some systems flag them.
 
-- A two-column Canva design with icons and skill bars ("Python ●●●●○") → ATS reads it as gibberish.
-- Bullets like "Responsible for developing features" — no result, no scale.
-- Three pages including high school, hobbies and a full address, but the GitHub link is missing.
+Think of it as a **movie trailer**, not the movie: best scenes, right genre, and a reason to watch more.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Structure (one page for juniors)
 
@@ -72,6 +83,8 @@ For career switchers, **Projects come before Experience**. Keep the previous job
 
 ### 2. Impact bullets
 
+"Reduced the applications page from 21 queries to 2, cutting p95 latency from 1.8 s to 240 ms" beats "Worked on backend performance" — same work, one of them is evidence.
+
 Formula (from Google's "XYZ"): **Accomplished [X] as measured by [Y], by doing [Z]**.
 
 | ❌ Weak | ✅ Strong |
@@ -99,12 +112,16 @@ Start with a strong verb (Built, Designed, Reduced, Automated, Migrated), includ
 
 ### 5. Indonesian conventions
 
+Keep two versions: the local one with the conventions Indonesian companies expect, and an international one for remote and US applications. Same content, different packaging.
+
 - **Photo, date of birth, marital status**: still common on Indonesian CVs, but not required by most tech companies; many startups and multinationals prefer **no photo**. For remote/international roles, leave them out.
 - **Language**: English CVs are standard for tech roles in Jakarta startups and multinationals; use Bahasa Indonesia if the post is in Bahasa and the company is local.
 - **Personal data**: city is enough — no full address, KTP number or NPWP on a CV.
 - Expected salary: don't put it on the CV; answer when asked (lesson on negotiation).
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | | ✅ | ❌ |
 |---|---|---|
@@ -112,6 +129,13 @@ Start with a strong verb (Built, Designed, Reduced, Automated, Migrated), includ
 | Designed template | memorable for humans | ATS parsing risks |
 | Master CV + tailored copies | best match per role | versions to manage |
 | Listing every technology | more keyword hits | shallow, interviewers probe everything |
+
+## ⚠️ Common mistakes
+
+- Objective statements ("seeking a challenging position to grow…").
+- Listing tasks instead of results.
+- Typos in technology names (Postgre, Nextjs, Javascript).
+- Different CV content from what you can explain in the interview.
 
 ## 🏆 Best practices
 
@@ -123,19 +147,6 @@ Start with a strong verb (Built, Designed, Reduced, Automated, Migrated), includ
 - [ ] Consistent dates and titles with LinkedIn.
 - [ ] Proofread; ask one engineer and one non-engineer to read it in 30 seconds and tell you what you do.
 - [ ] Never exaggerate — every bullet is an interview question.
-
-## 🏭 How it's used in industry
-
-- ATS platforms (e.g. Workday, Greenhouse, Lever and local tools) parse CVs into fields and keyword-match them against requirements.
-- Engineers screening CVs look for projects with depth, testing, deployment and clear ownership.
-- Tech companies increasingly ask for GitHub or portfolio links in application forms.
-
-## ⚠️ Common mistakes
-
-- Objective statements ("seeking a challenging position to grow…").
-- Listing tasks instead of results.
-- Typos in technology names (Postgre, Nextjs, Javascript).
-- Different CV content from what you can explain in the interview.
 
 ::part[Explain & Design]{n="2"}
 

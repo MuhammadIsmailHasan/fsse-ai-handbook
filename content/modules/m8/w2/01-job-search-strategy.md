@@ -19,21 +19,33 @@ tags: [career, job-search, indonesia, remote, networking]
 - Tracking every application (use your own CareerPilot)
 - Recognising **job scams** and bad offers
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Target role** | The specific job title you're aiming for | Posisi yang dibidik |
+| **Target list** | The companies you actually want to work for | Daftar perusahaan tujuan |
+| **Job board** | A site listing openings | Situs lowongan |
+| **Referral** | Somebody inside recommending you | Rekomendasi orang dalam |
+| **Outreach** | Contacting someone first, with a short message | Menghubungi lebih dulu |
+| **Funnel** | Applications → responses → interviews → offers | Corong lamaran |
+| **Conversion rate** | How many pass from one stage to the next | Tingkat lolos tiap tahap |
+| **Follow-up** | A polite reminder after silence | Menanyakan kabar |
+| **Red flag** | A warning sign of a scam or a bad employer | Tanda bahaya |
+
 ## 🧠 The big idea
 
 A job search is a **sales pipeline**, and you are both the product and the salesperson. Sales teams don't wait for customers; they pick target accounts, reach out, track every conversation and fix the stage where deals get stuck. Do the same: *applications → responses → interviews → offers*, measured weekly.
 
-## ❓ Why does this matter?
+## ❓ Why it matters
 
-"Apply to 200 jobs with one click" feels productive and usually produces silence. A focused search with tailored applications, referrals and follow-ups gets more interviews with less effort — and tells you *why* things aren't working.
+"Apply to 200 jobs with one click" feels productive and usually produces silence. A focused search — a target list, tailored applications, referrals and follow-ups — gets more interviews for less effort, and tells you *why* things aren't working.
 
-## 💥 What happens if we DON'T?
+Treating it as a funnel is what makes it fixable. If 50 applications give 2 replies, the problem is the CV or the targeting. If 10 interviews give no offers, the problem is in the interview, not the CV. Guessing costs months.
 
-- Easy Apply to everything → low response rate → motivation crash after 3 weeks.
-- No tracking → you forget where you applied, miss follow-ups, can't prepare for a surprise call.
-- Pay-to-apply "training placement" scams target career switchers.
+If you're aiming for **remote roles outside Indonesia, especially in the US**, the same funnel applies with different inputs: remote-first job boards, companies that already hire in Asia, an English CV, and a clear line about your time-zone overlap. Fewer, better-matched applications beat volume even more strongly there.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Targets
 
@@ -47,6 +59,8 @@ A job search is a **sales pipeline**, and you are both the product and the sales
 Build a list of **30–50 target companies**. For each: career page, tech stack (job posts, engineering blogs), 1–2 engineers to follow.
 
 ### 2. Where to look
+
+For remote-US roles, prioritise companies that already employ people outside the US — they have the paperwork and the working habits, so your application isn't the one that creates a new problem for them.
 
 | Channel | Notes |
 |---|---|
@@ -72,6 +86,8 @@ Hi Andi — I saw Kopi Data is hiring a Junior Backend Engineer (Python). I've b
 
 ### 4. The weekly funnel
 
+Write the numbers down each week. Without them, a bad month feels like bad luck; with them, it points at the exact stage to fix.
+
 | Stage | Weekly target (example) | If it's low… |
 |---|---|---|
 | Tailored applications | 10–15 | spend less time on Easy Apply, more on target list |
@@ -89,6 +105,8 @@ Use **CareerPilot**: companies, applications, statuses (saved → applied → sc
 
 ### 6. Scams and red flags
 
+Real employers don't ask you to pay for training, equipment or "processing". Anything that requires money from you, or rushes you through a chat app, is a scam.
+
 - Paying for "training" or "equipment" before starting; "bond" contracts with large penalties for leaving.
 - Interviews only over chat, offers without interviews, requests for KTP/bank details early.
 - Recruiters using personal emails for "big companies"; job posts copied from real companies with different contact info.
@@ -96,7 +114,9 @@ Use **CareerPilot**: companies, applications, statuses (saved → applied → sc
 
 Verify the company (website, LinkedIn employees, official career page) before sharing documents.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | | ✅ | ❌ |
 |---|---|---|
@@ -105,6 +125,13 @@ Verify the company (website, LinkedIn employees, official career page) before sh
 | Remote-only | bigger salary range, flexibility | much more competition, time zones |
 | Software houses | junior-friendly, broad exposure | varying mentorship; project pressure |
 | Startups | ownership, fast learning | less structure, more risk |
+
+## ⚠️ Common mistakes
+
+- Waiting to feel "ready" before applying — apply when you meet ~60–70% of requirements.
+- Ignoring non-startup employers (banks, telcos, logistics, government-tech vendors) that hire many developers.
+- One CV for everything.
+- Not preparing after getting a response.
 
 ## 🏆 Best practices
 
@@ -115,19 +142,6 @@ Verify the company (website, LinkedIn employees, official career page) before sh
 - [ ] Track everything (CareerPilot) and review the funnel weekly.
 - [ ] Protect your time and data: verify companies, never pay to get a job.
 - [ ] Keep learning and building during the search (1–2 hours a day) — it gives you new stories.
-
-## 🏭 How it's used in industry
-
-- Recruiters work from pipelines and metrics too; understanding the funnel helps you speak their language.
-- Many tech companies run employee referral programs, so engineers are often happy to refer candidates who show real work.
-- Job searches for juniors commonly take several months; consistent weekly effort beats bursts.
-
-## ⚠️ Common mistakes
-
-- Waiting to feel "ready" before applying — apply when you meet ~60–70% of requirements.
-- Ignoring non-startup employers (banks, telcos, logistics, government-tech vendors) that hire many developers.
-- One CV for everything.
-- Not preparing after getting a response.
 
 ::part[Explain & Design]{n="2"}
 

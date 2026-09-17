@@ -19,21 +19,31 @@ tags: [career, linkedin, writing, personal-brand, community]
 - Using AI for writing **without** sounding generic
 - What not to share (secrets, company info, negativity) and measuring results
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Learning in public** | Sharing what you're learning as you go | Belajar sambil berbagi |
+| **Hook** | The first line that makes someone keep reading | Kalimat pembuka penarik |
+| **Specifics** | Real numbers and real details, not general claims | Detail nyata |
+| **Post cadence** | How often you post, kept steady | Irama posting |
+| **Engagement** | Comments and conversations, not just likes | Interaksi nyata |
+| **Personal brand** | What people expect from you when they see your name | Citra diri profesional |
+| **Oversharing** | Posting secrets, client details or complaints about people | Membagi yang seharusnya privat |
+
 ## 🧠 The big idea
 
 Learning in public is a **gym logbook shared with friends**. Nobody expects you to lift the heaviest weights — they notice that you show up every week, record what you did, and get stronger. Over months, the logbook becomes proof of consistency that a CV can't show.
 
-## ❓ Why does this matter?
+## ❓ Why it matters
 
-Recruiters and engineers rarely see how you think. Short, honest posts about real problems ("my list endpoint ran 21 SQL queries — here's the fix") demonstrate understanding, communication and persistence. Posts also create conversations with engineers who later become referrals.
+Recruiters and engineers rarely get to see how you think. Short, honest posts about real problems — "my list endpoint ran 21 SQL queries; here's the fix" — show understanding, communication and persistence at the same time.
 
-## 💥 What happens if we DON'T (or do it badly)?
+For remote roles abroad this is one of the few ways a stranger in another country can get a sense of you before an interview. Several people in this market get their first remote job through a conversation that started under a post.
 
-- Silence: 6 months of work invisible until the CV.
-- Hype: "I built a SaaS in 2 hours with AI 🚀🔥" — attracts likes, not hiring managers.
-- Certificate-only posts with no substance.
+The gym-logbook comparison is the point: nobody expects record weights, they notice that you show up every week and get stronger.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Post types (templates are in every week's lessons)
 
@@ -46,6 +56,8 @@ Recruiters and engineers rarely see how you think. Short, honest posts about rea
 | **Reflection** | "3 things I'd tell myself on day 1 of learning to code." | monthly |
 
 ### 2. The anatomy of a good post
+
+One specific thing you did, what broke, what you learned, and a question. That's it — posts that try to teach everything get read by nobody.
 
 ```text
 [Hook — 1 line, specific]
@@ -86,6 +98,8 @@ Use AI to **tighten** your draft (shorter, clearer, check grammar in English), n
 
 ### 5. What not to share
 
+Never post secrets, client data, or frustration about named people. The internet keeps everything, and hiring managers read back.
+
 - Secrets, internal company code, customer data, screenshots with tokens.
 - Negative posts about bootcamps, teachers, employers or interviewers.
 - Claims you can't back up ("expert", "10x").
@@ -95,7 +109,9 @@ Use AI to **tighten** your draft (shorter, clearer, check grammar in English), n
 
 Likes are noisy. Track: profile views from recruiters, meaningful comments from engineers, connection requests from your target companies, conversations that turned into referrals or interviews.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | | ✅ | ❌ |
 |---|---|---|
@@ -103,6 +119,13 @@ Likes are noisy. Track: profile views from recruiters, meaningful comments from 
 | Long blog articles | depth, SEO, portfolio pieces | slower; fewer readers at first |
 | Short LinkedIn posts | reach where recruiters are | shallow if not careful |
 | Posting in Bahasa Indonesia vs English | local community vs global reach | choose per goal; English helps for remote roles |
+
+## ⚠️ Common mistakes
+
+- Only posting certificates and "Day 47 of #100DaysOfCode" without content.
+- Engagement-bait questions unrelated to the post.
+- Copy-pasting AI posts that sound like everyone else's.
+- Giving up after two weeks because posts got few likes.
 
 ## 🏆 Best practices
 
@@ -113,19 +136,6 @@ Likes are noisy. Track: profile views from recruiters, meaningful comments from 
 - [ ] Keep it honest and humble; credit people and resources.
 - [ ] Never post secrets, company internals or private data.
 - [ ] Review AI-polished text so it still sounds like you.
-
-## 🏭 How it's used in industry
-
-- Developer advocates and many senior engineers built careers through writing and talks; for juniors, the same habit signals communication skills.
-- Hiring managers sometimes reference a candidate's post in interviews ("tell me more about that N+1 bug").
-- Tech communities in Indonesia (meetups, Discord/Telegram groups, LinkedIn) share job leads with members they know.
-
-## ⚠️ Common mistakes
-
-- Only posting certificates and "Day 47 of #100DaysOfCode" without content.
-- Engagement-bait questions unrelated to the post.
-- Copy-pasting AI posts that sound like everyone else's.
-- Giving up after two weeks because posts got few likes.
 
 ::part[Explain & Design]{n="2"}
 
