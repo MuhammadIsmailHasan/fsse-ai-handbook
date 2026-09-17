@@ -19,34 +19,37 @@ tags: [architecture, repository, unit-of-work, transactions, testing, sqlalchemy
 - How SQLAlchemy's `Session` already implements both patterns — and when adding your own layer is worth it
 - Building on Module 2 Week 4 (layered architecture) and Week 2 (transactions)
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Repository** | An object that stores and fetches your data, hiding the SQL | Penyimpan data |
+| **Unit of Work** | One business action = one transaction, saved all at once | Satu aksi, satu transaksi |
+| **Domain object** | A plain object with your business rules, not tied to a table | Objek aturan bisnis |
+| **Mapping** | Turning rows into objects and back | Menerjemahkan baris ke objek |
+| **Fake** | A simple in-memory stand-in used in tests | Pengganti sederhana |
+| **Contract test** | One test suite run against both the real and the fake version | Uji kesepakatan |
+| **Transaction boundary** | Where the "all or nothing" starts and ends | Batas transaksi |
+| **Session (SQLAlchemy)** | SQLAlchemy's own unit of work | Unit kerja bawaan |
+
 ## 🧠 The big idea
 
 A **repository** is a **librarian**: you ask "give me application 42" or "shelve this one", and you don't care whether the books live on shelves, in a warehouse or in a digital archive.
 
 A **unit of work** is a **shopping cart at checkout**: you put several items in, and payment happens **all at once** — either everything is bought or nothing is. You never end up having paid for half the cart.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-In Week 4 you saw routes full of `db.session` calls and moved them into repositories. Two problems remain in many codebases:
+In Week 4 you moved `db.session` calls out of routes and into repositories. Two problems usually remain:
 
-1. **Business logic tied to the database** → slow tests that need PostgreSQL for every rule.
-2. **Unclear transaction boundaries** → some functions commit, others don't; a failure halfway leaves half-saved data.
+1. **Business rules tied to the database** — every rule test needs PostgreSQL running, so the test suite crawls.
+2. **Unclear transaction boundaries** — half an operation is saved, and nobody is sure where the commit happens.
 
-The repository hides *how* data is stored; the unit of work decides *when* a batch of changes becomes permanent.
+Repositories and units of work fix both: the librarian hides where the books are kept, and the checkout makes sure you never pay for half the trolley.
 
-## 💥 What happens if we DON'T?
+The honest counter-argument: SQLAlchemy's `Session` already *is* a unit of work with repository-like queries. Add your own layer when you need database-free tests or expect to swap storage — not by default.
 
-```python
-def withdraw_all(user_id):
-    for app in Application.query.filter_by(user_id=user_id):
-        app.status = "withdrawn"
-        db.session.commit()          # commits inside the loop
-        send_withdrawal_email(app)   # fails on the 3rd application…
-```
-
-Two applications are withdrawn, the rest aren't, and emails went out for some. And testing the rule "only active applications can be withdrawn" requires a real database.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The repository interface
 
@@ -116,6 +119,8 @@ def withdraw_all(uow, user_id):
 
 ### 4. Fakes
 
+A fake repository is a dictionary with the same methods. Suddenly a business rule can be tested in milliseconds, with no database at all.
+
 ```python
 class InMemoryUnitOfWork:
     def __enter__(self):
@@ -130,6 +135,8 @@ class InMemoryUnitOfWork:
 Service tests run in milliseconds with `InMemoryUnitOfWork` — hundreds of business-rule tests without Docker.
 
 ### 5. Contract tests: one test suite, two implementations
+
+This is what stops fakes from lying: the same tests run against the real repository and the fake one, so "it passes with the fake" means something.
 
 ```python
 @pytest.fixture(params=["memory", "sql"])
@@ -156,7 +163,9 @@ Yes:
 | Rich business rules, many unit tests, possible storage changes | add repository + UoW interfaces over SQLAlchemy |
 | Several data sources in one use case (DB + external API + cache) | a UoW coordinating them is especially valuable |
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -167,29 +176,11 @@ Yes:
 | Fakes + contract tests | fast tests you can trust | contract tests must be maintained with the interface |
 | Domain dataclasses + mapping | domain independent of ORM | mapping code |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Services with meaningful business rules you want to unit test.
 - ✅ Operations touching several aggregates that must succeed or fail together.
 - ✅ When storage might change (SQL → document store, or an external API as source of truth).
 - 🚫 Thin CRUD endpoints with no logic — the extra layer adds nothing.
 - 🚫 Complex reporting queries — use dedicated read-model queries (SQL views, query services) instead of forcing them through repositories.
-
-## 🏆 Best practices
-
-- [ ] Name repository methods in domain language; return domain objects or DTOs, never ORM queries.
-- [ ] **Never commit inside repositories**; one use case = one unit of work = one commit.
-- [ ] Roll back automatically on exceptions or missing commit; always close connections.
-- [ ] Trigger side effects (emails, events) **after** commit.
-- [ ] Keep fakes behind the same protocol and run **contract tests** against fake and real implementations.
-- [ ] Don't create a repository per table by reflex — group by aggregate/use case.
-- [ ] Use the ORM session directly when the extra abstraction wouldn't pay for itself — and say so in a design note.
-
-## 🏭 How it's used in industry
-
-- Domain-driven design teams (and the *Architecture Patterns with Python* / "Cosmic Python" book) use repository + UoW for complex domains like logistics and finance.
-- Many successful Django/Flask apps skip the pattern and use the ORM directly — the right choice for CRUD-heavy products.
-- Contract tests are common for adapters to external systems (payment gateways, message brokers), not only databases.
 
 ## ⚠️ Common mistakes
 
@@ -201,6 +192,16 @@ Yes:
 :::revoshop
 RevoShop has `app/repositories/*`. (1) Open `order_repository.py`: does `OrderRepository.create` call `db.session.commit()`? What happens if you want to create an order **and** a payment record in one atomic operation from a service? (2) Do repository methods return model instances, dicts or queries? (3) The unit tests mock repositories (`tests/unit/test_order_service.py`) — what would a contract test between a fake repository and the real one catch that mocks don't?
 :::
+
+## 🏆 Best practices
+
+- [ ] Name repository methods in domain language; return domain objects or DTOs, never ORM queries.
+- [ ] **Never commit inside repositories**; one use case = one unit of work = one commit.
+- [ ] Roll back automatically on exceptions or missing commit; always close connections.
+- [ ] Trigger side effects (emails, events) **after** commit.
+- [ ] Keep fakes behind the same protocol and run **contract tests** against fake and real implementations.
+- [ ] Don't create a repository per table by reflex — group by aggregate/use case.
+- [ ] Use the ORM session directly when the extra abstraction wouldn't pay for itself — and say so in a design note.
 
 ::part[Explain & Design]{n="2"}
 
@@ -264,16 +265,6 @@ What does a contract test protect you from?
 A fake implementation drifting from the real one, so tests pass with the fake while production behaves differently.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Repository | Repositori — antarmuka seperti koleksi untuk data |
-| Unit of Work | Satuan kerja — satu transaksi untuk satu operasi bisnis |
-| Atomic | Atomik — semua berhasil atau semua batal |
-| Mapping | Pemetaan (baris database ↔ objek domain) |
-| Fake | Implementasi tiruan yang berfungsi |
-| Contract test | Tes kontrak — tes yang sama untuk beberapa implementasi |
 
 ## 📚 Keep learning
 

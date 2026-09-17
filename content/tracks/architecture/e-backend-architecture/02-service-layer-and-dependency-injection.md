@@ -19,6 +19,19 @@ tags: [architecture, service-layer, dependency-injection, composition-root, dto,
 - DI containers vs plain functions, and FastAPI's `Depends`
 - Publishing events after commit (tying Stage D's Observer to Stage E)
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Service layer** | One method per use case, with the business rules | Lapisan kasus penggunaan |
+| **Use case** | One thing a user wants to do ("apply to a job") | Satu tujuan pengguna |
+| **DTO** | A plain object carrying data across a boundary | Objek pembawa data |
+| **Domain error** | Your own error type, translated to HTTP at the edge | Kesalahan aturan bisnis |
+| **Dependency injection** | Passing what a service needs into it | Menyuntikkan kebutuhan |
+| **Constructor injection** | Passing those things when the object is created | Disuntik saat objek dibuat |
+| **Composition root** | The one place that wires everything together | Titik perakitan |
+| **DI container** | A library that does the wiring for you | Pustaka perakit |
+
 ## 🧠 The big idea
 
 A hospital has a **reception desk** (routes), **doctors** (services) and **pharmacies, labs, records** (infrastructure). The receptionist doesn't diagnose; the doctor doesn't care whether a patient arrived by walk-in, phone or app; and which lab processes blood tests is decided by hospital management, not by each doctor.
@@ -27,28 +40,15 @@ A hospital has a **reception desk** (routes), **doctors** (services) and **pharm
 - **Routes/CLI/workers** = different reception desks for the same doctors.
 - **Composition root** = management deciding which lab, pharmacy and records system everyone uses.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-As apps grow, the same use case gets triggered from several places: an API route, a CLI import command, a scheduled worker, an admin panel, an AI agent tool (Module 7). If logic lives in routes, it's duplicated or impossible to reuse. And if services create their own dependencies (`SmtpClient()`, `datetime.now()`), they can't be tested or reconfigured.
+As an app grows, the same use case gets triggered from several places: an API route, a CLI import command, a scheduled worker, an admin panel, later an AI agent tool (Module 7). If the logic lives in the route, it's either copied or impossible to reuse.
 
-## 💥 What happens if we DON'T?
+And if a service creates its own dependencies inside itself (`SmtpClient()`, `datetime.now()`), it can't be tested or reconfigured — the doctor buying their own lab equipment.
 
-```python
-@app.post("/applications/<int:id>/status")
-def change_status(id):
-    app_ = Application.query.get(id)                       # persistence in the route
-    if app_.status == "saved" and request.json["status"] == "offer":   # rules in the route
-        return {"error": "invalid"}, 409
-    app_.status = request.json["status"]
-    app_.updated_at = datetime.now()                       # hidden dependency on the clock
-    db.session.commit()
-    SmtpClient("smtp.gmail.com").send(...)                 # hidden dependency on SMTP
-    return app_.to_dict()
-```
+Put the use cases in services, pass their tools in, and decide the wiring in one place.
 
-The CLI importer needs the same rules → copy-paste. Tests need an HTTP client, a database and an SMTP server, and can't control "now".
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. A use case per service method
 
@@ -74,6 +74,8 @@ class ApplicationService:
 The service **orchestrates**: load → check permissions → apply domain rules → persist → publish. Domain objects hold the rules themselves (`move_to`).
 
 ### 2. DTOs at the boundary
+
+Returning ORM objects from a service leaks the database into everything that calls it — and one lazy-loaded attribute later blows up outside the session.
 
 Services return **plain data** (dicts or small dataclasses), not ORM/domain objects:
 - callers can't accidentally lazy-load or mutate persistent state after the transaction,
@@ -105,6 +107,8 @@ def move(user_id, application_id):
 Parse → call → serialize. If a route has an `if` about business rules, the rule is in the wrong place.
 
 ### 5. Dependency injection and the composition root
+
+One place builds the objects: production wires real clients, tests wire fakes, the CLI wires the same services as the API. Nothing else needs to know.
 
 **Constructor injection**: dependencies are parameters, not things the service creates.
 
@@ -147,7 +151,9 @@ flowchart TB
 In FastAPI, dependencies are declared as parameters: `def move(..., service: ApplicationService = Depends(get_application_service))`. Tests replace them with `app.dependency_overrides[get_application_service] = lambda: fake_service` — dependency injection built into the framework.
 :::
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -158,29 +164,10 @@ In FastAPI, dependencies are declared as parameters: `def move(..., service: App
 | DI container library | less manual wiring in huge apps | indirection, harder to trace |
 | Module-level globals (`db`, `mail`) | convenient in Flask | hidden dependencies; tests need patching |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Use cases called from more than one entry point, or with non-trivial rules.
 - ✅ Anything touching external systems (email, payments, LLMs) you must fake in tests.
 - 🚫 A service method that only calls `repository.get()` and returns it — let the route call a query helper, or accept the thin wrapper consciously for consistency.
 - 🚫 Injecting pure utility functions (`slugify`) — just import them.
-
-## 🏆 Best practices
-
-- [ ] One service method per use case, named by intent (`move`, `add_application`, `import_jobs`).
-- [ ] Services depend on **protocols** (UoW, publisher, clock, LLM client), never on Flask/`request`.
-- [ ] Return **DTOs**; raise **domain errors**; map errors to HTTP/CLI at the edge.
-- [ ] Keep routes to parse → call → serialize.
-- [ ] Wire everything in **one composition root**; that's the only module importing concrete adapters.
-- [ ] Inject the **clock** (and randomness/id generators) for deterministic tests.
-- [ ] Publish events **after** commit.
-- [ ] If a constructor needs 7+ dependencies, split the service.
-
-## 🏭 How it's used in industry
-
-- Most mature Python backends (Django "services.py", Flask/FastAPI "use cases") follow this split; FastAPI's `Depends` made DI mainstream in Python.
-- AI apps expose the **same service methods** as HTTP endpoints and as tools for LLM agents (MCP servers, function calling) — only possible when logic isn't trapped in routes (Module 7).
-- Hiring managers look for "business logic in routes/views" as a code smell in take-home assignments.
 
 ## ⚠️ Common mistakes
 
@@ -192,6 +179,17 @@ In FastAPI, dependencies are declared as parameters: `def move(..., service: App
 :::revoshop
 (1) Compare a RevoShop route (e.g. `app/routes/orders.py`) with `OrderService`: does the route contain any business rules, or does it only parse, call and serialize? (2) Services are `@staticmethod`s that import repositories and `db` directly — what does that mean for dependency injection and for the mocks in `tests/unit`? (3) Sketch a `bootstrap()` for RevoShop that creates `OrderService(uow, payment_gateway, clock)` and how `create_app()` would use it.
 :::
+
+## 🏆 Best practices
+
+- [ ] One service method per use case, named by intent (`move`, `add_application`, `import_jobs`).
+- [ ] Services depend on **protocols** (UoW, publisher, clock, LLM client), never on Flask/`request`.
+- [ ] Return **DTOs**; raise **domain errors**; map errors to HTTP/CLI at the edge.
+- [ ] Keep routes to parse → call → serialize.
+- [ ] Wire everything in **one composition root**; that's the only module importing concrete adapters.
+- [ ] Inject the **clock** (and randomness/id generators) for deterministic tests.
+- [ ] Publish events **after** commit.
+- [ ] If a constructor needs 7+ dependencies, split the service.
 
 ::part[Explain & Design]{n="2"}
 
@@ -257,16 +255,6 @@ Why should services raise domain errors instead of returning HTTP responses?
 So the same use case works for any entry point (API, CLI, worker, AI tool); each edge maps errors to its own format (status codes, exit codes, tool messages).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Service layer | Lapisan layanan (kasus penggunaan) |
-| Use case | Kasus penggunaan |
-| DTO (Data Transfer Object) | Objek pemindah data |
-| Dependency injection | Injeksi dependensi |
-| Composition root | Titik perakitan dependensi |
-| Entry point | Titik masuk (API, CLI, worker) |
 
 ## 📚 Keep learning
 

@@ -19,41 +19,42 @@ tags: [architecture, react, components, separation-of-concerns, testing]
 - Testing each half, and using presentational components in Storybook
 - When the split helps and when it's ceremony
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Presentational component** | Shows what it's given; no data fetching | Komponen tampilan saja |
+| **Container component** | Loads data and handles state, then hands it down | Komponen pengurus data |
+| **Props** | The values passed into a component | Nilai yang dikirim ke komponen |
+| **UI state** | Which situation the screen is in: loading, error, ready | Kondisi tampilan |
+| **Discriminated union** | A type where one field says which shape it is | Tipe dengan penanda bentuk |
+| **Injected loader** | Passing in the function that fetches data | Fungsi pengambil data yang disuntik |
+| **Server Component** | A component that runs on the server — today's container | Komponen yang jalan di server |
+| **Storybook** | A tool to view components on their own, with fake data | Alat melihat komponen terpisah |
+
 ## 🧠 The big idea
 
 A **TV** and a **cable box**. The TV (presentational) only shows whatever signal it receives — it doesn't know if it's from cable, a laptop or a game console. The cable box (container) knows where to get channels, handles subscriptions and errors, and sends a signal to the TV.
 
 You can test a TV with any signal generator, and swap the cable box for a streaming stick without buying a new TV.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Components that fetch, transform, handle errors and render in one place are hard to:
-- **test** — every test needs a mocked `fetch` and waits for async code;
-- **reuse** — the same card list is needed on the dashboard (from a different endpoint) and in a Storybook story (from fake data);
-- **change** — moving data loading to a Server Component or TanStack Query means rewriting the markup too.
+A component that fetches, transforms, handles errors and renders all at once is hard to:
 
-The pattern was popularized by Dan Abramov in 2015. Hooks changed *how* we write containers, but the idea of separating data/behavior from rendering still underpins modern React (Server Components, headless UI libraries).
+- **test** — every test needs a mocked `fetch` and waits for async work,
+- **reuse** — the same card list is needed on the dashboard from a different endpoint, and in Storybook from fake data,
+- **read** — the markup is buried among effects and error handling.
 
-## 💥 What happens if we DON'T?
+Splitting it is the TV and the cable box: the TV works with any signal, and you can replace the box without buying a new TV.
 
-```tsx
-"use client";
-export function TangledApplications() {
-  const [status, setStatus] = useState("all");
-  const [items, setItems] = useState(null);
-  const [error, setError] = useState(false);
-  useEffect(() => {
-    fetch(`/api/applications?status=${status}`).then((r) => r.json()).then(setItems).catch(() => setError(true));
-  }, [status]);   // race conditions, no retry, error never resets
-  return (/* 60 lines of markup mixed with the state above */);
-}
-```
+It's not always worth it — for a small component that fetches one thing, the split is pure ceremony.
 
-The designer asks for an "empty state" illustration — you have to understand fetching to change a picture.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Model the states explicitly
+
+Naming the states (`loading | error | ready`) removes a whole family of bugs: you can no longer render data that isn't there yet, because the type won't let you.
 
 ```ts
 export type ViewState =
@@ -110,6 +111,8 @@ The loader is **injected**: production passes `applicationsClient.list`; tests p
 
 ### 4. The modern shapes of the same idea
 
+The pattern didn't disappear — it moved. A Server Component or a custom hook is the container; the component that takes props and renders markup is still the TV.
+
 ```mermaid
 flowchart TB
     subgraph S["Server Component as container"]
@@ -134,7 +137,9 @@ export default async function ApplicationsPage({ searchParams }: PageProps<"/app
 
 With TanStack Query, `useApplications(status)` **is** the container logic; the component becomes a one-line adapter from query state to `ViewState`.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | | ✅ | ❌ |
 |---|---|---|
@@ -142,12 +147,17 @@ With TanStack Query, `useApplications(status)` **is** the container logic; the c
 | All-in-one | quick for small, one-off components | hard to test and change as it grows |
 | Server Component container | data on the server, zero client JS for loading | only for data available at request time |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Views with several states (loading/error/empty/ready) or used in more than one place.
 - ✅ Design-system style components that should render in Storybook with fake data.
 - 🚫 A 15-line component used once — splitting adds noise.
 - 🚫 Don't create "containers" that only forward props — let the page or hook do it.
+
+## ⚠️ Common mistakes
+
+- Presentational components that secretly call `useRouter` or a store "just for one thing".
+- Boolean soup: `isLoading`, `isError`, `data` that can contradict each other.
+- Passing an inline loader function to a container that depends on it → infinite refetch.
+- Splitting everything, including components with no state.
 
 ## 🏆 Best practices
 
@@ -157,19 +167,6 @@ With TanStack Query, `useApplications(status)` **is** the container logic; the c
 - [ ] Inject dependencies (loaders, clients) for testability; keep them stable.
 - [ ] Prefer Server Components as containers in the App Router when data is known at request time.
 - [ ] Write stories/tests for each view state.
-
-## 🏭 How it's used in industry
-
-- Design systems (and Storybook) depend on presentational components that render from props alone.
-- Headless UI libraries (Radix, React Aria, TanStack Table) separate behavior from rendering — the same principle at library scale.
-- In App Router codebases, "fetch in the page, render in components" is the common default.
-
-## ⚠️ Common mistakes
-
-- Presentational components that secretly call `useRouter` or a store "just for one thing".
-- Boolean soup: `isLoading`, `isError`, `data` that can contradict each other.
-- Passing an inline loader function to a container that depends on it → infinite refetch.
-- Splitting everything, including components with no state.
 
 ::part[Explain & Design]{n="2"}
 
@@ -234,16 +231,6 @@ Is a Server Component page that fetches data and renders `<ApplicationsView item
 Yes — it owns data loading and passes plain props to a presentational component. It's the App Router's most common form of the pattern.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Presentational component | Komponen tampilan (hanya dari props) |
-| Container component | Komponen pengelola data dan state |
-| Discriminated union | Tipe gabungan dengan penanda jenis |
-| Dependency injection | Menyuntikkan dependensi dari luar |
-| Separation of concerns | Pemisahan tanggung jawab |
-| Storybook | Katalog komponen UI terisolasi |
 
 ## 📚 Keep learning
 

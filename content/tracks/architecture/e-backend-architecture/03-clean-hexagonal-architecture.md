@@ -19,29 +19,35 @@ tags: [architecture, hexagonal, clean-architecture, ports-and-adapters, anti-pat
 - Backend **anti-patterns**: anemic domain, god service, leaky abstractions, distributed monolith, architecture astronautics
 - How to choose the *amount* of architecture for your project
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Hexagonal architecture** | Core logic with plug-in points around it | Arsitektur inti dan colokan |
+| **Port** | An interface the core owns and others must fit | Kesepakatan colokan |
+| **Adapter** | Code that plugs a real tool into a port | Penghubung ke alat nyata |
+| **Driving adapter** | Something that calls your app (HTTP, CLI) | Pemanggil aplikasi |
+| **Driven adapter** | Something your app calls (database, email, LLM) | Yang dipanggil aplikasi |
+| **Dependency rule** | Source code dependencies point inwards, towards the core | Arah ketergantungan ke dalam |
+| **Anemic domain** | Objects with data but no rules, so rules scatter | Objek tanpa aturan |
+| **Leaky abstraction** | An interface that still exposes the tool behind it | Abstraksi yang bocor |
+| **import-linter** | A tool that fails the build when a boundary is crossed | Pemeriksa batas impor |
+
 ## 🧠 The big idea
 
 Picture a **game console**. The console (your core logic) has **ports**: controller ports, an HDMI port, a power port. Anything that fits the port works — a wireless controller, an arcade stick, a TV, a projector. The console never changes when you buy a new TV.
 
 Hexagonal architecture builds software the same way: the core defines ports; the outside world plugs in through adapters.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Frameworks, databases and vendors change faster than business rules. Teams migrated Flask → FastAPI, MySQL → PostgreSQL, SendGrid → SES, GPT → Claude — and in tangled codebases each migration meant touching business logic. Keeping the core independent makes these swaps local, and makes the core testable in milliseconds.
+Frameworks, databases and vendors change faster than business rules. Teams have migrated Flask → FastAPI, MySQL → PostgreSQL, SendGrid → SES, GPT → Claude — and in a tangled codebase every one of those migrations means touching business logic.
 
-## 💥 What happens if we DON'T?
+Keeping the core independent makes those swaps local, and lets the core be tested in milliseconds. The console analogy holds: buy a new TV, keep the console.
 
-```text
-domain/model.py        imports json, reads files, imports console notifier
-use_cases.py           creates InMemoryJobStore() as a global, imports adapters directly
-routes.py              contains matching rules
-```
+The opposite danger is real too — "architecture astronautics", where a small app gets five layers and twelve interfaces nobody needs. The last section of this lesson is about choosing the right *amount*.
 
-- You can't test recommendations without files on disk.
-- Switching the job feed from JSON to a partner API edits the domain.
-- Global state leaks between tests and requests.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. From layers to hexagon
 
@@ -68,6 +74,8 @@ flowchart LR
 ```
 
 ### 2. The dependency rule
+
+One sentence: the inside may not import the outside. Business rules must not import Flask, SQLAlchemy or boto3 — those are plugs, not the console.
 
 > Source code dependencies only point **inward**. Inner layers know nothing about outer layers.
 
@@ -114,6 +122,8 @@ Alternative: **package by feature** (`applications/`, `jobs/`, `billing/`, each 
 
 ### 5. Enforce boundaries automatically
 
+A rule nobody checks becomes a suggestion. A boundary check in CI turns "please don't import the database here" into a failing build.
+
 Rules in a README get broken under deadline pressure. Automate them:
 
 ```ini
@@ -158,7 +168,9 @@ layers =
 | Rich domain, many integrations, long life, several entry points (CareerPilot Phases 3–7) | **hexagonal** core with ports for LLM, payments, notifications, storage |
 | Many teams, independent scaling | modular monolith → services along bounded contexts |
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -168,30 +180,10 @@ layers =
 | Package by layer | clear technical boundaries | a feature spreads across many folders |
 | Package by feature | cohesive features | boundaries between features need their own rules |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Long-lived products with meaningful rules and several external systems (payments, LLMs, notifications).
 - ✅ When the same logic must run from API, CLI, workers and agents.
 - 🚫 Short-lived prototypes or simple CRUD — ship it simply and refactor when the pain appears.
 - 🚫 As a reason to delay shipping: architecture should serve delivery.
-
-## 🏆 Best practices
-
-- [ ] Write down the **dependency rule** and **enforce it in CI** (import-linter or tests).
-- [ ] Keep the domain free of I/O and frameworks; put rules on entities/value objects.
-- [ ] Define ports **in the application layer**, shaped by what use cases need.
-- [ ] One composition root per process (web, worker, CLI) — the only place concrete adapters meet.
-- [ ] Map at the edges: request schema → command/DTO → domain → DTO → response.
-- [ ] Prefer a **modular monolith** with clear boundaries before microservices.
-- [ ] Record significant decisions as short **ADRs** (Architecture Decision Records): context, decision, consequences.
-- [ ] Refactor toward boundaries incrementally; don't rewrite.
-
-## 🏭 How it's used in industry
-
-- Companies migrating frameworks or vendors (e.g. payment providers, cloud email, LLM providers) rely on adapter boundaries to limit blast radius.
-- Shopify, GitLab and many others run **modular monoliths** with enforced boundaries rather than hundreds of microservices.
-- Python teams use `import-linter` in CI; Java/Kotlin teams use ArchUnit for the same checks.
-- AI platforms put each model provider behind a port so they can route requests across providers.
 
 ## ⚠️ Common mistakes
 
@@ -203,6 +195,17 @@ layers =
 :::revoshop
 Map RevoShop to the hexagon: (1) Which folders are driving adapters (`routes/`), driven adapters (`repositories/`, `integrations/midtrans.py`), application (`services/`), domain (`models/`?)? (2) The domain is SQLAlchemy models with `to_dict()` — a pragmatic choice; what's its cost? (3) Write an `.importlinter` layers contract for RevoShop and run `uv tool run --from import-linter lint-imports` (or reason it through): which imports would break the rule today? (4) Pick one anti-pattern from the table that RevoShop shows and one it avoids.
 :::
+
+## 🏆 Best practices
+
+- [ ] Write down the **dependency rule** and **enforce it in CI** (import-linter or tests).
+- [ ] Keep the domain free of I/O and frameworks; put rules on entities/value objects.
+- [ ] Define ports **in the application layer**, shaped by what use cases need.
+- [ ] One composition root per process (web, worker, CLI) — the only place concrete adapters meet.
+- [ ] Map at the edges: request schema → command/DTO → domain → DTO → response.
+- [ ] Prefer a **modular monolith** with clear boundaries before microservices.
+- [ ] Record significant decisions as short **ADRs** (Architecture Decision Records): context, decision, consequences.
+- [ ] Refactor toward boundaries incrementally; don't rewrite.
 
 ::part[Explain & Design]{n="2"}
 
@@ -273,16 +276,6 @@ What's the difference between a driving and a driven adapter?
 Driving adapters call into the application (HTTP routes, CLI, workers); driven adapters are called by the application through ports (databases, email, LLM or payment clients).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Hexagonal architecture / ports & adapters | Arsitektur heksagonal / port dan adaptor |
-| Dependency rule | Aturan ketergantungan (arah ke dalam) |
-| Driving / driven adapter | Adaptor penggerak / yang digerakkan |
-| Anemic domain model | Model domain "anemia" (tanpa perilaku) |
-| Modular monolith | Monolit modular |
-| ADR (Architecture Decision Record) | Catatan keputusan arsitektur |
 
 ## 📚 Keep learning
 
