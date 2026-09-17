@@ -19,22 +19,32 @@ tags: [career, interviews, hiring-process, take-home, recruiters]
 - Culture/values rounds, **reference checks**, offer and background checks
 - Asking good questions, following up, and learning from rejections
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Recruiter screen** | A short first call about fit, motivation and logistics | Wawancara awal dengan rekruter |
+| **Online assessment** | An automated coding test with a time limit | Tes kode otomatis |
+| **Take-home** | A small project you build in your own time | Tugas dikerjakan di rumah |
+| **Deep-dive** | An interview about a project you built | Pendalaman proyek |
+| **Culture round** | A conversation about how you work with people | Wawancara kecocokan kerja |
+| **Reference check** | Calling someone who worked with you | Pengecekan referensi |
+| **Offer** | The formal job proposal: role, salary, start date | Penawaran kerja |
+| **Follow-up** | A short, polite message after a stage | Menanyakan kelanjutan |
+
 ## 🧠 The big idea
 
 The hiring process is a **series of doors**, each with a different lock. The recruiter door checks *fit and logistics*, the coding door checks *problem solving*, the project door checks *depth and honesty*, the team door checks *collaboration*. Knowing which lock you're facing tells you which key to bring.
 
-## ❓ Why does this matter?
+## ❓ Why it matters
 
-Candidates often fail not because they lack skill but because they prepared for the wrong stage — grinding algorithms for a take-home, or rambling in a 20-minute recruiter call. Preparation per stage raises pass rates cheaply.
+Candidates usually fail a stage they didn't prepare for, not one they lacked the skill for: grinding algorithm puzzles for a take-home round, or rambling for twenty minutes in a recruiter call that needed a two-minute pitch.
 
-## 💥 What happens if we DON'T?
+Knowing the order of the doors — and which lock each one has — is the cheapest possible preparation.
 
-- "Tell me about yourself" → a 6-minute life story.
-- A take-home submitted without a README or tests.
-- A salary expectation blurted out with no research.
-- Silence after the interview; no notes, so the same mistakes repeat.
+For **remote roles abroad**, expect two extra things in the process: a question about your time-zone overlap and how you communicate in writing, and a longer gap between stages because of holidays and time differences. Both are normal; plan your follow-ups around them instead of assuming rejection.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. A typical process
 
@@ -52,6 +62,8 @@ flowchart LR
 Startups may compress this into 2–3 steps; larger companies may add rounds. **Ask the recruiter** for the stages and what each covers — that's normal and expected.
 
 ### 2. Recruiter screen
+
+Prepare a 90-second answer to "tell me about yourself" and a salary range you can say without hesitating. Those two decide most screens.
 
 | They check | Prepare |
 |---|---|
@@ -86,6 +98,8 @@ Behavioral questions (lesson 03): conflict, failure, feedback, ownership. Also: 
 
 ### 6. Your questions (always prepare 3–5)
 
+Good questions are also evidence: asking how they handle deploys or code review shows you've thought about the job, not just about getting hired.
+
 - "What does a new junior engineer's first 90 days look like?"
 - "How are code reviews done? How is work planned — sprints, Kanban?"
 - "What's the biggest technical challenge the team faces right now?"
@@ -103,7 +117,9 @@ Behavioral questions (lesson 03): conflict, failure, feedback, ownership. Also: 
 - **References**: prepare 2–3 people (bootcamp mentor, previous manager) and tell them in advance.
 - **Offer**: get it in writing; review contract type (PKWT fixed-term vs PKWTT permanent), probation, salary (gross), benefits (BPJS, THR, health insurance), work mode, notice period. Details in the negotiation lesson.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Assessment type | ✅ for you | ❌ for you |
 |---|---|---|
@@ -111,6 +127,13 @@ Behavioral questions (lesson 03): conflict, failure, feedback, ownership. Also: 
 | Live coding | quick, interactive, hints possible | stress; less realistic |
 | Project deep-dive | plays to your strengths | exposes shallow understanding |
 | Pair programming | shows collaboration | unfamiliar environment |
+
+## ⚠️ Common mistakes
+
+- Badmouthing previous employers or bootcamps.
+- Not testing your camera/mic/screen share before remote interviews.
+- Treating recruiters as gatekeepers to rush past — they're often your advocate.
+- Accepting a verbal offer and stopping other processes before the written offer.
 
 ## 🏆 Best practices
 
@@ -121,19 +144,6 @@ Behavioral questions (lesson 03): conflict, failure, feedback, ownership. Also: 
 - [ ] Always bring questions; take notes after each round.
 - [ ] Follow up briefly; be gracious with rejections.
 - [ ] Get offers in writing and read the contract before accepting.
-
-## 🏭 How it's used in industry
-
-- Structured interviews with scoring rubrics are common in mature companies to reduce bias — interviewers grade specific signals per round.
-- Many startups in Indonesia use a short process (screen → technical/take-home → user interview → offer) to move fast.
-- Hiring committees often compare notes: consistent, honest answers across rounds matter.
-
-## ⚠️ Common mistakes
-
-- Badmouthing previous employers or bootcamps.
-- Not testing your camera/mic/screen share before remote interviews.
-- Treating recruiters as gatekeepers to rush past — they're often your advocate.
-- Accepting a verbal offer and stopping other processes before the written offer.
 
 ::part[Explain & Design]{n="2"}
 

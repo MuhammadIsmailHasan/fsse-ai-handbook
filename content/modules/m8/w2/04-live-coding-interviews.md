@@ -20,21 +20,32 @@ tags: [career, interviews, live-coding, dsa, problem-solving]
 - **Practical** rounds: build a small endpoint, fix a bug, write a React component
 - A practice plan with timed mocks
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Live coding** | Writing code while an interviewer watches | Menulis kode saat diamati |
+| **Rubric** | The list of things they score you on | Daftar penilaian |
+| **Clarify** | Asking questions about the problem before coding | Menanyakan detail soal |
+| **Think out loud** | Saying what you're considering, as you consider it | Menjelaskan sambil berpikir |
+| **Pattern** | A known approach (two pointers, hash map) that fits the problem | Pola penyelesaian |
+| **Complexity** | The Big-O of your approach | Kompleksitas |
+| **Hint** | Help from the interviewer — accepting it well is a plus | Petunjuk dari pewawancara |
+| **Practical round** | Building a small endpoint or component instead of a puzzle | Sesi tugas nyata |
+
 ## 🧠 The big idea
 
 Live coding is **cooking on a TV show**. The judges care about the dish, but they also watch how you plan, keep your station clean, taste as you go and recover when something burns. Narrating your cooking lets them give you points even if the soufflé doesn't fully rise.
 
-## ❓ Why does this matter?
+## ❓ Why it matters
 
-Many companies — especially larger ones and remote-first teams — include at least one live coding round. Juniors with strong projects still fail it by jumping into code silently, freezing when stuck, or never testing.
+Interviewers can't read your mind, and the score sheet has more rows than "correct answer": how you clarify, how you plan, whether you test, how you react when stuck.
 
-## 💥 What happens if we DON'T?
+The cooking-show picture explains the whole round: the judges care about the dish, but they also watch how you plan, keep your station clean, taste as you go, and recover when something burns. Narrating gives them something to score even when the soufflé doesn't rise.
 
-- Starts typing immediately, solves the wrong problem.
-- 15 minutes of silence; interviewer can't help or give credit.
-- Code "done" but fails on an empty input they would have asked about.
+For remote interviews there's a practical layer too: a quiet room, a stable connection, and saying "let me share my screen" smoothly all cost you nothing and remove distractions from the actual assessment.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. What's scored (typical rubric)
 
@@ -47,6 +58,8 @@ Many companies — especially larger ones and remote-first teams — include at 
 | Communication | explains thinking, listens to hints |
 
 ### 2. The 7-step flow (45-minute round)
+
+Follow it even when you think you know the answer. Jumping straight to code is the most common way strong candidates lose points.
 
 | Step | Minutes | Say |
 |---|---|---|
@@ -98,6 +111,8 @@ Narration sample: *"I'll count interviews per company with a dictionary — one 
 
 ### 5. When you're stuck
 
+Say what you know, say what you've ruled out, and ask a specific question. Silence is the only answer that scores nothing.
+
 1. Say it: "I'm stuck on how to handle duplicates; let me try a smaller example."
 2. Solve by hand on a tiny input; describe what *you* did — that's the algorithm.
 3. Go back to brute force and optimize the slow part.
@@ -118,7 +133,9 @@ Narration sample: *"I'll count interviews per company with a dictionary — one 
 - Unless explicitly allowed, **don't use AI assistants or copilots** in live interviews — if allowed, narrate how you verify their output.
 - Set up: quiet room, stable internet, zoom-in font size, water.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Practice method | ✅ | ❌ |
 |---|---|---|
@@ -126,6 +143,13 @@ Narration sample: *"I'll count interviews per company with a dictionary — one 
 | Timed mock interviews with peers | realistic pressure, feedback | scheduling |
 | Explaining solutions in writing/posts | deep understanding | slower |
 | Memorizing solutions | fast recall | fails on variations |
+
+## ⚠️ Common mistakes
+
+- Coding before understanding; not asking about edge cases.
+- Optimizing prematurely and never finishing.
+- Silent struggling; arguing with hints.
+- Not testing; declaring victory on the happy path.
 
 ## 🏆 Best practices
 
@@ -136,19 +160,6 @@ Narration sample: *"I'll count interviews per company with a dictionary — one 
 - [ ] Test with examples and edge cases before saying "done".
 - [ ] Practice patterns weekly (DSA track spaced review) and do timed mocks out loud.
 - [ ] Prepare practical rounds too: a small API, a bug fix, a React component.
-
-## 🏭 How it's used in industry
-
-- Many companies use shared coding environments and structured rubrics for live coding rounds.
-- Practical, job-like rounds (build a small feature, pair programming, debugging) are increasingly common, especially for frontend and startup roles.
-- Some teams now run interviews that allow AI tools and evaluate how candidates prompt, verify and correct AI output.
-
-## ⚠️ Common mistakes
-
-- Coding before understanding; not asking about edge cases.
-- Optimizing prematurely and never finishing.
-- Silent struggling; arguing with hints.
-- Not testing; declaring victory on the happy path.
 
 ::part[Explain & Design]{n="2"}
 

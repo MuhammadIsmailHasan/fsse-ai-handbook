@@ -19,22 +19,31 @@ tags: [career, interviews, behavioral, star-method, communication]
 - Framing a **career switch** and bootcamp experience as strengths
 - Delivery: length, "I" vs "we", honesty about failures
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Behavioral interview** | Questions about what you actually did before | Wawancara berdasarkan pengalaman |
+| **STAR** | Situation, Task, Action, Result — the shape of an answer | Kerangka menjawab |
+| **Reflection** | What you learned, added at the end | Pelajaran yang diambil |
+| **Story bank** | 8–10 prepared stories covering most questions | Kumpulan cerita siap pakai |
+| **Signal** | What the interviewer is really checking | Hal yang sebenarnya dinilai |
+| **"I" vs "we"** | Being clear about your own part in a team effort | Peranmu sendiri |
+| **Red flag** | An answer that worries the interviewer (blaming others) | Tanda yang mengkhawatirkan |
+
 ## 🧠 The big idea
 
 Past behavior is the best available predictor of future behavior. Interviewers can't watch you work for a month, so they ask for **short documentaries** of moments that already happened. STAR is the storyboard that keeps your documentary under two minutes and focused on *what you did*.
 
-## ❓ Why does this matter?
+## ❓ Why it matters
 
-Behavioral rounds often decide between technically similar candidates, and hiring managers use them to spot risks (blaming others, giving up, poor communication). For career switchers they're a chance to show maturity from previous work.
+What you did before is the best available guess at what you'll do next. An interviewer can't watch you work for a month, so they ask for **short documentaries** of moments that already happened.
 
-## 💥 What happens if we DON'T?
+These rounds often decide between candidates who are technically similar, and hiring managers use them to spot risk: blaming others, giving up, poor communication. For career switchers they're the best chance to turn previous work into an advantage.
 
-- Rambling 5-minute answers with no result.
-- Hypotheticals ("I would…") instead of real events.
-- "We did…" everywhere — the interviewer can't tell your contribution.
-- A "weakness" like "I'm a perfectionist" that sounds rehearsed.
+In remote hiring they carry even more weight, because the team can't observe you day to day — so how clearly you describe a past problem *is* the sample of your communication.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. STAR (+R)
 
@@ -57,6 +66,8 @@ Behavioral rounds often decide between technically similar candidates, and hirin
 - **Reflection:** "I learned to explore unfamiliar APIs with a small spike before writing production code — I did the same later with jose for session encryption."
 
 ### 3. Build a story bank
+
+Eight stories cover almost every question, because most questions are variations of conflict, failure, ownership, learning and pressure. Prepare once, reuse everywhere.
 
 Collect 8–10 stories from bootcamp projects, CareerPilot, RevoShop, previous jobs, volunteering. Tag each with the themes it covers:
 
@@ -91,19 +102,30 @@ Frame it as a **deliberate move with evidence**: what drew you in (a moment), wh
 
 ### 6. Delivery tips
 
+Two minutes, first person, and a real result. "We improved things" tells the interviewer nothing about you.
+
 - Aim for **~2 minutes**; offer to go deeper ("happy to explain how the idempotency check worked").
 - Say **"I"** for your actions, **"we"** for team outcomes.
 - Failures: pick real but not catastrophic ones; spend most time on what you changed.
 - Pause before answering; it's fine to say "let me think of a good example".
 - In Indonesian and remote contexts alike: be polite and humble but **specific about your contribution** — modesty shouldn't hide your work.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | | ✅ | ❌ |
 |---|---|---|
 | Memorized scripts | confidence | robotic; breaks with follow-ups |
 | Bullet-point story bank | flexible, natural | needs practice out loud |
 | Technical-heavy stories | show skills | may miss people/process signals |
+
+## ⚠️ Common mistakes
+
+- No result, or a result that's "and then the project ended".
+- Choosing a conflict story where you were clearly right and the other person was a villain.
+- Reusing one story for everything.
+- Talking negatively about bootcamps or previous managers.
 
 ## 🏆 Best practices
 
@@ -113,19 +135,6 @@ Frame it as a **deliberate move with evidence**: what drew you in (a moment), wh
 - [ ] Practice out loud; record and time yourself; do mock interviews with peers.
 - [ ] Prepare for follow-ups: "what would you do differently?", "what did your teammate think?".
 - [ ] Never invent or exaggerate; don't blame others.
-
-## 🏭 How it's used in industry
-
-- Many companies use **structured behavioral interviews** with defined competencies and scoring (e.g. ownership, collaboration); Amazon's Leadership Principles are a well-known example.
-- Interviewers are trained to probe with follow-ups until they find your individual contribution.
-- For junior roles, coachability and learning speed often weigh as much as current skill.
-
-## ⚠️ Common mistakes
-
-- No result, or a result that's "and then the project ended".
-- Choosing a conflict story where you were clearly right and the other person was a villain.
-- Reusing one story for everything.
-- Talking negatively about bootcamps or previous managers.
 
 ::part[Explain & Design]{n="2"}
 
