@@ -20,22 +20,42 @@ tags: [aws, ssm, secrets-manager, kms, configuration, security]
 - **Rolling out changes**: when running apps see new values
 - **Auditing** with CloudTrail and cost comparison
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Parameter Store** | AWS's place for settings, with an option to encrypt them | Tempat menyimpan pengaturan |
+| **SecureString** | A parameter stored encrypted, readable only with a KMS key | Nilai terenkripsi |
+| **KMS** | AWS's key service; `kms:Decrypt` is what actually unlocks the value | Layanan kunci enkripsi |
+| **Path** | A folder-like name (`/revoshop/production/jwt`) you can grant access by | Nama berjenjang |
+| **Secrets Manager** | A pricier service for secrets that can rotate them automatically | Layanan rahasia dengan rotasi |
+| **Rotation** | Replacing a secret with a new one on a schedule | Penggantian berkala |
+| **Injection** | The platform putting a secret into the app's environment at startup | Menyuntikkan nilai ke aplikasi |
+| **Caching** | Keeping a fetched value in memory for a while instead of asking every time | Menyimpan sementara di memori |
+| **CloudTrail** | The log of who called which AWS API, including secret reads | Catatan aktivitas AWS |
+
 ## 🧠 The big idea
 
-Parameter Store is a **labeled filing cabinet**: drawers by application and environment (`/revoshop/production/`), some folders locked with a key (SecureString + KMS), and a guard (IAM) who checks which drawers you may open. Secrets Manager is the **bank's safety-deposit service**: more expensive per box, but it can **change the lock combination on a schedule** (rotation) and tell every authorized person the new one.
+Parameter Store is a **labelled filing cabinet**:
 
-## ❓ Why does this matter?
+- drawers per application and environment (`/revoshop/production/`),
+- some folders locked with a key (SecureString + KMS),
+- and a guard (IAM) who checks which drawers you may open.
 
-RevoShop's `JWT_SECRET_KEY`, database credentials and Midtrans server key must reach ECS tasks, EC2 hosts and Lambdas without living in Git, images, task definitions or chat. You also need to know **who read them** and how to **change** them without an outage.
+Secrets Manager is the **bank's safety-deposit service**: more expensive per box, but it can **change the lock combination on a schedule** (rotation) and tell everyone who's allowed the new one.
 
-## 💥 What happens if we DON'T?
+## ❓ Why it matters
 
-- Secrets as plain `environment` in the task definition → visible to anyone with `ecs:DescribeTaskDefinition`.
-- One IAM policy `ssm:GetParameter*` on `*` → the staging task can read production secrets.
-- The database password is rotated, but running tasks keep the old one → every new connection fails after the old password expires.
-- Parameters named `jwt`, `JWT`, `prod-jwt-new-final` — nobody knows which one is used.
+RevoShop's `JWT_SECRET_KEY`, database credentials and Midtrans server key must reach ECS tasks, EC2 hosts and Lambda functions without ever living in Git, images, task definitions or chat. You also need to know **who read them**, and to be able to **change them** without an outage.
 
-## 📖 How it works, step by step
+Done carelessly:
+
+- Secrets written as plain `environment` values in the task definition → visible to anyone who can run `ecs:DescribeTaskDefinition`.
+- One IAM policy with `ssm:GetParameter*` on `*` → the staging task can read production secrets.
+- The database password is rotated, but running tasks keep the old one, so every new connection fails once the old password stops working.
+- Parameters named `jwt`, `JWT`, `prod-jwt-new-final` — and nobody knows which one is in use.
+
+## 📖 Step by step
 
 ### 1. Parameter Store
 
@@ -64,6 +84,8 @@ SecureString values are encrypted with a KMS key: the **AWS managed key** `alias
 
 ### 3. IAM by path
 
+Paths turn one cabinet into separate drawers: a staging badge opens `/revoshop/staging/*` and nothing else. Without paths, every badge is a master key.
+
 ```json
 {
   "Effect": "Allow",
@@ -90,6 +112,8 @@ Rule of thumb: **Secrets Manager** for credentials that should rotate (database 
 
 ### 5. Getting values into running code
 
+Two ways in: the platform puts the value into the app's environment at startup (simple, but a change needs a restart), or the app asks for it while running and remembers it for a few minutes (more flexible, but you must handle failures and caching).
+
 | Platform | Mechanism | Picks up changes |
 |---|---|---|
 | **ECS** | task definition `secrets` → env vars at task start (JSON keys supported: `arn:…:secret:name-AbCdEf:password::`) | only **new tasks** — force a new deployment |
@@ -98,6 +122,8 @@ Rule of thumb: **Secrets Manager** for credentials that should rotate (database 
 | **App code (any)** | SDK with a TTL cache and stale fallback (exercise 05) | after TTL |
 
 ### 6. Rotating without outages
+
+Changing a lock while people are inside only works if both keys open the door for a while. That's why rotation happens in two steps: add the new secret, let everything pick it up, then retire the old one.
 
 **Database password rotation (two users)**: keep two database users (or rely on managed rotation's versioning); rotate one while the app uses the other; roll tasks; rotate the other.
 
@@ -111,7 +137,9 @@ Rule of thumb: **Secrets Manager** for credentials that should rotate (database 
 - Tag parameters/secrets (`Project`, `Env`, `Owner`, `Rotation=90d`).
 - Never pass secrets on command lines in shared environments (visible in process lists and shell history) — read them from files, stdin or SDKs.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -122,29 +150,10 @@ Rule of thumb: **Secrets Manager** for credentials that should rotate (database 
 | Inject at start (ECS) | no code changes | changes need new tasks |
 | Load in code with cache | changes picked up without redeploys | code, caching and failure handling |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Every environment-specific value that isn't compiled into the image.
 - ✅ Secrets Manager for rotating credentials; Parameter Store for the rest.
 - 🚫 Don't use either as a general key-value database or for high-frequency reads without caching.
 - 🚫 Don't store secrets in `String` parameters "just for now".
-
-## 🏆 Best practices
-
-- [ ] Consistent hierarchy `/app/env/NAME`; environments strictly separated.
-- [ ] SecureString (or Secrets Manager) for every secret; `String` only for non-secret config.
-- [ ] IAM scoped by path and environment; `kms:Decrypt` scoped by key or `kms:ViaService`.
-- [ ] Rotation plan per secret; managed rotation for RDS master passwords.
-- [ ] Inject via platform mechanisms; force new deployments after changes (or use TTL caching in code).
-- [ ] Least people/roles can read production secrets; CI deploys without humans reading values.
-- [ ] Tags and CloudTrail monitoring; parameter history for change tracking.
-- [ ] Manage parameter *definitions* in IaC (values from a secure source, not committed).
-
-## 🏭 How it's used in industry
-
-- Parameter Store and Secrets Manager are the default secret stores for AWS-native workloads; HashiCorp Vault is common in multi-cloud or large enterprises.
-- Rotation of database credentials is increasingly handled by managed integrations rather than custom scripts.
-- Security audits check that task definitions, Lambda environment variables and repositories contain no plain secrets.
 
 ## ⚠️ Common mistakes
 
@@ -160,6 +169,17 @@ Rule of thumb: **Secrets Manager** for credentials that should rotate (database 
 4. **Lab 3 → Lab 4.** On EC2 you wrote `.env.production` from SSM at deploy time. On ECS, the task definition's `secrets` do the same at task start. After changing `/revoshop/production/MIDTRANS_SERVER_KEY`, what command makes production pick it up, and how do you verify without printing the key?
 5. **Audit.** Find your own `GetParametersByPath` calls from Lab 3 in CloudTrail event history. Which principal made them (the instance role session name contains the instance ID)?
 :::
+
+## 🏆 Best practices
+
+- [ ] Consistent hierarchy `/app/env/NAME`; environments strictly separated.
+- [ ] SecureString (or Secrets Manager) for every secret; `String` only for non-secret config.
+- [ ] IAM scoped by path and environment; `kms:Decrypt` scoped by key or `kms:ViaService`.
+- [ ] Rotation plan per secret; managed rotation for RDS master passwords.
+- [ ] Inject via platform mechanisms; force new deployments after changes (or use TTL caching in code).
+- [ ] Least people/roles can read production secrets; CI deploys without humans reading values.
+- [ ] Tags and CloudTrail monitoring; parameter history for change tracking.
+- [ ] Manage parameter *definitions* in IaC (values from a secure source, not committed).
 
 ::part[Explain & Design]{n="2"}
 
@@ -224,16 +244,6 @@ Why does reading a SecureString parameter need two permissions?
 `ssm:GetParameter` allows reading the parameter, and `kms:Decrypt` on its KMS key allows decrypting the value; without the second, you only get an access error for the decryption.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Parameter Store | Penyimpanan parameter |
-| SecureString | String terenkripsi |
-| KMS key | Kunci enkripsi terkelola |
-| Rotation | Rotasi kredensial |
-| Injection | Penyuntikan nilai ke aplikasi |
-| Audit trail | Jejak audit |
 
 ## 📚 Keep learning
 
