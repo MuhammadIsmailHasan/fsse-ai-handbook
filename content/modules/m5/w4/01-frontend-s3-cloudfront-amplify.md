@@ -19,22 +19,42 @@ tags: [aws, cloudfront, s3, amplify, nextjs, frontend, cdn]
 - Putting the **API behind the same CloudFront distribution** (path-based origins) vs **CORS**
 - A deploy pipeline: build → sync → invalidate → smoke test
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Static site** | Files that are already finished before anyone visits | Situs berupa file jadi |
+| **SPA** | One HTML page where JavaScript swaps the content as you click | Aplikasi satu halaman |
+| **Server-rendered (SSR)** | Pages built fresh on a server for each visitor | Halaman dibuat di server |
+| **Static export** | `next build` producing plain files, with no server features | Ekspor jadi file biasa |
+| **CDN edge** | A CloudFront location near the user that keeps copies of your files | Titik CDN dekat pengguna |
+| **Cache-Control** | The header that says how long a file may be reused | Aturan lama penyimpanan |
+| **Content type (MIME)** | The label saying what a file is (`text/css`, `application/javascript`) | Jenis file |
+| **Invalidation** | Telling CloudFront to drop a cached file | Menghapus cache CDN |
+| **Routing fallback** | Sending unknown paths to `index.html` so an SPA can handle them | Pengalihan ke index.html |
+| **Amplify Hosting** | An AWS service that builds and hosts frontends, including Next.js servers | Layanan hosting frontend AWS |
+
 ## 🧠 The big idea
 
-A static frontend is a **printed catalog**: once printed, copies can be stacked in every shop (CDN edges) and handed out instantly. A server-rendered frontend is a **personal shopper** who writes a custom page for each visitor — it needs a person on duty (a running server). Know which one you're shipping before choosing where to host it.
+Two very different things get called "a frontend":
 
-## ❓ Why does this matter?
+- A **static** frontend is a **printed catalogue**. Once printed, copies sit in every shop (CDN edges) and are handed out instantly.
+- A **server-rendered** frontend is a **personal shopper** who writes a fresh page for each visitor — so somebody must be on duty (a running server).
 
-Frontends are often most of what users feel as "speed". Serving them from a CDN makes them fast everywhere; serving them wrong (no caching, wrong content types, stale `index.html`, public buckets) makes them slow, broken after deploys, or insecure.
+Decide which one you are shipping *before* choosing where to host it; most AWS frontend confusion comes from mixing these two up.
 
-## 💥 What happens if we DON'T?
+## ❓ Why it matters
 
-- `index.html` cached for a year → users stay on the old version, which requests assets you already deleted → blank page.
-- `.js` uploaded as `binary/octet-stream` → browsers refuse to execute it under strict MIME checking.
-- Deep links (`/orders/42`) return S3 `403 AccessDenied` in a single-page app.
-- The API lives on another domain with `Access-Control-Allow-Origin: *` and cookies → CORS errors or unsafe configuration.
+For most users, the frontend *is* the speed of your product. Serving it from a CDN makes it fast everywhere; serving it wrongly makes it slow, broken right after a deploy, or unsafe.
 
-## 📖 How it works, step by step
+Done carelessly:
+
+- `index.html` cached for a year → users keep the old version, which asks for files you already deleted → a blank page.
+- `.js` uploaded as `binary/octet-stream` → browsers refuse to run it.
+- Deep links like `/orders/42` return S3 `403 AccessDenied` in a single-page app.
+- The API sits on another domain with `Access-Control-Allow-Origin: *` plus cookies → CORS errors, or an unsafe setup.
+
+## 📖 Step by step
 
 ### 1. Which frontend do you have?
 
@@ -47,6 +67,8 @@ Frontends are often most of what users feel as "speed". Serving them from a CDN 
 CareerPilot's Phase 4 web app (sessions, Server Actions) is **server-rendered**. A marketing site or docs are static.
 
 ### 2. Static hosting: S3 + CloudFront
+
+The rule of thumb for caching: files whose names contain a hash (`app-9f2c.js`) can be kept for a year, because a change gives them a new name. `index.html` must **not** be cached for long — it's the page that tells the browser which file names to ask for.
 
 ```mermaid
 flowchart LR
@@ -77,6 +99,8 @@ flowchart LR
 
 ### 3. SPA routing
 
+S3 only knows files. When a visitor opens `/orders/42`, there is no such file — so you tell CloudFront "if it's missing, serve `index.html`" and let the app's router decide, like a receptionist who sends every unknown request to the front desk.
+
 S3 has no `/orders/42` object. Options:
 - a **CloudFront Function** on viewer requests that rewrites paths without a file extension to `/index.html`;
 - or CloudFront **custom error responses** mapping 403/404 → `/index.html` with status 200 (simpler, but also turns real missing files into 200s).
@@ -103,6 +127,8 @@ function handler(event) {
 
 ### 5. API origin: same domain or CORS?
 
+Same domain is like the shop and warehouse sharing one address: the browser doesn't need permission slips (CORS) and cookies just work. Separate domains need an explicit allow-list, and never `*` when cookies are involved.
+
 | Pattern | How | Notes |
 |---|---|---|
 | **Same site via CloudFront path** | behavior `/api/*` → ALB origin, **caching disabled**, forward all headers/cookies/query strings (`AllViewer` origin request policy) | no CORS; cookies just work; one domain |
@@ -128,7 +154,9 @@ You *can* cache selected public API responses (e.g. `GET /api/v1/products`) at C
 
 Your planner from exercise 01 generalizes this with correct content types, ordering and minimal invalidations.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -137,29 +165,10 @@ Your planner from exercise 01 generalizes this with correct content types, order
 | Container SSR on ECS | full control, same as backend | cost and operations |
 | API behind the same distribution | no CORS, cookie-friendly | CloudFront behavior configuration; careful not to cache user data |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ S3 + CloudFront for static sites, SPAs, docs and static exports.
 - ✅ A server platform for Next.js features that need a request-time server.
 - 🚫 Don't use the S3 **website endpoint** with a public bucket for production.
 - 🚫 Don't cache HTML for long, and don't cache personalized API responses at the CDN.
-
-## 🏆 Best practices
-
-- [ ] Choose hosting by rendering model (static vs SSR).
-- [ ] Private bucket + OAC; HTTPS only; ACM certificate in us-east-1 for CloudFront.
-- [ ] Immutable long caching for hashed assets; no caching for HTML; correct content types.
-- [ ] Upload assets before HTML; delete old assets after a grace period; invalidate only mutable paths.
-- [ ] Security headers via a response headers policy (HSTS, CSP, nosniff).
-- [ ] SPA fallback with a CloudFront Function (not by making the bucket public).
-- [ ] Same-domain API routing or strict CORS allow-lists.
-- [ ] Deploy with OIDC roles scoped to the bucket and distribution.
-
-## 🏭 How it's used in industry
-
-- Static frontends and marketing sites commonly sit on S3/CloudFront or similar CDN + object storage stacks.
-- Teams running Next.js at scale split static assets to a CDN and run the Node server on containers or a managed platform.
-- CloudFront is often the single entry point for both frontend and API, with WAF rules in front.
 
 ## ⚠️ Common mistakes
 
@@ -176,6 +185,17 @@ RevoShop is an API, but it will have frontends (a storefront, a seller dashboard
 3. **Cacheable API responses.** Which RevoShop endpoints could CloudFront cache safely for 60 seconds (`GET /api/v1/products/`, `GET /api/v1/categories/`)? What must the cache key include (query strings!) and which endpoints must never be cached (`/users/me`, `/orders`, `/payments/webhook/midtrans`)?
 4. **Product images.** Connect Week 3 lesson 05: the storefront would load images from `images.<domain>` (CloudFront + OAC) while HTML comes from `shop.<domain>`. Sketch both distributions and their cache behaviors.
 :::
+
+## 🏆 Best practices
+
+- [ ] Choose hosting by rendering model (static vs SSR).
+- [ ] Private bucket + OAC; HTTPS only; ACM certificate in us-east-1 for CloudFront.
+- [ ] Immutable long caching for hashed assets; no caching for HTML; correct content types.
+- [ ] Upload assets before HTML; delete old assets after a grace period; invalidate only mutable paths.
+- [ ] Security headers via a response headers policy (HSTS, CSP, nosniff).
+- [ ] SPA fallback with a CloudFront Function (not by making the bucket public).
+- [ ] Same-domain API routing or strict CORS allow-lists.
+- [ ] Deploy with OIDC roles scoped to the bucket and distribution.
 
 ::part[Explain & Design]{n="2"}
 
@@ -235,16 +255,6 @@ Why must the ACM certificate for a CloudFront custom domain be in us-east-1?
 CloudFront is a global service that reads certificates from the US East (N. Virginia) region, regardless of where your origins are.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Static site | Situs statis |
-| Single-page application | Aplikasi satu halaman |
-| Server-side rendering | Render di sisi server |
-| Origin Access Control | Kontrol akses asal (S3 privat untuk CloudFront) |
-| Invalidation | Pembatalan cache |
-| CORS | Berbagi sumber lintas asal |
 
 ## 📚 Keep learning
 
