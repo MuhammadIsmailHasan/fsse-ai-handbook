@@ -20,22 +20,41 @@ tags: [aws, iam, security, billing, cost, mfa]
 - **Budgets**, free-tier usage alerts, Cost Explorer and Cost Anomaly Detection
 - The classic **cost traps** and a **security baseline** (CloudTrail, alternate contacts, regions)
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Root user** | The account owner's login — it can do everything, including closing the account | Pengguna pemilik akun |
+| **MFA** | A second proof when logging in (a code or a security key), not just a password | Verifikasi dua langkah |
+| **IAM** | The part of AWS that decides who may do what | Pengatur hak akses |
+| **IAM user** | A named login for a person | Akun pengguna |
+| **IAM role** | An identity that a person, server or pipeline borrows for a short time | Identitas yang dipinjam |
+| **Policy** | A JSON document listing allowed or denied actions | Dokumen aturan akses |
+| **Least privilege** | Give only the access the job really needs | Hak seminimal mungkin |
+| **Access key** | A long-lived password for the API — easy to leak, so avoid it | Kunci akses permanen |
+| **Budget alert** | An email when spending passes an amount you set | Peringatan anggaran |
+| **Region** | The group of data centres your resources live in (Singapore, Jakarta…) | Wilayah data center |
+
 ## 🧠 The big idea
 
-An AWS account is a **company credit card with a master key to a data center**. The root user is the *owner's* key: lock it in a safe (MFA, no keys) and use it only for owner-only tasks. Everyone — including you — works with a *staff badge* (an IAM identity) that opens only the doors they need. And like a credit card, you set **spending alerts before** the first purchase, not after the statement arrives.
+An AWS account is a **company credit card plus the master key to a data centre**.
 
-## ❓ Why does this matter?
+- The root user is the *owner's* key: lock it in a safe (MFA, no access keys) and use it only for owner-only tasks.
+- Everyone else — including you, every day — works with a *staff badge* (an IAM identity) that opens only the doors they need.
+- And like any credit card, you set **spending alerts before** the first purchase, not after the bill arrives.
 
-Mistakes on AWS cost real money and data: leaked keys used for crypto mining, a forgotten NAT gateway, an RDS instance left running for months, an S3 bucket made public. These are among the most common incidents for new cloud users — and almost all are prevented by the first hour of setup this lesson describes.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T?
+Mistakes on AWS cost real money and real data: leaked keys used for crypto mining, a forgotten NAT gateway, an RDS database left running for months, an S3 bucket made public. These are the most common accidents for new cloud users — and almost all of them are prevented by the first hour of setup in this lesson.
 
-- You work as root every day; a phished password gives an attacker everything, including billing and account closure.
+What happens without that first hour:
+
+- You work as root every day; one phished password gives an attacker everything, including billing and the power to close the account.
 - Access keys for an admin user sit in `~/.aws/credentials` and in a `.env` pushed to GitHub.
-- No budget alert: the first sign of trouble is the monthly invoice.
-- On the **Free plan**, credits run out mid-project and the account **closes** — with your RDS database in it.
+- No budget alert, so the first sign of trouble is the monthly invoice.
+- On the **Free plan**, credits run out mid-project and the account **closes** — with your database inside it.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Free plan vs Paid plan (new accounts since July 2025)
 
@@ -100,7 +119,7 @@ flowchart TD
 | Resource policy | attached to a resource (S3 bucket, SQS queue): who can use *it* |
 | Role + trust policy | *who* may assume the role (Week 2's OIDC trust policy) |
 
-Default is **deny**; an explicit **Deny always wins**.
+Default is **deny**: if nothing allows the action, the answer is no. And an explicit **Deny always wins** — a "do not enter" sign beats any general permission.
 
 ### 5. Least privilege, practically
 
@@ -119,7 +138,7 @@ Default is **deny**; an explicit **Deny always wins**.
 | **Cost Explorer** | check daily cost by service after every lab |
 | Credits page | remaining credits and expiry |
 
-Alerts **notify**; they don't stop resources. You still have to act (or use budget actions to apply restrictive policies, which is more advanced).
+Alerts only **tell you**; they don't switch anything off — like a fuel gauge, not a brake. You still have to act (or set up budget actions, which apply restrictive policies automatically; that's a more advanced step).
 
 ### 7. Cost traps to recognize
 
@@ -143,7 +162,9 @@ Alerts **notify**; they don't stop resources. You still have to act (or use budg
 - Tag everything: `Project=revoshop`, `Env=staging`, `Owner=you` — then filter costs by tag.
 - Enable **S3 Block Public Access** at the account level.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -153,12 +174,17 @@ Alerts **notify**; they don't stop resources. You still have to act (or use budg
 | IAM Identity Center + Organizations | SSO, multi-account, short-lived access | requires Organizations (upgrades a Free plan and expires credits) |
 | Singapore vs Jakarta | Singapore: default-enabled, often cheaper | Jakarta: lower latency for Indonesian users, opt-in, check service availability |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Do the full baseline on **every** account — personal, learning or company.
 - ✅ Separate identities: you (human, MFA), CI (OIDC role), apps (task/instance roles).
 - 🚫 Never create root access keys; avoid access keys for humans entirely.
 - 🚫 Don't join AWS Organizations on a Free plan account unless you intend to upgrade.
+
+## ⚠️ Common mistakes
+
+- Using the root email/password in a shared password document.
+- Creating an access key "just for the CLI" and forgetting it for years.
+- Budget alerts sent to an email nobody reads.
+- Assuming "stopped" means "free" (EBS volumes, Elastic IPs and RDS storage keep billing).
 
 ## 🏆 Best practices
 
@@ -171,19 +197,6 @@ Alerts **notify**; they don't stop resources. You still have to act (or use budg
 - [ ] Know the cost traps (NAT, IPv4, idle ALB, RDS auto-restart, orphaned EBS).
 - [ ] Review IAM policies with Access Analyzer; search CloudTrail when something changes unexpectedly.
 - [ ] Write a teardown checklist for every lab and follow it.
-
-## 🏭 How it's used in industry
-
-- Companies use **AWS Organizations** with separate accounts for production, staging, security and logging, IAM Identity Center for people, and service control policies as guardrails.
-- FinOps practices (budgets per team, tagging policies, anomaly alerts, monthly cost reviews) are standard as cloud bills grow.
-- Leaked credentials and misconfigured public resources remain top causes of cloud security incidents; AWS actively scans for exposed keys and notifies owners.
-
-## ⚠️ Common mistakes
-
-- Using the root email/password in a shared password document.
-- Creating an access key "just for the CLI" and forgetting it for years.
-- Budget alerts sent to an email nobody reads.
-- Assuming "stopped" means "free" (EBS, Elastic IPs and RDS storage keep billing).
 
 :::revoshop
 1. **What RevoShop needs from AWS.** From your `compose.prod.yaml` (Lab 1): a server or containers for the API, PostgreSQL, Redis, a public HTTPS endpoint for Midtrans webhooks, logs, and (soon) product image storage. Write the AWS service you'd pick for each **and** the cheapest acceptable option for a learning deployment.
@@ -266,16 +279,6 @@ Why is `iam:PassRole` on `Resource: "*"` dangerous?
 It lets the principal hand **any** role (including admin roles) to a service it controls (EC2, ECS, Lambda) and then act with that role's permissions — a privilege escalation.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Root user | Pengguna root (pemilik akun) |
-| MFA | Autentikasi multi-faktor |
-| IAM role | Peran IAM (identitas sementara) |
-| Least privilege | Hak akses seminimal mungkin |
-| Budget alert | Peringatan anggaran |
-| Explicit deny | Penolakan eksplisit |
 
 ## 📚 Keep learning
 
