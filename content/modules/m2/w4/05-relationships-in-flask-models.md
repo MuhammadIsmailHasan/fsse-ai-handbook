@@ -20,17 +20,31 @@ tags: [flask, sqlalchemy, relationships, n-plus-one, performance]
 - **Lazy loading**, the **N+1 problem**, and fixing it with `selectinload` / `joinedload`
 - Counting queries to prove your fix works
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **`ForeignKey`** | The column in the database pointing at another table | Kolom penunjuk tabel lain |
+| **`relationship()`** | The Python attribute that fetches the related object(s) | Atribut penelusur relasi |
+| **`back_populates`** | Linking both sides so they stay in step | Menyambungkan dua sisi |
+| **Association table** | The plain in-between table for many-to-many | Tabel penghubung |
+| **Association object** | The same, but as a model, because the link has extra fields | Tabel penghubung dengan data |
+| **Cascade** | What happens to children when the parent is deleted | Perlakuan pada data anak |
+| **Lazy loading** | Related data is fetched later, when you touch it | Diambil saat diakses |
+| **Eager loading** | Related data is fetched up front, in one go | Diambil sekaligus di awal |
+| **N+1 problem** | One query for the list, then one more per row | Satu kueri jadi banyak |
+
 ## 🧠 The big idea
 
-A foreign key is the **address written on an envelope** (the database knows where it points). A `relationship()` is **a courier who fetches the house for you**: `application.company` gives you the `Company` object without writing a query.
+A foreign key is the **address written on an envelope** — the database knows where it points. A `relationship()` is **a courier who fetches the house for you**: `application.company` hands you the `Company` object without you writing a query.
 
-Convenient — but a courier who makes **one trip per envelope** is slow when you have 500 envelopes. Knowing *when* the courier travels is the difference between a 30 ms page and a 3-second page.
+That's convenient, but a courier who makes **one trip per envelope** is slow when you have 500 envelopes. Knowing *when* the courier travels is the difference between a 30 ms page and a 3-second page.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Business logic navigates between objects all the time: an application's company, its interviews, its required skills; a user's applications. Writing a join query for every navigation would be repetitive. Relationships make navigation natural — **and** let you control how related data is loaded.
+Business logic navigates between objects all the time: an application's company, its interviews, its required skills; a user's applications. Writing a join for every step would be repetitive. Relationships make that natural — **and** let you decide how the related data is loaded.
 
-## 💥 What happens if we DON'T control loading?
+Left uncontrolled:
 
 ```python
 applications = db.session.scalars(select(Application).where(Application.user_id == 7)).all()  # 1 query
@@ -39,9 +53,9 @@ for application in applications:
     print([s.name for s in application.skills])   # +1 more query per application
 ```
 
-With 100 applications: **1 + 100 + 100 = 201 queries** for one page. Everything works in development with 3 rows; production crawls. This is the :term[N+1 problem]{bahasa="masalah N+1 — 1 query untuk daftar, lalu N query tambahan untuk setiap item"}.
+With 100 applications that's **1 + 100 + 100 = 201 queries** for one page. It feels fine in development with three rows, and crawls in production. This is the :term[N+1 problem]{bahasa="masalah N+1 — 1 query untuk daftar, lalu N query tambahan untuk setiap item"}.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. One-to-many
 
@@ -115,6 +129,8 @@ Start with the simple table; switch to an association object as soon as the rela
 
 ### 4. Cascades: ORM vs database
 
+There are two rule-makers here: SQLAlchemy (when objects are deleted through the session) and PostgreSQL (`ON DELETE`, which also applies to a script or an admin tool). Set both, and set them to the same intention.
+
 | Setting | Where | Effect |
 |---|---|---|
 | `ForeignKey(..., ondelete="CASCADE")` | database | deleting the parent row deletes child rows — for **every** writer, even raw SQL |
@@ -132,6 +148,8 @@ interviews: Mapped[list["Interview"]] = relationship(
 Use both layers consistently: `ON DELETE CASCADE` in the database, `delete-orphan` + `passive_deletes` in the ORM. For shared data (companies, skills), **no** delete cascade.
 
 ### 5. Loading strategies
+
+One courier trip for everything (`selectinload`) beats 200 separate trips. Choose the strategy at the **query** that needs it, rather than making every relationship eager for ever.
 
 | Strategy | SQL | Best for |
 |---|---|---|
@@ -183,7 +201,9 @@ sequenceDiagram
 
 When returning JSON, make the loading strategy match the fields you serialize. If the response includes `company.name` and `skills`, load them eagerly **in the repository query** — don't let the serializer trigger lazy loads.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -195,29 +215,11 @@ When returning JSON, make the loading strategy match the fields you serialize. I
 | ORM cascade only | works without DB constraints | raw SQL bypasses it |
 | DB `ON DELETE` only | enforced everywhere | session may hold stale objects unless `passive_deletes` configured |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ `relationship()` + `back_populates` for navigation you actually use.
 - ✅ Eager loading options in queries that feed lists and API responses.
 - ✅ `delete-orphan` for owned children only.
 - 🚫 Don't access relationships in loops without eager loading.
 - 🚫 Don't set `lazy="joined"` globally on big collections — it slows every query of that model.
-
-## 🏆 Best practices
-
-- [ ] Declare relationships on **both sides** with `back_populates` and typed `Mapped[...]`.
-- [ ] Mirror database `ON DELETE` rules in the ORM (`cascade="all, delete-orphan"`, `passive_deletes=True`) for owned children.
-- [ ] Default to lazy relationships, and **choose eager loading per query**: `joinedload` for many-to-one, `selectinload` for collections.
-- [ ] **Count queries** for list endpoints in tests; consider `raiseload` to forbid accidental lazy loads.
-- [ ] Load everything a serializer needs inside the repository/service query.
-- [ ] Use an association object as soon as a many-to-many link needs extra columns.
-- [ ] Index foreign key columns (Week 2 still applies!).
-
-## 🏭 How it's used in industry
-
-- "Reduce queries on the dashboard from 300 to 4" is one of the most common backend performance PRs.
-- Code reviewers look for relationship access inside loops.
-- GraphQL servers and nested REST responses make N+1 especially likely — tools like DataLoader exist just for it.
 
 ## ⚠️ Common mistakes
 
@@ -230,6 +232,16 @@ When returning JSON, make the loading strategy match the fields you serialize. I
 :::revoshop
 Open `app/models/products.py`: `images = db.relationship('ProductImage', backref='product', lazy=True, cascade='all, delete-orphan', order_by=...)`, and `to_dict()` reads `self.primary_image` → `self.images`. Now think about the product **list** endpoint returning 20 products with their primary image: how many queries run? Check `app/repositories/product_repository.py` for `selectinload`/`joinedload`. Turn on `SQLALCHEMY_ECHO` locally, call `GET /api/v1/products`, and count. If it's N+1, write the one-line fix.
 :::
+
+## 🏆 Best practices
+
+- [ ] Declare relationships on **both sides** with `back_populates` and typed `Mapped[...]`.
+- [ ] Mirror database `ON DELETE` rules in the ORM (`cascade="all, delete-orphan"`, `passive_deletes=True`) for owned children.
+- [ ] Default to lazy relationships, and **choose eager loading per query**: `joinedload` for many-to-one, `selectinload` for collections.
+- [ ] **Count queries** for list endpoints in tests; consider `raiseload` to forbid accidental lazy loads.
+- [ ] Load everything a serializer needs inside the repository/service query.
+- [ ] Use an association object as soon as a many-to-many link needs extra columns.
+- [ ] Index foreign key columns (Week 2 still applies!).
 
 ::part[Explain & Design]{n="2"}
 
@@ -314,16 +326,6 @@ What does `cascade="all, delete-orphan"` add beyond saving children?
 Deleting the parent deletes its children, and removing a child from the parent's collection deletes that child — appropriate only for children owned by the parent.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Relationship | Relasi antar model |
-| Association table | Tabel penghubung many-to-many |
-| Lazy loading | Memuat data terkait saat diakses |
-| Eager loading | Memuat data terkait sekaligus di awal |
-| N+1 problem | Masalah query berlebih dalam perulangan |
-| Cascade | Aksi berantai ke data anak |
 
 ## 📚 Keep learning
 

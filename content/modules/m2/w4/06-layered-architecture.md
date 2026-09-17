@@ -19,6 +19,19 @@ tags: [architecture, flask, services, repositories, testing, bonus]
 - Testing strategy: fast **unit tests** for services with fakes, **integration tests** for routes and repositories
 - When layering is overkill
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Layer** | A group of code with one job (HTTP, business rules, data) | Lapisan dengan satu tugas |
+| **Route (HTTP layer)** | Reads the request and formats the response — nothing more | Lapisan penerima permintaan |
+| **Service (business layer)** | Where the rules and workflows live | Lapisan aturan bisnis |
+| **Repository (data layer)** | The only place that writes queries | Lapisan akses data |
+| **Dependency direction** | Outer layers may call inner ones, never the reverse | Arah ketergantungan |
+| **Dependency injection** | Passing what a service needs, instead of it creating them | Menyuntikkan kebutuhan |
+| **Fake / stub** | A simple stand-in used in tests instead of a real database | Pengganti untuk tes |
+| **Unit test / integration test** | Tests one piece alone / tests pieces working together | Uji satuan / uji gabungan |
+
 ## 🧠 The big idea
 
 Think of a restaurant again:
@@ -29,13 +42,13 @@ Think of a restaurant again:
 | **Services** (business layer) | the **chef**: knows the recipes and kitchen rules | business rules, workflows, transactions |
 | **Repositories** (data layer) | the **pantry manager**: knows where every ingredient is stored | queries, inserts, updates |
 
-The waiter never cooks. The chef never talks to customers or rearranges the pantry shelves. Each can be replaced or retrained without the others changing.
+The waiter never cooks. The chef never talks to customers or rearranges the pantry shelves. Each one can be replaced or retrained without the others changing.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-When everything happens inside route functions, the same business rule gets copied into the web API, the CLI and the background worker; unit testing a rule requires an HTTP request and a database; and swapping an ORM or adding a cache touches every endpoint. Layers put each kind of knowledge in **one** place.
+When everything happens inside route functions, the same business rule gets copied into the web API, the CLI and the background worker; testing one rule needs an HTTP request and a database; and swapping the ORM or adding a cache touches every endpoint. Layers keep each kind of knowledge in **one** place.
 
-## 💥 What happens if we DON'T layer?
+Here's the unlayered version:
 
 ```python
 @bp.post("/applications/<int:app_id>/status")
@@ -50,12 +63,12 @@ def change_status(app_id):
     return {"ok": True}
 ```
 
-- The status rule is buried in HTTP code — the nightly job that auto-rejects stale applications must copy it (and will get it slightly wrong).
+- The status rule is buried in HTTP code, so the nightly job that auto-rejects stale applications must copy it — and will get it slightly wrong.
 - There's no ownership check.
-- Testing the rule requires a running database and an HTTP call.
+- Testing the rule needs a running database and an HTTP call.
 - If the email fails, the whole request fails even though the database change was fine.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The layers and their jobs
 
@@ -91,6 +104,8 @@ flowchart TB
 | Sending emails, calling payment/AI APIs | service calls an injected **client**; slow work goes to a background job | testable and swappable |
 
 ### 3. A service with injected dependencies
+
+Passing the repository in (instead of importing it) is what makes the chef testable: in tests you hand over a pantry full of pretend ingredients, and the recipe still runs.
 
 ```python
 class ApplicationService:
@@ -169,9 +184,13 @@ Import rules can be checked automatically — the exercise does it with Python's
 
 ### 8. When it's overkill
 
+For a 200-line script, three layers are three times the paperwork. Add layers when a rule needs to be used from more than one place, or when you can't test something without a database.
+
 A 3-endpoint prototype or a tiny internal tool doesn't need repositories and interfaces for everything. Start simple, and introduce layers **when** business rules appear or code starts to be duplicated. (YAGNI still applies — but CareerPilot and RevoShop are past that point.)
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -182,29 +201,10 @@ A 3-endpoint prototype or a tiny internal tool doesn't need repositories and int
 | Generic "base repository" for all models | less code | leaky abstractions; queries end up in services anyway |
 | Repositories per aggregate/use case | clear, optimized queries | more methods to write |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Any backend with real business rules, several entry points (API, CLI, jobs), or more than one developer.
 - ✅ Keep the same layering in Flask and FastAPI — it transfers directly (Module 3).
 - 🚫 Don't create empty pass-through layers just for ceremony in tiny scripts.
 - 🚫 Don't let services return HTTP responses or read `request`.
-
-## 🏆 Best practices
-
-- [ ] **Routes are thin**: parse → authenticate → call one service method → serialize.
-- [ ] **Services own business rules**, authorization and the **transaction boundary** (commit once per use case).
-- [ ] **Repositories are the only layer that uses the ORM/SQL**, including eager loading and DB-error translation.
-- [ ] Dependencies point **downward only**; enforce it with tests or import-linter.
-- [ ] Inject dependencies (repository, clients, clock) so services are unit-testable with fakes.
-- [ ] Raise **domain errors** in services; map them to HTTP in **one** error handler.
-- [ ] Keep request/response **schemas** at the route layer; don't leak ORM objects' internals into JSON by accident.
-- [ ] Put slow side effects (emails, AI calls) behind clients and move them to background jobs when they don't need to block the response.
-
-## 🏭 How it's used in industry
-
-- This layering (sometimes called controller–service–repository) is the default in most backend teams, across Python, Java/Spring, Node/NestJS and Go.
-- Interviewers ask "where would you put this rule?" and "how would you test this service without a database?".
-- Clean/Hexagonal architecture (Architecture Stage E) is the next step: services depend on **interfaces** (ports), with databases and APIs as **adapters**.
 
 ## ⚠️ Common mistakes
 
@@ -217,6 +217,17 @@ A 3-endpoint prototype or a tiny internal tool doesn't need repositories and int
 :::revoshop
 RevoShop already uses this structure — this is your chance to **really** understand it. Pick one feature (e.g. products): `app/routes/products.py` → `app/services/product_service.py` → `app/repositories/product_repository.py`. For that feature, answer: (1) Do routes contain any business `if`s? (2) Does the service import Flask or `db`? (3) Where does `commit()` happen? (4) `ProductService.get_all(...)` is called as a **static** method — how would you unit-test it with a fake repository, and what would you change to make that easier? (5) Where is `ProductNotFoundError` turned into a 404? Write your answers as an "architecture tour" section for your RevoShop README — it's a strong interview talking point.
 :::
+
+## 🏆 Best practices
+
+- [ ] **Routes are thin**: parse → authenticate → call one service method → serialize.
+- [ ] **Services own business rules**, authorization and the **transaction boundary** (commit once per use case).
+- [ ] **Repositories are the only layer that uses the ORM/SQL**, including eager loading and DB-error translation.
+- [ ] Dependencies point **downward only**; enforce it with tests or import-linter.
+- [ ] Inject dependencies (repository, clients, clock) so services are unit-testable with fakes.
+- [ ] Raise **domain errors** in services; map them to HTTP in **one** error handler.
+- [ ] Keep request/response **schemas** at the route layer; don't leak ORM objects' internals into JSON by accident.
+- [ ] Put slow side effects (emails, AI calls) behind clients and move them to background jobs when they don't need to block the response.
 
 ::part[Explain & Design]{n="2"}
 
@@ -292,16 +303,6 @@ What does a repository hide from the rest of the app?
 How data is stored and queried: SQL/ORM details, eager loading, and database-specific errors (translated into domain errors).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Layered architecture | Arsitektur berlapis |
-| Route / Controller | Lapisan HTTP |
-| Service | Lapisan logika bisnis |
-| Repository | Lapisan akses data |
-| Dependency direction | Arah ketergantungan antar lapisan |
-| Unit test / Integration test | Tes satuan / Tes integrasi |
 
 ## 📚 Keep learning
 
