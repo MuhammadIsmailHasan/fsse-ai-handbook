@@ -19,6 +19,21 @@ tags: [python, data-structures, dict, set, collections, dataclasses]
 - Representing records: dicts vs **`dataclass`** vs `TypedDict`
 - Nested data (JSON-like) without getting lost, and copying it safely
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **`list`** | An ordered, changeable sequence | Urutan yang bisa diubah |
+| **`tuple`** | A fixed sequence you can't change | Urutan tetap |
+| **`dict`** | Labelled values: look up by key | Pasangan kunci–nilai |
+| **`set`** | A bag of unique values, fast for "is this in it?" | Kumpulan nilai unik |
+| **Hashable** | A value stable enough to be a dict key or set member | Bisa jadi kunci |
+| **O(1) vs O(n)** | Instant lookup vs checking every item | Langsung vs periksa semua |
+| **`Counter`** | Counts how many times each value appears | Penghitung kemunculan |
+| **`defaultdict`** | A dict that creates missing values for you | Dict dengan nilai awal otomatis |
+| **`dataclass`** | A small class for records, with named fields | Kelas ringkas untuk data |
+| **Deep copy** | A copy that doesn't share the nested pieces | Salinan hingga isi dalam |
+
 ## 🧠 The big idea
 
 Picking a data structure is like picking a **container in a kitchen**:
@@ -27,16 +42,16 @@ Picking a data structure is like picking a **container in a kitchen**:
 |---|---|---|
 | A row of numbered jars you can rearrange | shelf | `list` |
 | A sealed bento box with fixed compartments | lunch box | `tuple` |
-| Labeled drawers ("spoons", "knives") | drawer cabinet | `dict` |
+| Labelled drawers ("spoons", "knives") | drawer cabinet | `dict` |
 | A bag of unique ingredients — "do we have garlic?" | pantry check | `set` |
 
-The right container makes the task obvious and fast. The wrong one makes simple things slow and awkward.
+The right container makes the task obvious and fast; the wrong one makes simple things slow and awkward.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Every API request and response is data: lists of jobs, a dict per job, sets of permissions, tuples of coordinates. Choosing well gives you **readable code** and **fast operations** — which you measured with Big-O in the DSA track.
+Every API request and response is data: lists of jobs, a dict per job, sets of permissions, tuples of coordinates. Choosing well gives you **readable code** and **fast operations** — the Big-O you measured in the DSA track.
 
-## 💥 What happens if we DON'T choose well?
+Choosing badly is quietly expensive:
 
 ```python
 blocked_user_ids = [3, 17, 42, ...]          # 100,000 ids
@@ -50,7 +65,9 @@ job = ["Backend Dev", "Kopi Data", 12000000, True]
 salary = job[2]          # what's index 2? what if someone inserts a field?
 ```
 
-## 📖 How it works, step by step
+The first is a list used where a set belongs (checking a guest list name by name instead of using an index). The second is data with no labels, so every reader must guess.
+
+## 📖 Step by step
 
 ### 1. Costs at a glance
 
@@ -93,6 +110,8 @@ by_id = {j["id"]: j for j in jobs}        # index for O(1) lookups
 
 ### 4. Sets: membership and comparisons
 
+A set answers "is this in it?" in one step, however big it is — which is why permission checks and blocklists belong in sets, not lists.
+
 ```python
 required = {"python", "sql", "docker"}
 mine = {"python", "sql", "react"}
@@ -124,6 +143,8 @@ Point = namedtuple("Point", "lat lng")        # tuple with names (dataclasses ar
 ```
 
 ### 6. Records: dict, dataclass or TypedDict?
+
+Rule of thumb: a dict for data passing through (JSON in, JSON out), a `dataclass` when the same shape travels through your own code and you want names, defaults and typos caught.
 
 ```python
 from dataclasses import dataclass, field
@@ -159,7 +180,9 @@ city = payload.get("user", {}).get("profile", {}).get("city")   # no KeyError on
 
 Copying (DSA Stage 1 recap): `dict.copy()` is shallow; nested dicts/lists are shared. Use `copy.deepcopy` or build new structures.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -169,30 +192,10 @@ Copying (DSA Stage 1 recap): `dict.copy()` is shallow; nested dicts/lists are sh
 | `frozen` dataclass | safe to share, hashable | create a new object for changes (`dataclasses.replace`) |
 | `defaultdict` | shorter grouping code | reading a missing key **creates** it silently |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ `set` for membership/uniqueness, `dict` for lookup by key, `list` for ordered sequences, `tuple` for fixed records and composite keys.
 - ✅ Dataclasses for domain records passed around your code.
 - 🚫 Don't use lists of pairs when you need lookups by key.
 - 🚫 Don't use positional tuples for records with many fields — names prevent bugs.
-
-## 🏆 Best practices
-
-- [ ] Choose the collection by **the operations you need** (lookup, order, uniqueness, mutability).
-- [ ] Build a `dict`/`set` **index** once when you'll look things up repeatedly.
-- [ ] Use `dict.get` with defaults and `setdefault`/`defaultdict` for grouping.
-- [ ] Use **`@dataclass`** (often `frozen=True, slots=True`) for internal records; `field(default_factory=list)` for mutable defaults.
-- [ ] Keep JSON-shaped dicts at the boundaries; convert to typed objects inside.
-- [ ] Prefer returning **new** collections over mutating inputs.
-- [ ] Use set operations (`&`, `-`, `|`, `<=`) for permission and skill comparisons.
-- [ ] Add type hints to collections: `list[JobListing]`, `dict[int, User]`, `set[str]`.
-
-## 🏭 How it's used in industry
-
-- Permission checks: `required_permissions <= user_permissions`.
-- Caches and indexes in memory are dicts; deduplication uses sets.
-- Domain models as dataclasses or Pydantic/SQLAlchemy models; serialization back to dicts for JSON responses.
-- Recruiters' "skills gap" features (like CareerPilot's) are set differences.
 
 ## ⚠️ Common mistakes
 
@@ -205,6 +208,17 @@ Copying (DSA Stage 1 recap): `dict.copy()` is shallow; nested dicts/lists are sh
 :::revoshop
 In RevoShop, find a place where a list of items is checked for membership or duplicates (e.g. cart items, product ids in an order, allowed roles). Would a `set` or a dict index make it clearer or faster? Also look at `app/schemas/` — marshmallow schemas turn dicts into validated data. How is that similar to a dataclass, and how is it different?
 :::
+
+## 🏆 Best practices
+
+- [ ] Choose the collection by **the operations you need** (lookup, order, uniqueness, mutability).
+- [ ] Build a `dict`/`set` **index** once when you'll look things up repeatedly.
+- [ ] Use `dict.get` with defaults and `setdefault`/`defaultdict` for grouping.
+- [ ] Use **`@dataclass`** (often `frozen=True, slots=True`) for internal records; `field(default_factory=list)` for mutable defaults.
+- [ ] Keep JSON-shaped dicts at the boundaries; convert to typed objects inside.
+- [ ] Prefer returning **new** collections over mutating inputs.
+- [ ] Use set operations (`&`, `-`, `|`, `<=`) for permission and skill comparisons.
+- [ ] Add type hints to collections: `list[JobListing]`, `dict[int, User]`, `set[str]`.
 
 ::part[Explain & Design]{n="2"}
 
@@ -276,15 +290,6 @@ Why use `field(default_factory=list)` in a dataclass?
 A plain `[]` default would be shared by every instance; `default_factory` creates a new list for each object (dataclasses even raise an error for mutable defaults).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Hashable | Bisa di-hash — syarat jadi kunci dict/anggota set |
-| Immutable | Tidak bisa diubah setelah dibuat |
-| Dataclass | Kelas ringkas untuk menyimpan data |
-| Set operations | Operasi himpunan (irisan, selisih, gabungan) |
-| Index (in memory) | Struktur bantu pencarian cepat |
 
 ## 📚 Keep learning
 

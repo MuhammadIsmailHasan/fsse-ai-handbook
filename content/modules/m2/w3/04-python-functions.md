@@ -19,17 +19,31 @@ tags: [python, functions, closures, decorators]
 - **Closures**: functions that remember their surroundings
 - **Decorators**: wrapping functions to add behavior — with and without arguments, using `functools.wraps`
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Parameter / argument** | The name in the definition / the value you pass in | Nama di definisi / nilai dikirim |
+| **Default value** | A value used when the caller doesn't pass one | Nilai bawaan |
+| **Keyword-only** | An argument that must be passed by name | Wajib disebut namanya |
+| **`*args` / `**kwargs`** | Catch any number of positional / named arguments | Tampung argumen bebas |
+| **First-class function** | A function you can store, pass and return like any value | Fungsi sebagai nilai |
+| **Closure** | A function that remembers values from where it was created | Fungsi yang mengingat lingkungannya |
+| **Decorator** | A function that wraps another to add behaviour | Pembungkus fungsi |
+| **`functools.wraps`** | Keeps the wrapped function's name and docs | Menjaga identitas fungsi asli |
+| **Registration decorator** | A decorator that records the function somewhere (like `@app.route`) | Pendaftar fungsi |
+
 ## 🧠 The big idea
 
-In Python, functions are **objects**, just like numbers and lists. You can hand one to another function, store it in a dict (a dispatch table!), or build a new one on the fly.
+In Python, functions are **objects**, just like numbers and lists: you can hand one to another function, store it in a dict (a dispatch table), or build a new one while the program runs.
 
-A :term[decorator]{bahasa="decorator — fungsi yang membungkus fungsi lain untuk menambah perilaku tanpa mengubah isinya"} is **gift wrapping**: the gift (your function) stays the same, but the wrapping adds something — a ribbon, a card, a "handle with care" sticker. `@app.route("/jobs")`, `@login_required` and `@pytest.fixture` are all wrappings.
+A :term[decorator]{bahasa="decorator — fungsi yang membungkus fungsi lain untuk menambah perilaku tanpa mengubah isinya"} is **gift wrapping**: the gift (your function) stays exactly the same, but the wrapping adds something — a ribbon, a card, a "handle with care" sticker. `@app.route("/jobs")`, `@login_required` and `@pytest.fixture` are all wrappings.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Many concerns cut **across** functions: logging, timing, retries, authentication, caching, registering routes. Copy-pasting that code into every function is DRY-violating and error-prone. Decorators let you write the concern **once** and apply it with one line.
+Some concerns cut **across** many functions: logging, timing, retries, authentication, caching, registering routes. Copy-pasting that code into every function is repetitive and easy to get wrong. A decorator lets you write the concern **once** and apply it with one line.
 
-## 💥 What happens if we DON'T use them?
+Without them:
 
 ```python
 def get_jobs(request):
@@ -46,9 +60,9 @@ def create_application(request):
     ...
 ```
 
-One forgotten copy = one unprotected endpoint.
+One forgotten copy is one unprotected endpoint.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Parameter kinds
 
@@ -100,6 +114,8 @@ handler = HANDLERS["csv"]; handler(report)            # call later
 `lambda` creates a small anonymous function — fine for short `key=` functions; use `def` for anything with a name worth giving.
 
 ### 4. Closures
+
+A closure is a **note in your pocket**: the inner function keeps the value it was created with, even after the outer function has finished.
 
 A function defined inside another function can use the outer function's variables — even after the outer function has returned:
 
@@ -175,6 +191,8 @@ Three layers: `retry(...)` → `decorator(func)` → `wrapper(*args, **kwargs)`.
 
 ### 7. Registration decorators (how Flask routes work)
 
+This is the whole trick behind `@app.route`: the decorator writes your function's name in a directory (URL → function), then hands the function back unchanged.
+
 A decorator doesn't have to wrap — it can **register** the function and return it unchanged:
 
 ```python
@@ -195,7 +213,9 @@ ROUTES["/health"]()   # {'status': 'ok'}
 
 That's the core idea behind `@app.route` — a dispatch table filled by decorators.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -205,30 +225,10 @@ That's the core idea behind `@app.route` — a dispatch table filled by decorato
 | Closures | lightweight state | shared mutable state can surprise |
 | Classes instead of closures | explicit state and methods | more code |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Decorators for logging, timing, retries, caching (`functools.cache`), auth checks, registration.
 - ✅ Keyword-only arguments for options and flags.
 - 🚫 Don't hide business logic in decorators — readers should see *what* a function does in its body.
 - 🚫 Don't use `*args, **kwargs` just to avoid naming parameters.
-
-## 🏆 Best practices
-
-- [ ] Always use **`functools.wraps`** in decorators.
-- [ ] Forward `*args, **kwargs` untouched and **return** the wrapped function's result.
-- [ ] Use `try/finally` in wrappers that must run cleanup/timing even when the function raises.
-- [ ] Make boolean flags and optional settings **keyword-only** (`*`).
-- [ ] Never use mutable default arguments; use `None` and create inside.
-- [ ] Keep decorators small, generic and well-named (`@require_role("admin")`, not `@check`).
-- [ ] Retry only **safe, idempotent** operations and only for specific exceptions — with a limit (and backoff in real systems).
-- [ ] Use standard ones when they exist: `functools.cache`/`lru_cache`, `contextlib.contextmanager`.
-
-## 🏭 How it's used in industry
-
-- Flask: `@app.route`, `@app.before_request`, `@jwt_required()` (RevoShop uses it!).
-- FastAPI: `@app.get` plus dependency injection (Module 3).
-- pytest: `@pytest.fixture`, `@pytest.mark.parametrize`.
-- Observability libraries add tracing with decorators — including LLM tracing in Module 7.
 
 ## ⚠️ Common mistakes
 
@@ -241,6 +241,17 @@ That's the core idea behind `@app.route` — a dispatch table filled by decorato
 :::revoshop
 Search RevoShop for decorators: `grep -rn "^\s*@" app/routes | sort | uniq -c | sort -rn | head`. You'll likely see `@blp.route`, `@blp.arguments`, `@blp.response`, `@jwt_required()`. Open `app/auth.py` or `app/utils/auth_context.py`: do you have a **custom** decorator (e.g. checking roles)? Explain line by line how it wraps the view, and whether it uses `functools.wraps`. If you don't have one, sketch `@require_role("seller")`.
 :::
+
+## 🏆 Best practices
+
+- [ ] Always use **`functools.wraps`** in decorators.
+- [ ] Forward `*args, **kwargs` untouched and **return** the wrapped function's result.
+- [ ] Use `try/finally` in wrappers that must run cleanup/timing even when the function raises.
+- [ ] Make boolean flags and optional settings **keyword-only** (`*`).
+- [ ] Never use mutable default arguments; use `None` and create inside.
+- [ ] Keep decorators small, generic and well-named (`@require_role("admin")`, not `@check`).
+- [ ] Retry only **safe, idempotent** operations and only for specific exceptions — with a limit (and backoff in real systems).
+- [ ] Use standard ones when they exist: `functools.cache`/`lru_cache`, `contextlib.contextmanager`.
 
 ::part[Explain & Design]{n="2"}
 
@@ -327,15 +338,6 @@ When does a decorator need three nested functions?
 When it takes its own arguments (`@retry(times=3)`): the outer function receives the options and returns the actual decorator.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Decorator | Pembungkus fungsi untuk menambah perilaku |
-| Closure | Fungsi yang "mengingat" variabel dari lingkup luarnya |
-| First-class function | Fungsi yang bisa diperlakukan sebagai nilai |
-| Keyword-only argument | Argumen yang wajib disebut namanya |
-| Cross-cutting concern | Kebutuhan yang muncul di banyak tempat (log, auth) |
 
 ## 📚 Keep learning
 

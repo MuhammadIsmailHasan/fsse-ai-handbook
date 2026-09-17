@@ -21,19 +21,34 @@ tags: [python, oop, classes, composition, dataclasses]
 - **Inheritance** vs **composition**, and why composition is usually safer
 - How OOP shows up in backend code: models, services, repositories, exceptions
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Class** | A blueprint for making objects | Cetak biru objek |
+| **Object (instance)** | One thing built from that blueprint | Satu objek hasil cetakan |
+| **Attribute** | A value stored on the object (its state) | Data pada objek |
+| **Method** | A function that belongs to the object (its behaviour) | Fungsi milik objek |
+| **`self`** | The object the method was called on | Objek itu sendiri |
+| **Encapsulation** | Keeping the rules next to the data they protect | Menyatukan aturan dan data |
+| **Invariant** | Something that must always stay true (status is always valid) | Aturan yang selalu benar |
+| **`@property`** | A method you read like an attribute | Nilai terhitung seperti atribut |
+| **Dunder method** | Special names like `__repr__`, `__eq__` that Python calls for you | Metode khusus Python |
+| **Inheritance vs composition** | "Is a kind of" vs "is built from" | Mewarisi vs menyusun |
+
 ## 🧠 The big idea
 
-A :term[class]{bahasa="class — cetak biru untuk membuat objek yang punya data dan perilaku sendiri"} is a **blueprint**; an **object** is a house built from it. Each house has its own furniture (state), and all houses share the same design for doors and lights (methods).
+A :term[class]{bahasa="class — cetak biru untuk membuat objek yang punya data dan perilaku sendiri"} is a **blueprint**; an **object** is a house built from it. Each house has its own furniture (state), and every house shares the same design for doors and lights (methods).
 
-The real power isn't grouping data — dicts do that. It's putting the **rules next to the data**, so the data can't get into an invalid state:
+The real power isn't grouping data — a dict already does that. It's putting the **rules next to the data**, so the data can't reach an invalid state:
 
-> An application can't jump from "rejected" to "offer" — not because every caller remembers, but because the `Application` object refuses.
+> An application can't jump from "rejected" to "offer" — not because every caller remembers the rule, but because the `Application` object refuses.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-As programs grow, the same data travels through many functions. If every function must remember every rule ("status changes must be valid", "salary can't be negative", "always update `updated_at`"), someone forgets. Classes **bundle** data with the operations allowed on it, giving one place to enforce and test the rules.
+As a program grows, the same data travels through many functions. If every function must remember every rule ("status changes must be valid", "salary can't be negative", "always update `updated_at`"), somebody will forget. A class **bundles** the data with the operations allowed on it, so there is one place to enforce and test the rules.
 
-## 💥 What happens if we DON'T encapsulate rules?
+Without that, the data can't defend itself:
 
 ```python
 application = {"status": "applied", "history": []}
@@ -49,9 +64,9 @@ application["status"] = "offer"
 application["status"] = "hired!!"
 ```
 
-The dict can't defend itself. The rules exist only as habits.
+The rules exist only as habits, and habits break at 2 a.m.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. A first class
 
@@ -100,6 +115,8 @@ A mutable **class** attribute (`tags = []`) is shared by **all** instances — t
 :::
 
 ### 3. Properties: computed or protected attributes
+
+A property is a **doorman for one attribute**: readers see a simple value, but every change goes through your check first.
 
 ```python
 class SalaryRange:
@@ -166,6 +183,8 @@ Inheritance means **"is-a"**: an `EmailNotifier` *is a* `Notifier`. `super().__i
 
 ### 7. Composition over inheritance
 
+Inheritance says "a seller *is* a user"; composition says "an order *has* a payment". Inheritance is a tight family tie — easy to start, hard to change later — so prefer building from parts.
+
 Composition means **"has-a"**: build objects out of other objects.
 
 ```python
@@ -202,7 +221,9 @@ classDiagram
 
 Deep inheritance trees (`BaseModel → TimestampedModel → SoftDeleteModel → UserOwnedModel → Application`) make behavior hard to trace and change. Prefer shallow hierarchies and composition.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -212,29 +233,10 @@ Deep inheritance trees (`BaseModel → TimestampedModel → SoftDeleteModel → 
 | Inheritance | shared interface, reuse | tight coupling; fragile base class problems |
 | Composition | flexible, testable, swappable parts | more objects to wire together |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Classes for things with **state + rules** (an application's lifecycle, a shopping cart), for **services** with injected dependencies, and for **custom exceptions**.
 - ✅ Dataclasses for records.
 - 🚫 Don't create classes with one method and no state — a function is simpler.
 - 🚫 Don't build inheritance hierarchies to reuse a couple of helper functions.
-
-## 🏆 Best practices
-
-- [ ] Validate in `__init__` so invalid objects can't exist; expose changes through **methods** that keep invariants.
-- [ ] Prefix internal attributes with `_`; use `@property` for read-only or computed values.
-- [ ] Always give domain classes a helpful `__repr__` (or use `@dataclass`).
-- [ ] Keep classes **small and cohesive** (Single Responsibility — you'll meet SOLID in Architecture Stage C).
-- [ ] **Prefer composition**; inject dependencies (repositories, clients, clocks) through `__init__`.
-- [ ] Use inheritance for real "is-a" relationships and shared interfaces (or `typing.Protocol` for duck typing).
-- [ ] Never use mutable class attributes for per-instance state.
-- [ ] Type-hint attributes and method signatures.
-
-## 🏭 How it's used in industry
-
-- ORMs: every table is a class (SQLAlchemy models — Week 4). RevoShop's `app/models/`, `app/services/`, `app/repositories/` are classes or modules with clear roles.
-- Frameworks expose classes you extend or configure (`MethodView`, `Blueprint`, Pydantic `BaseModel`).
-- Interviewers ask about encapsulation, inheritance vs composition, and designing a class for a small domain (parking lot, cart, rate limiter).
 
 ## ⚠️ Common mistakes
 
@@ -247,6 +249,17 @@ Deep inheritance trees (`BaseModel → TimestampedModel → SoftDeleteModel → 
 :::revoshop
 Open one service in RevoShop, e.g. `app/services/cart_service.py`, and its repository `app/repositories/cart_repository.py`. Answer: Are they classes or module functions? How does the service get the repository — does it **create** it inside or receive it (composition + injection)? Where is the rule "a cart item's quantity must be positive" enforced: model, schema, service, or database? If the answer is "in several places", which one is the source of truth?
 :::
+
+## 🏆 Best practices
+
+- [ ] Validate in `__init__` so invalid objects can't exist; expose changes through **methods** that keep invariants.
+- [ ] Prefix internal attributes with `_`; use `@property` for read-only or computed values.
+- [ ] Always give domain classes a helpful `__repr__` (or use `@dataclass`).
+- [ ] Keep classes **small and cohesive** (Single Responsibility — you'll meet SOLID in Architecture Stage C).
+- [ ] **Prefer composition**; inject dependencies (repositories, clients, clocks) through `__init__`.
+- [ ] Use inheritance for real "is-a" relationships and shared interfaces (or `typing.Protocol` for duck typing).
+- [ ] Never use mutable class attributes for per-instance state.
+- [ ] Type-hint attributes and method signatures.
 
 ::part[Explain & Design]{n="2"}
 
@@ -316,16 +329,6 @@ When is inheritance the right tool?
 For genuine "is-a" relationships sharing an interface or behavior — e.g. `NotFoundError(AppError)`, or several notifier implementations. For reusing parts, prefer composition.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Class / Object | Cetak biru / Objek hasil cetak biru |
-| Attribute / Method | Data milik objek / Fungsi milik objek |
-| Encapsulation | Enkapsulasi — menyembunyikan detail dan menjaga aturan |
-| Inheritance | Pewarisan ("adalah sebuah") |
-| Composition | Komposisi ("memiliki sebuah") |
-| Invariant | Aturan yang harus selalu benar |
 
 ## 📚 Keep learning
 
