@@ -19,6 +19,21 @@ tags: [web, http, client-server, architecture]
 - How to read a **URL**, **HTTP methods** and **status codes**
 - How to watch real requests in your browser's DevTools
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Client** | The program asking for something (your browser, an app) | Pihak yang meminta |
+| **Server** | The program that answers | Pihak yang melayani |
+| **HTTP** | The agreed language clients and servers use | Bahasa komunikasi web |
+| **Request / response** | What you send / what comes back | Permintaan / balasan |
+| **URL** | The address of what you want | Alamat sumber daya |
+| **HTTP method** | The verb: GET (read), POST (create), PUT/PATCH (change), DELETE | Jenis tindakan |
+| **Status code** | A three-digit result: 200 OK, 404 not found, 500 server broke | Kode hasil |
+| **Header** | Extra information attached to a request or response | Keterangan tambahan |
+| **JSON** | The text format APIs use to send data | Format data teks |
+| **Stateless** | The server remembers nothing between requests | Tanpa ingatan antar permintaan |
+
 ## 🧠 The big idea
 
 Think of a restaurant:
@@ -33,28 +48,13 @@ Think of a restaurant:
 
 You never walk into the kitchen. You send a clearly formatted order, and you get something back. The web works the same way: **clients ask, servers answer**.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Billions of different devices (phones, laptops, smart TVs) need to talk to millions of different servers written in different languages. That only works if everyone follows **the same rules** for asking and answering. Those rules are :term[HTTP]{bahasa="HyperText Transfer Protocol — aturan baku cara browser dan server saling bertukar pesan"}.
+Everything you'll build in this handbook — a Flask API, a Next.js app, an AI service — is a program that answers requests. Knowing the shape of a request and a response is what lets you read error messages, debug a broken page, and design an API on purpose instead of by trial and error.
 
-Splitting the work into client and server also means:
+It also explains things that otherwise feel magical: why a page needs a token on every request, why a `404` and a `500` mean completely different things for you as a developer, and why "it works in Postman but not in the browser" is usually about headers.
 
-- The **client** focuses on showing things and reacting to the user.
-- The **server** protects the data and the business rules (for example: "only the owner can see this order").
-
-## 💥 What happens if we DON'T have shared rules?
-
-Imagine every website invented its own format:
-
-```text
-Site A expects:  GIVE_ME products PAGE=2
-Site B expects:  {"want": "products", "p": 2}
-Site C expects:  products|2|please
-```
-
-Every browser would need custom code for every site. Nothing would work together. And if the client held all the data instead of a server, anyone could open DevTools and change their bank balance. 😱
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The URL: the address of what you want
 
@@ -74,6 +74,8 @@ scheme        host      port  path          query          fragment
 | **fragment** | A spot *inside* the page — never sent to the server |
 
 ### 2. The journey of one request
+
+Follow it once slowly. Almost every bug you'll debug later is one broken step in this chain.
 
 ```mermaid
 sequenceDiagram
@@ -158,9 +160,13 @@ flowchart LR
 
 ### 6. HTTP is stateless
 
+The kitchen forgets you the moment the plate leaves. That's why every request must carry its own proof of who you are — the reason tokens and cookies exist at all.
+
 Each request stands alone: the server doesn't automatically remember your previous request. That's why apps send a **cookie** or a **token** (like the `Authorization` header above) with every request — it's how the server knows it's still you.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Decision | ✅ Benefit | ❌ Cost |
 |---|---|---|
@@ -169,17 +175,10 @@ Each request stands alone: the server doesn't automatically remember your previo
 | Logic on the **client** | Instant feedback, works offline | Can't be trusted — users can change it |
 | JSON API + separate frontend | Web, mobile and other apps share one backend | More moving parts to build and deploy |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 ✅ **Request → response HTTP** fits almost everything: loading pages, submitting forms, calling APIs.
 
 🚫 It's a poor fit when the **server needs to push updates instantly** (live chat, multiplayer games, stock tickers). Those use **WebSockets** or **Server-Sent Events**, which keep a connection open. (AI chat apps often use Server-Sent Events to stream answers word by word — you'll build that in Module 7.)
 
-## 🏭 How it's used in industry
-
-- Engineers debug with the browser's **Network tab** every day: "What did the frontend send? What did the API return? Which status code?"
-- Backend teams publish **API documentation** listing each method, path, request body and status code.
-- Monitoring dashboards track the **percentage of 5xx responses** — a spike wakes someone up at night.
 
 ## ⚠️ Common mistakes
 
@@ -281,15 +280,6 @@ Name one situation where plain request/response HTTP is not the best fit.
 When the server must push updates instantly — live chat, multiplayer games, live prices, or streaming AI answers. Use WebSockets or Server-Sent Events.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Client | Klien — aplikasi yang meminta data (browser, app HP) |
-| Server | Server — program yang menjawab permintaan |
-| Request / Response | Permintaan / Jawaban |
-| Status code | Kode status — angka yang menjelaskan hasil permintaan |
-| Stateless | Tanpa status — server tidak mengingat permintaan sebelumnya |
 
 ## 📚 Keep learning
 

@@ -18,6 +18,19 @@ tags: [python, conditionals, control-flow]
 - The ternary expression and `match` statement — and when to use them
 - How to test every branch
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Conditional** | Code that chooses a path based on a test | Percabangan |
+| **`if` / `elif` / `else`** | Check in order, run the first match | Periksa berurutan |
+| **Branch** | One possible path through the code | Satu jalur kode |
+| **Guard clause** | Handle the bad case first and stop early | Keluar awal |
+| **Nesting** | An `if` inside an `if` inside an `if` | Percabangan bertingkat |
+| **Ternary** | A one-line `if` that gives a value | Percabangan satu baris |
+| **`match`** | Choosing a branch by the shape of the data | Pencocokan pola |
+| **Branch coverage** | Testing every path, not just the happy one | Menguji semua jalur |
+
 ## 🧠 The big idea
 
 A :term[conditional]{bahasa="percabangan — kode yang memilih jalan berdasarkan kondisi benar/salah"} is a **fork in the road**. The program checks a condition and takes exactly one path.
@@ -30,44 +43,22 @@ Think of a security guard at an office:
 
 The guard checks **in order** and stops at the **first** rule that matches. That's `if` / `elif` / `else`.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Without choices, a program does the same thing for everyone: every user sees the admin page, every payment succeeds, every file is accepted. Real software is full of "it depends": on the user's role, the input, the time, the result of a previous step.
+Nearly every feature is a decision: can this user check out, is this discount valid, should we show the "Apply" button? Without conditionals a program can only do one thing, the same way, every time.
 
-## 💥 What happens if we DON'T structure conditions well?
-
-```python
-def shipping(weight, express, member):
-    if weight > 0:
-        if express:
-            if member:
-                return 15000
-            else:
-                return 25000
-        else:
-            if member:
-                return 0
-            else:
-                return 10000
-    else:
-        return None
-```
-
-It works, but it's a pyramid: hard to read, easy to break, and one wrong indent changes the meaning. Another classic bug:
+And the order matters. Write the rules in the wrong order and the guard waves everyone in:
 
 ```python
-score = 95
-if score >= 60:
-    grade = "C"
-elif score >= 80:     # never reached for 95 — the first match already won
-    grade = "B"
-elif score >= 90:
-    grade = "A"
+if user.has_card:          # too broad, checked first
+    allow()
+elif user.is_employee:     # never reached
+    allow_full_access()
 ```
 
-A 95 becomes a **C**. Nothing crashes. The bug ships.
+The program still runs. Nobody sees an error. The rule is simply wrong — which is why testing each branch, not just the happy path, is part of the lesson.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. `if` / `elif` / `else`
 
@@ -111,6 +102,8 @@ Ask yourself: *can more than one of these be true at the same time and should th
 
 ### 3. Guard clauses: fail fast, then do the main work
 
+Handle the exceptions at the door, then write the normal case flat and readable. Deeply nested `if`s are the code version of a sentence with five "however"s.
+
 ```python
 def shipping(weight: float, express: bool, member: bool) -> int | None:
     if weight <= 0:
@@ -150,6 +143,8 @@ match status_code:
 
 ### 6. Test every branch
 
+A quick way to check yourself: for each `if`, can you name one input that takes the true path and one that takes the false path? If not, that branch is untested.
+
 Each path through your conditions is a separate behavior, and each needs at least one test. **Boundaries** are where bugs live: if the rule says "≥ 500.000", test `499_999`, `500_000` and `500_001`.
 
 ```mermaid
@@ -166,7 +161,9 @@ flowchart TD
 
 Five end points → at least **five** test cases.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Style | ✅ | ❌ |
 |---|---|---|
@@ -176,20 +173,12 @@ Five end points → at least **five** test cases.
 | `match` | Clean for many exact values | Not for ranges; needs Python 3.10+ |
 | Lookup `dict` instead of `if` chain | Data, not code — easy to extend | Only for simple value → value mappings |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Use conditionals for **rules and validation**.
 - ✅ When a chain only maps a value to another value, consider a dictionary:
   `PLAN_LIMITS = {"free": 3, "pro": 100}` → `limit = PLAN_LIMITS[plan]`
 - 🚫 Avoid more than ~2 levels of nesting — refactor with guard clauses or small functions.
 - 🚫 Don't repeat the same condition in many places; name it once.
 
-## 🏭 How it's used in industry
-
-- **Input validation** at the start of every API endpoint (guard clauses returning `400`).
-- **Authorization**: `if not user.can_edit(post): return 403`.
-- **Feature flags**: `if flags.is_enabled("new_checkout"): ...` lets companies release features to 5% of users first.
-- Code reviewers flag deep nesting and missing `else` cases.
 
 ## ⚠️ Common mistakes
 
@@ -288,15 +277,6 @@ A rule says "discount for orders of Rp 1.000.000 or more". Which values should y
 The boundary and its neighbours: `999_999` (no), `1_000_000` (yes), `1_000_001` (yes).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Conditional | Percabangan |
-| Branch | Cabang — satu jalur yang bisa dijalankan |
-| Guard clause | Pengecekan awal yang langsung keluar jika kondisi tidak valid |
-| Nested | Bersarang — kode di dalam kode |
-| Boundary value | Nilai batas |
 
 ## 📚 Keep learning
 

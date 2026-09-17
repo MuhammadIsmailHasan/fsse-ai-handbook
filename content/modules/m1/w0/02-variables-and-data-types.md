@@ -19,6 +19,20 @@ tags: [python, variables, types]
 - How to **check** a type and **convert** between types
 - Why data from forms and files always arrives as **text**
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Variable** | A name attached to a value | Nama untuk sebuah nilai |
+| **Value** | The actual data (`450000`, `"Sari"`) | Datanya sendiri |
+| **Data type** | What kind of value it is, and what you may do with it | Jenis nilai |
+| **`int` / `float`** | Whole number / number with decimals | Bilangan bulat / desimal |
+| **`str`** | Text | Teks |
+| **`bool`** | True or False | Benar atau salah |
+| **`None`** | "No value yet" | Belum ada nilai |
+| **Type conversion** | Turning one type into another (`int("12")`) | Mengubah jenis nilai |
+| **Truthy / falsy** | Values Python treats as true or false in a condition | Dianggap benar / salah |
+
 ## 🧠 The big idea
 
 A :term[variable]{bahasa="variabel — nama yang menunjuk ke sebuah nilai yang disimpan program"} is a **name tag** you stick on a value so you can find it later.
@@ -31,31 +45,20 @@ Python creates the value `450000` in memory and sticks the tag `price` on it. La
 
 A :term[data type]{bahasa="tipe data — jenis nilai (angka, teks, benar/salah) yang menentukan apa yang boleh dilakukan"} says **what kind of value** it is — and therefore what you're allowed to do with it. You can divide numbers. You can make text uppercase. You can't make a number uppercase.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Programs need memory: the user's name, the items in a cart, whether they're logged in. Without names for values you'd have to repeat raw values everywhere and could never change them.
+Every program stores things: a price, a name, whether the user is logged in. The type decides what you can do with each one — you can divide numbers, you can uppercase text, and you can't uppercase a number.
 
-Types exist because **the same bytes mean different things**. `"5"` (text) and `5` (number) look alike on screen, but `"5" * 3` is `"555"` while `5 * 3` is `15`.
-
-## 💥 What happens if we DON'T care about types?
+It matters most at the edges. Data from a form, a file or an API arrives as **text**, always:
 
 ```python
-quantity = input("How many shirts? ")   # user types 3
-price = 150000
-total = quantity * price
-print(total)
+age = input("Your age: ")   # "25" — a string, not a number
+age + 1                      # 💥 TypeError
 ```
 
-You expect `450000`. Instead Python raises an error — and in other situations it's worse. Try it with a string and a small number:
+That one fact explains a large share of beginner errors, and it's why converting types carefully is a habit worth building now.
 
-```python
-quantity = "3"
-print(quantity * 2)     # "33"  ← no error, just a silently WRONG answer
-```
-
-`input()` always returns a `str`. Forgetting that is one of the most common beginner bugs — and in web apps it's the same: **everything from a form, URL, CSV or JSON text arrives as text** until you convert it.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Creating and changing variables
 
@@ -115,6 +118,8 @@ Put an `f` before the quotes and variables inside `{}`. You can even format numb
 
 ### 4. Converting between types
 
+Convert at the **edge** — right where the data arrives — then trust the type everywhere else. Converting again and again deeper in the code is how bugs hide.
+
 | From → To | Code | Result |
 |---|---|---|
 | text → int | `int("42")` | `42` |
@@ -143,6 +148,8 @@ Python treats these as `False` in a yes/no situation: `False`, `None`, `0`, `0.0
 
 ### 6. The float surprise
 
+`0.1 + 0.2` isn't exactly `0.3` because computers store decimals in binary, the way 1/3 can't be written exactly in decimal. This is why money uses `Decimal`, never `float`.
+
 ```python
 print(0.1 + 0.2)   # 0.30000000000000004
 ```
@@ -167,7 +174,9 @@ name: str = "Ismail"
 
 You'll use type hints everywhere later — FastAPI (Module 3) even uses them to validate API input.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ Benefit | ❌ Cost |
 |---|---|---|
@@ -177,18 +186,11 @@ You'll use type hints everywhere later — FastAPI (Module 3) even uses them to 
 | Money as `float` | Easy | Rounding errors |
 | Money as `int` (smallest unit) | Exact | Remember to format for display |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Convert **at the boundary**: the moment data enters (form, file, API), turn it into the right type once.
 - ✅ Use `None` for "unknown / not set yet" instead of fake values like `-1` or `""`.
 - 🚫 Don't use `float` for money.
 - 🚫 Don't reuse one variable for different types (`result = 5` then `result = "error"`). It confuses readers and tools.
 
-## 🏭 How it's used in industry
-
-- Backend frameworks validate and convert request data automatically (you'll see **Pydantic** and **marshmallow** do exactly this).
-- Payment systems store amounts as integers in the smallest currency unit.
-- Teams enable a **type checker** (mypy, pyright) in CI so type mistakes fail the build.
 
 ## ⚠️ Common mistakes
 
@@ -281,16 +283,6 @@ Where is the best place to convert user input into the right types?
 At the **boundary** — as soon as the data enters your program (form handler, file reader, API endpoint), so the rest of the code can trust the types.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Variable | Variabel — nama untuk sebuah nilai |
-| Assign (`=`) | Memberi nilai |
-| String | Teks |
-| Integer / Float | Bilangan bulat / bilangan desimal |
-| Type conversion | Konversi tipe |
-| Truthy / Falsy | Dianggap benar / dianggap salah |
 
 ## 📚 Keep learning
 

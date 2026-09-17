@@ -18,6 +18,20 @@ tags: [python, operators, boolean-logic]
 - Logic with `and`, `or`, `not` — and **short-circuiting**
 - Operator **precedence** and when to add parentheses
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Operator** | A symbol that does something to values (`+`, `==`) | Simbol operasi |
+| **Arithmetic** | Maths: `+ - * /` | Perhitungan |
+| **`//` floor division** | Divide and throw away the remainder | Bagi lalu bulatkan ke bawah |
+| **`%` modulo** | The remainder after dividing | Sisa bagi |
+| **Comparison** | Asking a yes/no question (`>`, `==`) | Perbandingan |
+| **`=` vs `==`** | Assign a value / check if equal | Memberi nilai / membandingkan |
+| **Logic (`and`, `or`, `not`)** | Combining yes/no answers | Menggabungkan kondisi |
+| **Short-circuit** | Python stops early when the answer is already decided | Berhenti lebih awal |
+| **Precedence** | Which operator runs first | Urutan pengerjaan |
+
 ## 🧠 The big idea
 
 An :term[operator]{bahasa="operator — simbol yang melakukan aksi pada nilai, seperti + atau =="} is a tiny machine: values go in, a new value comes out.
@@ -28,39 +42,18 @@ An :term[operator]{bahasa="operator — simbol yang melakukan aksi pada nilai, s
 
 Every "decision" in software — *can this user check out? is this password long enough?* — is built from these three.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Business rules are math and logic in disguise:
+Business rules are maths and logic wearing a costume:
 
-> "Members with a cart over Rp 500.000 get free shipping, unless the item is oversized."
+- "free shipping over Rp 200.000" → a comparison,
+- "an admin **or** the owner may edit" → logic,
+- "show 20 items per page" → division and remainder,
+- "is this password long enough **and** does it have a number?" → both.
 
-becomes
+Getting these wrong is quiet and expensive: `=` instead of `==`, or an `and` where an `or` belongs, produces code that runs happily and gives the wrong answer.
 
-```python
-free_shipping = is_member and cart_total > 500_000 and not is_oversized
-```
-
-Operators let you write that rule **once**, clearly, and let the computer apply it millions of times without mistakes.
-
-## 💥 What happens if we DON'T understand them?
-
-```python
-people = 4
-bill = 250_000
-each = bill / people          # 62500.0 — a float, fine
-boxes = 10 / 3                # 3.3333… — but you can't ship 3.33 boxes!
-```
-
-```python
-age = 20
-is_student = False
-# Intended: discount for under 18 OR students
-discount = age < 18 or is_student == True and age < 25   # hard to read, easy to get wrong
-```
-
-Without knowing `//`, `%` and how `and`/`or` combine, you ship wrong totals and wrong discounts — bugs that pass silently because nothing crashes.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Arithmetic
 
@@ -120,6 +113,8 @@ Truth table:
 
 ### 4. Short-circuiting
 
+This is why `if user and user.is_active:` is safe: if `user` is `None`, Python never looks at `.is_active`. Checking the gate before opening it.
+
 Python stops evaluating as soon as the answer is known:
 
 - `False and anything` → `False` (right side never runs)
@@ -134,6 +129,8 @@ if len(items) > 0 and items[0] == "urgent":
 ```
 
 ### 5. Precedence: who goes first
+
+When in doubt, add brackets. Nobody has ever complained that a condition was too easy to read.
 
 From highest to lowest (simplified):
 
@@ -155,7 +152,9 @@ If **you** had to think about precedence, add parentheses. Your future teammates
 `(age < 18) or (is_student and age < 25)`
 :::
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -164,18 +163,11 @@ If **you** had to think about precedence, add parentheses. Your future teammates
 | Relying on short-circuit to avoid errors | Concise | Order of conditions becomes important — reordering can crash |
 | `/` then `int()` vs `//` | — | `int(-7 / 2)` is `-3` but `-7 // 2` is `-4`: they differ for negatives |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Use `//` and `%` for grouping, pagination (`page_count = (total + per_page - 1) // per_page`), and cycles.
 - ✅ Give complex conditions a **name**.
 - 🚫 Don't compare booleans to `True`: write `if is_member:` not `if is_member == True:`.
 - 🚫 Don't compare floats with `==` after math (`0.1 + 0.2 == 0.3` is `False`). Use `math.isclose()`.
 
-## 🏭 How it's used in industry
-
-- **Pagination** in every API: `offset = (page - 1) * per_page`.
-- **Feature flags & permissions**: `can_edit = is_owner or (is_admin and not is_suspended)`.
-- **Rate limiting** and **sharding** often use `%` to spread work evenly: `server = user_id % server_count`.
 
 ## ⚠️ Common mistakes
 
@@ -259,15 +251,6 @@ How can the order of conditions in an `and` prevent a crash?
 With short-circuiting, the right side runs only if the left side is true — e.g. `user is not None and user.is_active` never touches `user.is_active` when `user` is `None`.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Floor division (`//`) | Pembagian bulat ke bawah |
-| Modulo (`%`) | Sisa bagi |
-| Comparison | Perbandingan |
-| Short-circuit | Evaluasi berhenti lebih awal saat hasil sudah pasti |
-| Precedence | Urutan prioritas operator |
 
 ## 📚 Keep learning
 
