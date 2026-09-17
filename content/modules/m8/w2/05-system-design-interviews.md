@@ -19,21 +19,33 @@ tags: [career, interviews, system-design, architecture, trade-offs]
 - Talking in **trade-offs**
 - A worked example: *design a job board like CareerPilot for 1 million users*
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **System design round** | "How would you build this?" — a discussion, not coding | Sesi merancang sistem |
+| **Functional requirement** | What the system must do | Fitur yang harus ada |
+| **Non-functional requirement** | How well: speed, uptime, scale | Kualitas layanan |
+| **Estimate** | A rough number of users, requests or storage | Perkiraan kasar |
+| **Data model** | The tables and their links | Rancangan data |
+| **Bottleneck** | The part that limits everything else | Titik sempit |
+| **Replica** | A copy of the database for reading | Salinan untuk membaca |
+| **Queue** | Work handed off to be done later | Antrean pekerjaan |
+| **Trade-off** | What you give up for what you gain | Untung-rugi pilihan |
+
 ## 🧠 The big idea
 
 A system design interview is **planning a house with a client**, not building it. You ask how many people live there and what they need, sketch the rooms, explain why the kitchen is next to the dining room, and discuss what changes if they add a floor later. No one expects plumbing diagrams from a junior — they expect sensible questions and clear reasoning.
 
-## ❓ Why does this matter?
+## ❓ Why it matters
 
-More companies include a light design round even for juniors ("design the backend for a URL shortener"), and full-stack roles often ask "how would you build this feature end to end?". You've already built most of the pieces in CareerPilot — the round checks whether you can **explain and extend** them.
+More companies now include a light design round even for juniors ("design the backend for a URL shortener"), and full-stack interviews often ask "how would you build this feature end to end?".
 
-## 💥 What happens if we DON'T?
+You have already built most of the pieces in CareerPilot. The round checks whether you can **explain and extend** them: ask sensible questions, sketch something clear, and say why you'd choose one option over another.
 
-- Jumping straight to "Kubernetes, Kafka, microservices" for an app with 1,000 users.
-- Drawing boxes without saying what data flows between them.
-- Freezing because "I've never designed Netflix".
+The house-planning picture sets the right expectations: you're planning with a client, not laying bricks. Nobody expects plumbing diagrams from a junior — they expect good questions and clear reasoning.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Expectations by level
 
@@ -45,6 +57,8 @@ More companies include a light design round even for juniors ("design the backen
 | Honest about limits ("I'd research X") | experience-based choices |
 
 ### 2. The 5-step framework (35–45 minutes)
+
+Spend the first five minutes on requirements and numbers. Candidates who draw boxes immediately end up redesigning halfway through.
 
 | Step | Output |
 |---|---|
@@ -108,6 +122,8 @@ flowchart LR
 
 ### 4. Trade-off language
 
+Phrases like "I'd cache this for 60 seconds, accepting slightly stale data to protect the database" are exactly what's being scored — a decision plus its cost.
+
 > "I'd start with PostgreSQL full-text search because it keeps the system simple and our volume is small. The trade-off is weaker relevance and facets. If search becomes a core differentiator or queries slow down, I'd add OpenSearch fed by change events — at the cost of another system to operate and eventual consistency between the DB and the index."
 
 Pattern: **choice → why for these requirements → cost → when you'd change it**.
@@ -125,7 +141,9 @@ Pattern: **choice → why for these requirements → cost → when you'd change 
 | Search and ranking | database full-text → search engine |
 | Files (CVs) | object storage (S3) + signed URLs |
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Decision | Option A | Option B |
 |---|---|---|
@@ -133,6 +151,13 @@ Pattern: **choice → why for these requirements → cost → when you'd change 
 | SQL vs NoSQL | relations, transactions (jobs, applications) | flexible schema, horizontal scale for specific workloads |
 | Offset vs cursor pagination | simple, jump to page | stable and fast at depth |
 | Sync vs async | immediate result | resilient, smooths spikes, eventual |
+
+## ⚠️ Common mistakes
+
+- Buzzword architecture without requirements.
+- Ignoring the data model.
+- One giant diagram with no explanation.
+- Treating the interviewer's questions as criticism instead of guidance.
 
 ## 🏆 Best practices
 
@@ -144,19 +169,6 @@ Pattern: **choice → why for these requirements → cost → when you'd change 
 - [ ] Explain trade-offs and when you'd evolve the design.
 - [ ] Check in with the interviewer: "Should I go deeper on search or on alerts?"
 - [ ] Use your own projects as reference points ("in CareerPilot I used…").
-
-## 🏭 How it's used in industry
-
-- Design discussions happen in real teams through design docs/RFCs using the same structure: context, requirements, options, decision, trade-offs.
-- Junior design rounds often use familiar products (URL shortener, chat, job board, food delivery) to check reasoning rather than scale expertise.
-- Interviewers value candidates who know when *not* to add complexity.
-
-## ⚠️ Common mistakes
-
-- Buzzword architecture without requirements.
-- Ignoring the data model.
-- One giant diagram with no explanation.
-- Treating the interviewer's questions as criticism instead of guidance.
 
 ::part[Explain & Design]{n="2"}
 

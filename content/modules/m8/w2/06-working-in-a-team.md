@@ -19,22 +19,31 @@ tags: [career, git, code-review, agile, scrum, teamwork]
 - Stand-ups, asking for help at the right time, and writing things down
 - Your **first 90 days** as a junior
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **GitHub Flow** | Branch → pull request → review → merge to main | Alur kerja Git tim |
+| **Trunk-based** | Short branches merged into main quickly | Branch pendek, sering merge |
+| **Protected branch** | Rules stopping direct pushes to main | Branch yang dilindungi |
+| **Pull request (PR)** | Your change, up for review | Usulan perubahan |
+| **Code review** | Teammates reading your change before merge | Pemeriksaan oleh rekan |
+| **Scrum / Kanban** | Working in sprints / working from a flowing board | Dua cara mengatur kerja |
+| **Stand-up** | A short daily sync | Rapat singkat harian |
+| **Estimate** | A guess at effort, not a promise | Perkiraan usaha |
+| **Onboarding** | Your first weeks learning the codebase and the team | Masa awal bergabung |
+
 ## 🧠 The big idea
 
 A software team is a **relay race**, not a solo sprint. Speed comes from clean handoffs: small batches of work, clear notes on what changed and why, and teammates who check each other's baton passes (code review) without dropping it. A brilliant runner who hoards the baton slows the whole team.
 
-## ❓ Why does this matter?
+## ❓ Why it matters
 
-Bootcamp and portfolio work is mostly solo. Jobs aren't. Interviewers ask "how do you work with Git in a team?" and "how do you handle review comments?" — and in your first months, collaboration habits matter more than raw speed.
+Bootcamp and portfolio work is mostly solo; jobs are not. Interviewers ask "how do you work with Git in a team?" and "how do you handle review comments?" — and in your first months, collaboration habits matter more than raw speed.
 
-## 💥 What happens if we DON'T?
+Remote teams raise the stakes further: when nobody sits next to you, a clear pull request description, a written decision and a well-timed question *are* your visible work. A brilliant runner who hoards the baton slows the whole relay — and in a remote team, nobody even sees them running.
 
-- A 3,000-line PR after two weeks: reviewers skim, bugs slip, merge conflicts everywhere.
-- "Fixed stuff" commit messages and empty PR descriptions.
-- Taking review comments personally, or leaving comments like "this is wrong".
-- Stuck silently for two days on an environment problem a teammate could solve in 5 minutes.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Branching workflows
 
@@ -69,6 +78,8 @@ git push -u origin feat/application-notes
 ```
 
 ### 2. Pull requests that get merged
+
+Small PRs get reviewed in minutes; 40-file PRs get "LGTM" without a real read. Splitting your work is a kindness that also gets you better feedback.
 
 - **Small**: aim for < 300–400 changed lines; split refactors from features.
 - **Description template**:
@@ -131,6 +142,8 @@ Conventional prefixes (`nit:`, `question:`, `suggestion:`, `issue:`/`blocking:`)
 
 ### 5. Asking for help
 
+A good rule: try for 30 minutes, write down what you tried, then ask with that context. Too early wastes their time; too late wastes yours.
+
 Rule of thumb for juniors: try for **30–60 minutes**, then ask — with context:
 
 ```text
@@ -148,7 +161,9 @@ Write down answers (team wiki/README) so the next person doesn't need to ask.
 - **Days 31–60**: own small features end to end; review others' PRs; ask for feedback in 1:1s.
 - **Days 61–90**: take a medium feature, improve something (tests, docs, a slow query), agree on growth goals with your manager.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | | ✅ | ❌ |
 |---|---|---|
@@ -157,6 +172,13 @@ Write down answers (team wiki/README) so the next person doesn't need to ask.
 | Long-lived feature branches | isolate big work | painful conflicts; late integration |
 | Feature flags | merge early, release later | flag clean-up and testing combinations |
 | Strict Scrum | predictable rhythm | ceremony overhead for small teams |
+
+## ⚠️ Common mistakes
+
+- Mixing formatting changes with logic changes in one PR.
+- "LGTM" reviews without reading.
+- Working on `main` locally and pushing directly.
+- Staying silent when estimates are clearly wrong.
 
 ## 🏆 Best practices
 
@@ -168,19 +190,6 @@ Write down answers (team wiki/README) so the next person doesn't need to ask.
 - [ ] Keep the board updated; raise blockers in stand-up early.
 - [ ] Ask for help with context after a time box; document answers.
 - [ ] Never force-push to shared branches; never commit secrets.
-
-## 🏭 How it's used in industry
-
-- Research such as the DORA reports links small batch sizes, fast code review and trunk-based practices with higher delivery performance.
-- Many companies use GitHub/GitLab PR templates, CODEOWNERS and required checks.
-- Teams frequently adapt Scrum into lighter hybrids ("Scrumban") — ask how *this* team works.
-
-## ⚠️ Common mistakes
-
-- Mixing formatting changes with logic changes in one PR.
-- "LGTM" reviews without reading.
-- Working on `main` locally and pushing directly.
-- Staying silent when estimates are clearly wrong.
 
 ::part[Explain & Design]{n="2"}
 

@@ -19,21 +19,32 @@ tags: [career, salary, negotiation, offers, indonesia]
 - A polite, evidence-based **negotiation script** (email and call)
 - Negotiating **non-salary** items and deciding when to accept
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Range** | The realistic pay band for the role and market | Rentang gaji wajar |
+| **Expectations question** | "What salary are you looking for?" | Pertanyaan harapan gaji |
+| **Gross vs take-home** | Before tax and deductions / what reaches your account | Kotor vs bersih |
+| **Total value** | Salary plus bonus, benefits, equipment, learning budget | Nilai keseluruhan |
+| **Anchor** | The first number mentioned, which shapes the rest | Angka pembuka |
+| **Counter-offer** | Your polite, reasoned request for more | Penawaran balik |
+| **Contract type** | PKWT (fixed term) vs PKWTT (permanent) in Indonesia | Jenis kontrak kerja |
+| **Contractor** | Being paid as a supplier, common for remote-abroad roles | Bekerja sebagai kontraktor |
+
 ## 🧠 The big idea
 
 Negotiation is **collaborative problem solving**, not a fight. The company wants to hire you (they've invested hours in interviews); you want to join. You're both looking for a package that works. Coming with research, clear priorities and a friendly tone makes the conversation easy for the recruiter to champion internally.
 
-## ❓ Why does this matter?
+## ❓ Why it matters
 
-Your first salary anchors future raises and offers. Small differences compound over years. Many juniors accept the first number out of fear — but a respectful, well-reasoned request rarely causes an offer to be withdrawn at reputable companies.
+Your first salary anchors future raises and offers, and small differences compound over years. Many juniors accept the first number out of fear — but a respectful, well-reasoned request rarely causes a reputable company to withdraw an offer.
 
-## 💥 What happens if we DON'T?
+It's collaborative problem solving, not a fight: they have already spent hours interviewing you and want this to work.
 
-- Saying a number in the first call without research → far below the budget for the role.
-- Comparing a PKWT 1-year contract with a permanent offer only by monthly salary.
-- Accepting verbally, then discovering the offer is net of different deductions than you assumed.
+For **remote roles with US companies**, three extra things matter. Pay is often benchmarked to your location rather than theirs, so research both. Many such roles are **contractor** arrangements, which means no BPJS, no THR, and you handle your own taxes — so compare take-home, not headline numbers. And ask early about equipment, paid time off and the expected hours of overlap; those are part of the package too.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Research ranges
 
@@ -42,6 +53,8 @@ Your first salary anchors future raises and offers. Small differences compound o
 - Write down **three numbers**: *walk-away* (minimum you'd accept), *target* (realistic good), *stretch* (top of range). Check data is recent — ranges change yearly.
 
 ### 2. The expectations question
+
+Give a researched range rather than a single number, and say what it's based on. "Based on similar backend roles in Jakarta, I'm looking at X–Y" is hard to argue with and easy to work with.
 
 | Stage | Approach |
 |---|---|
@@ -70,6 +83,8 @@ Always clarify **gross or net (take-home)** and **monthly or annual**.
 Laws and rules change; confirm current regulations and ask HR for written clarification when unsure.
 
 ### 4. Compare total value
+
+Write both offers in one table: take-home, bonus, benefits, equipment, learning budget, hours, and how much you'll learn. The bigger headline number doesn't always win.
 
 ```text
 Offer A (startup, PKWTT): Rp X gross/month, 3-month probation, private insurance, remote allowance, annual bonus up to 1 month, learning budget
@@ -108,7 +123,9 @@ Start date, remote days, learning budget, laptop choice, **salary review after p
 - Use deadlines honestly: "I have another process finishing next week — could I respond by Friday?"
 - Decline politely; keep relationships — the recruiter may contact you in a year.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | | ✅ | ❌ |
 |---|---|---|
@@ -116,6 +133,13 @@ Start date, remote days, learning budget, laptop choice, **salary review after p
 | Asking for their range first | information advantage | some recruiters insist |
 | Negotiating | often better package | small risk at companies with fixed bands (usually just "no") |
 | Accepting immediately | quick certainty | may leave value on the table |
+
+## ⚠️ Common mistakes
+
+- Negotiating before you have an offer.
+- Using ultimatums or fake competing offers.
+- Ignoring probation terms and contract type.
+- Forgetting take-home calculations and assuming gross = net.
 
 ## 🏆 Best practices
 
@@ -126,19 +150,6 @@ Start date, remote days, learning budget, laptop choice, **salary review after p
 - [ ] Read the contract type, probation, bonds and notice period carefully.
 - [ ] Get agreements in writing; never lie about competing offers.
 - [ ] Stay professional whether you accept or decline.
-
-## 🏭 How it's used in industry
-
-- Many companies have salary **bands** per level; recruiters often have some room within a band and can escalate with good reasons.
-- Structured offers (base + allowances + bonus + equity) are common in Indonesian startups; banks and multinationals often have fixed grades with standard benefits.
-- Remote roles for foreign companies may pay in other currencies or through employer-of-record services — check taxes and contracts.
-
-## ⚠️ Common mistakes
-
-- Negotiating before you have an offer.
-- Using ultimatums or fake competing offers.
-- Ignoring probation terms and contract type.
-- Forgetting take-home calculations and assuming gross = net.
 
 ::part[Explain & Design]{n="2"}
 
