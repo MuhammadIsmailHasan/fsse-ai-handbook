@@ -18,6 +18,20 @@ tags: [dsa, big-o, complexity, interviews]
 - **Space** complexity, not just time
 - The classic trade: use memory (a set/dict) to save time
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Big-O** | How the time or memory grows when the data grows | Pertumbuhan waktu/memori |
+| **Input size (n)** | How many items you're working with | Banyaknya data |
+| **O(1) constant** | Same cost no matter how big the data is | Biaya tetap |
+| **O(log n)** | Cost grows very slowly — halving each step | Tumbuh sangat lambat |
+| **O(n) linear** | Twice the data, twice the work | Sebanding data |
+| **O(n log n)** | The cost of good sorting | Biaya pengurutan baik |
+| **O(n²) quadratic** | Every item compared with every item | Setiap data dibanding semua |
+| **Space complexity** | How much extra memory the algorithm needs | Kebutuhan memori |
+| **Trade-off** | Using more memory to save time, or the reverse | Tukar memori dengan waktu |
+
 ## 🧠 The big idea
 
 Big-O doesn't tell you "this takes 3 seconds". It tells you **how the time grows when the input grows**.
@@ -32,32 +46,15 @@ Think of delivering invitations:
 
 On small data everything feels fast. Big-O tells you what happens **on real data**.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Computers differ in speed, and so do languages. We need a way to compare **algorithms**, not machines. Big-O answers: *"If my data grows 10× next year, will this code be 10× slower, 100× slower, or not slower at all?"*
+Computers differ in speed, and so do programming languages. We need a way to compare **algorithms**, not machines. Big-O answers one question: *"If my data grows 10× next year, will this code be 10× slower, 100× slower, or not slower at all?"*
 
 It's also the shared language of interviews: *"Can you do better than O(n²)?"*
 
-## 💥 What happens if we DON'T think about it?
+And it matters in real products, not just interviews. Code that is fine with 200 rows on your laptop can lock up the server at 200,000 rows — same code, different scale.
 
-```python
-def has_duplicate(emails):
-    for i in range(len(emails)):
-        for j in range(i + 1, len(emails)):
-            if emails[i] == emails[j]:
-                return True
-    return False
-```
-
-| Emails | Comparisons (worst case) | At ~50 million comparisons/second in Python |
-|---|---|---|
-| 1,000 | ~500,000 | 0.01 s |
-| 100,000 | ~5,000,000,000 | ~100 s |
-| 1,000,000 | ~500,000,000,000 | ~3 hours |
-
-The same task with a set is O(n): one million emails in well under a second.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The main complexity classes
 
@@ -131,6 +128,8 @@ for email in new_emails:          # n
 
 ### 3. Drop constants and small terms
 
+Big-O is about the **shape** of the growth, not the exact number: 3n + 50 and n both draw the same straight line once n is large, so both are O(n).
+
 `O(3n + 20)` → `O(n)`. `O(n² + n)` → `O(n²)`. Big-O cares about the **shape** of growth as n gets huge; constants matter in practice, but they don't change the class.
 
 ### 4. Best, average, worst
@@ -138,6 +137,8 @@ for email in new_emails:          # n
 Linear search for something at position 0 is fast (best case), but Big-O usually describes the **worst case** — what you can promise.
 
 ### 5. Space complexity
+
+Time isn't the only budget. A solution that's twice as fast but keeps a copy of the whole file in memory can still be the wrong choice on a small server.
 
 How much **extra memory** does the algorithm use as n grows?
 
@@ -153,7 +154,9 @@ def has_duplicate(emails):
 
 Nested-loop version: O(n²) time, **O(1)** space. Set version: O(n) time, **O(n)** space. That's the most common trade in DSA: **memory for speed**.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | Time | Space | When it's worth it |
 |---|---|---|---|
@@ -163,18 +166,11 @@ Nested-loop version: O(n²) time, **O(1)** space. Set version: O(n) time, **O(n)
 
 Big-O is not everything: an O(n) algorithm with a huge constant can lose to O(n log n) on real sizes. **Measure** when it matters.
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Estimate complexity for any code that runs on user data, in loops, or on every request.
 - ✅ Ask: *what's n in production?* (100? 10 million?)
 - 🚫 Don't micro-optimize code that runs once on 50 items.
 - 🚫 Don't claim "O(1)" for `x in my_list`.
 
-## 🏭 How it's used in industry
-
-- Code reviews: *"This `in` check is inside a loop over all orders — O(n·m). Can we use a set?"*
-- Database query plans are Big-O in action: a full table scan (O(n)) vs an index lookup (O(log n)).
-- Interviews almost always end with: *"What's the time and space complexity?"*
 
 ## ⚠️ Common mistakes
 
@@ -265,15 +261,6 @@ You make a list lookup inside a loop faster by converting the list to a set firs
 Memory: the set uses O(m) extra space, and building it costs O(m) once — in exchange, each lookup drops from O(m) to O(1) average.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Time complexity | Kompleksitas waktu |
-| Space complexity | Kompleksitas memori |
-| Constant / Linear / Quadratic | Konstan / Linear / Kuadratik |
-| Worst case | Kasus terburuk |
-| Trade-off | Pertukaran untung-rugi |
 
 ## 📚 Keep learning
 

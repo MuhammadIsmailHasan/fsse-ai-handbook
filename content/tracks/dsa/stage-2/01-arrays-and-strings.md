@@ -18,22 +18,37 @@ tags: [dsa, arrays, strings, complexity, in-place]
 - **In-place** algorithms with a read/write pointer
 - Index arithmetic: modulo for rotation, boundaries for 2D grids
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Array** | Items stored side by side in memory | Elemen berdampingan di memori |
+| **Index** | The position number of an item | Nomor posisi |
+| **Contiguous** | Right next to each other, with no gaps | Berdampingan tanpa celah |
+| **Dynamic array** | An array that grows automatically (a Python list) | Larik yang membesar sendiri |
+| **Amortised O(1)** | Usually instant; occasionally the list is copied to a bigger space | Rata-rata cepat |
+| **Immutable string** | Changing a string makes a new one | String tidak bisa diubah |
+| **`"".join()`** | Building a string once, instead of adding in a loop | Menyusun string sekali |
+| **In-place** | Changing the same list instead of building a new one | Diubah di tempat |
+| **Read/write pointer** | Two positions: one reading, one writing the kept items | Dua penunjuk baca/tulis |
+
 ## 🧠 The big idea
 
 An :term[array]{bahasa="larik — kumpulan elemen berurutan yang disimpan berdampingan di memori"} is a row of **numbered lockers side by side**. Because they're side by side, you can jump straight to locker #5,000 — no walking. But if you want to add a new locker at the **front**, every item has to move one locker to the right.
 
 That single picture explains most array performance questions in interviews.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Contiguous memory makes arrays:
-- **fast to index** (`nums[i]` is O(1): address = start + i × size),
-- **cache-friendly** (the CPU loads neighbors together),
-- **compact**.
+Storing items side by side makes arrays:
 
-Nearly everything is built on them: Python lists, strings, NumPy arrays, database pages, the JSON arrays your API returns.
+- **fast to index** — `nums[i]` is one calculation, not a search,
+- **cache-friendly** — the CPU loads neighbouring items together,
+- **compact** in memory.
 
-## 💥 What happens if we DON'T understand it?
+Almost everything is built on them: Python lists, strings, NumPy arrays, database pages, the JSON arrays your API returns.
+
+Not knowing the cost is how an innocent line becomes a 100× slowdown:
 
 ```python
 queue = []
@@ -41,15 +56,7 @@ for request in requests:        # 100,000 requests
     queue.insert(0, request)     # 🐢 each insert shifts every item: O(n) → O(n²) total
 ```
 
-```python
-report = ""
-for line in lines:               # 100,000 lines
-    report += line + "\n"        # 🐢 may copy the whole string each time
-```
-
-Both "work" in a demo with 10 items and crawl in production with 100,000.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Python lists are dynamic arrays
 
@@ -79,6 +86,8 @@ Need fast adds/removes at **both** ends? Use `collections.deque` (next lessons).
 
 ### 3. Strings are immutable arrays of characters
 
+Adding to a string in a loop is like rewriting a whole letter to add one word each time. `"".join(parts)` writes it once at the end.
+
 ```python
 s = "careerpilot"
 s[0]            # 'c' — O(1)
@@ -96,6 +105,8 @@ report = "\n".join(parts)   # one O(total length) pass
 ```
 
 ### 4. In-place with read/write pointers
+
+Picture tidying a shelf with two hands: one hand moves along reading, the other places the items worth keeping. Nothing extra is needed, and the shelf ends up correct.
 
 Remove zeros from a list **without** a new list (O(1) extra space):
 
@@ -134,7 +145,9 @@ grid = [[0] * 3 for _ in range(3)]   # ✅ three separate rows
 
 And remember Stage 1's lesson on references: a function that mutates a list argument changes the caller's list.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -144,12 +157,17 @@ And remember Stage 1's lesson on references: a function that mutates a list argu
 | `deque` | O(1) at both ends | O(n) index in the middle |
 | Sorting first | enables binary search, two pointers | O(n log n), loses original order |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Ordered data you index by position, append to, or iterate.
 - ✅ In-place algorithms when memory is tight or the interviewer asks for O(1) space.
 - 🚫 Frequent `x in list` lookups → use a `set` (next lesson).
 - 🚫 Queue behavior (`pop(0)`) → use `deque`.
+
+## ⚠️ Common mistakes
+
+- `pop(0)` or `insert(0, …)` inside loops.
+- Modifying a list while iterating over it with `for x in nums` (skips items).
+- Off-by-one errors at boundaries (`range(len(nums) - 1)`).
+- `[[0] * cols] * rows` shared rows.
 
 ## 🏆 Best practices
 
@@ -160,19 +178,6 @@ And remember Stage 1's lesson on references: a function that mutates a list argu
 - [ ] For in-place algorithms, name pointers by role (`read`, `write`, `left`, `right`), not `i`, `j`.
 - [ ] Test edge cases: empty, one element, all same, already done (no zeros, k = 0).
 - [ ] Prefer built-ins (`sum`, `sorted`, slicing) in real code; in interviews, implement the core logic when asked.
-
-## 🏭 How it's used in industry
-
-- Pagination and batching over lists of records; ring buffers (modulo) for metrics and logs.
-- Text processing: tokenizers, log parsing, CSV cleaning (Phase 1!).
-- Image and ML data are big 2D/3D arrays (NumPy) — row/column thinking is the same.
-
-## ⚠️ Common mistakes
-
-- `pop(0)` or `insert(0, …)` inside loops.
-- Modifying a list while iterating over it with `for x in nums` (skips items).
-- Off-by-one errors at boundaries (`range(len(nums) - 1)`).
-- `[[0] * cols] * rows` shared rows.
 
 ::part[Explain & Design]{n="2"}
 
@@ -241,16 +246,6 @@ What's the cost of `result += piece` for strings in a loop, and the fix?
 Potentially O(n²) total because each concatenation can create a new string; collect pieces in a list and `"".join()` once.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Array / dynamic array | Larik / larik dinamis |
-| Contiguous memory | Memori yang berdampingan |
-| Amortized | Rata-rata biaya dalam jangka panjang |
-| Immutable | Tidak dapat diubah |
-| In place | Di tempat — tanpa membuat struktur baru |
-| Ring buffer | Buffer melingkar |
 
 ## 📚 Keep learning
 

@@ -17,6 +17,19 @@ tags: [dsa, recursion, call-stack]
 - When recursion is natural (nested/tree-shaped data) and when a loop is better
 - Recursion limits, and a first taste of **memoization**
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Recursion** | A function that calls itself on a smaller version of the problem | Fungsi memanggil dirinya |
+| **Base case** | The smallest version, whose answer you already know | Kasus terkecil |
+| **Recursive case** | Making the problem smaller and calling again | Langkah mengecilkan masalah |
+| **Call stack** | The pile of calls waiting for their answers | Tumpukan pemanggilan |
+| **Stack overflow** | Too many calls piled up — Python stops with an error | Tumpukan melebihi batas |
+| **Nested data** | Data inside data: folders, replies, JSON | Data bersarang |
+| **Memoization** | Remembering answers you already worked out | Menyimpan hasil hitungan |
+| **Tail-call style** | Rewriting recursion as a loop (Python doesn't optimise it) | Mengubah jadi perulangan |
+
 ## 🧠 The big idea
 
 :term[Recursion]{bahasa="rekursi — fungsi yang memanggil dirinya sendiri dengan masalah yang lebih kecil"} means: *"I don't know the whole answer, but I know how to make the problem a bit smaller, and I know the answer for the tiniest version."*
@@ -30,25 +43,15 @@ def position(person):
     return position(person.in_front) + 1   # recursive case: smaller problem + a step
 ```
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Some data is **nested**: folders inside folders, comments with replies to replies, JSON inside JSON, a company org chart, the HTML of a web page. A loop handles one level; recursion handles **any** depth naturally, because each level looks like a smaller copy of the whole.
+Some data is **nested**: folders inside folders, comments with replies to replies, JSON inside JSON, a company org chart, the HTML of a web page. A loop handles one level; recursion handles **any** depth naturally, because every level looks like a smaller copy of the whole.
 
-Recursion is also the foundation for trees and graphs (DSA Stage 4), merge sort, and backtracking.
+Recursion is also the foundation of trees and graphs (DSA Stage 4), merge sort, and backtracking.
 
-## 💥 What happens if we DON'T use it (or use it wrong)?
+Done wrong, it fails loudly: forget the base case and the queue of people never reaches the front — Python stops you with a `RecursionError` after about a thousand calls.
 
-Without recursion, counting all files in nested folders needs a manual stack and bookkeeping. With recursion done **wrong**:
-
-```python
-def countdown(n):
-    print(n)
-    countdown(n - 1)     # 🐛 no base case
-countdown(3)
-# 3, 2, 1, 0, -1, -2, ... RecursionError: maximum recursion depth exceeded
-```
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Base case + recursive case
 
@@ -66,6 +69,8 @@ Checklist for every recursive function:
 3. **Trust**: assume the recursive call returns the right answer for the smaller input, and use it.
 
 ### 2. The call stack
+
+The stack is the **queue of people still waiting for an answer**: each one is paused, holding their place, until the person in front replies.
 
 Each call gets its own "frame" with its own local variables, stacked on top of the previous one:
 
@@ -106,6 +111,8 @@ def count_files(folder: dict) -> int:
 Here the base case is implicit: a folder with no subfolders makes no recursive calls.
 
 ### 4. Recursion vs loops
+
+Rule of thumb: recursion for data that branches (trees, folders), a loop for data that's a straight line (a list). Both work; one reads far better than the other.
 
 ```python
 def factorial_recursive(n):
@@ -149,7 +156,9 @@ def fib(n):
 
 This idea grows into **dynamic programming** in Stage 5.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -157,18 +166,11 @@ This idea grows into **dynamic programming** in Stage 5.
 | Loop | No depth limit, often faster in Python | Awkward for nested data (needs a manual stack) |
 | Memoization | Turns exponential into linear for overlapping subproblems | Memory for the cache |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Nested or tree-shaped data: file systems, JSON, comments, org charts, the DOM.
 - ✅ Divide-and-conquer algorithms (merge sort, binary search).
 - 🚫 Simple linear work over a flat list — a loop is clearer and has no depth limit.
 - 🚫 Very deep inputs (tens of thousands of levels) in Python.
 
-## 🏭 How it's used in industry
-
-- Rendering nested comment threads or menus in React (a component that renders itself for children).
-- Walking JSON configs, file trees, and ASTs in linters and compilers (the exercise tests in this handbook use Python's `ast` module to walk your code!).
-- Interview favorites: tree traversal, permutations, flattening nested structures.
 
 ## ⚠️ Common mistakes
 
@@ -257,15 +259,6 @@ Why is naive recursive Fibonacci so slow, and how does `@cache` help?
 It recomputes the same subproblems exponentially many times. `@cache` stores each result the first time, so each `fib(k)` is computed once → O(n).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Recursion | Rekursi |
-| Base case | Kasus dasar — kondisi berhenti |
-| Call stack | Tumpukan pemanggilan fungsi |
-| Memoization | Menyimpan hasil perhitungan agar tidak dihitung ulang |
-| Nested | Bersarang |
 
 ## 📚 Keep learning
 
