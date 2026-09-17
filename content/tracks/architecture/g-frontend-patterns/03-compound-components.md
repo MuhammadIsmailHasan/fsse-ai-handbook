@@ -20,30 +20,31 @@ tags: [architecture, react, compound-components, context, accessibility, design-
 - Helpful errors for parts used outside the root
 - Alternatives: slots, render props, `asChild`
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Compound components** | A group of components that work together as one feature | Komponen yang bekerja berpasangan |
+| **Prop explosion** | A component growing endless props for every new need | Ledakan jumlah prop |
+| **Root component** | The outer part that owns the shared state | Komponen induk pemilik state |
+| **Context** | How the parts read that shared state | Cara berbagi state |
+| **Part** | One piece of the group (`Tabs.Trigger`) | Bagian dari kelompok |
+| **`useId`** | React's way to generate ids that match on server and client | Pembuat id unik |
+| **ARIA relationship** | The attributes telling screen readers which part controls which | Kaitan untuk screen reader |
+| **Roving tabindex** | Arrow keys move focus inside a group; Tab moves past it | Fokus berpindah dengan panah |
+| **`asChild` / slot** | Letting the caller decide which element is rendered | Menyerahkan elemen ke pemanggil |
+
 ## 🧠 The big idea
 
 Think of **HTML's `<select>` and `<option>`**: you don't pass `options={[…]}` to `<select>` — you put `<option>` elements inside, and they work together. Compound components give your own components that same feel: `<Tabs>` with `<Tabs.List>`, `<Tabs.Trigger>` and `<Tabs.Panel>` inside, arranged however the page needs.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-A "configurable" component starts with `tabs={[{label, content}]}`. Then someone needs an icon, a badge, a disabled tab, a panel rendered elsewhere in the layout, a different class for the active tab… and you add `renderLabel`, `badgeFor`, `disabledTabs`, `activeClassName`, `panelWrapper`. Every new design needs a new prop.
+A "configurable" component starts with `tabs={[{label, content}]}`. Then somebody needs an icon, then a badge, then a disabled tab, then a panel rendered elsewhere in the layout, then a different class for the active tab — so you add `renderLabel`, `badgeFor`, `disabledTabs`, `activeClassName`, `panelWrapper`. Every new design adds a prop, and the component turns into a settings panel nobody understands.
 
-## 💥 What happens if we DON'T?
+Compound components flip it around: the root keeps the state, and the caller arranges the parts — exactly how HTML already works with `<select>` and `<option>`.
 
-```tsx
-<Tabs
-  tabs={[{ id: "notes", label: "Notes", icon: <NoteIcon />, badge: 3 }, { id: "files", label: "Files", disabled: true }]}
-  renderPanel={(id) => (id === "notes" ? <Notes /> : <Files />)}
-  activeTabClassName="border-b-2"
-  tabListClassName="gap-4"
-  onTabChange={track}
-  panelPlacement="below"
-/>
-```
-
-Hard to read, hard to type, and still not flexible enough.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The shape
 
@@ -79,6 +80,8 @@ function TabsRoot({ value, defaultValue, onValueChange, children }: TabsProps) {
 ```
 
 ### 3. Parts read context and wire ARIA
+
+This is where accessibility becomes free for the caller: the parts connect the right ids themselves, so screen readers get correct relationships without anyone remembering to add them.
 
 ```tsx
 function Trigger({ value, disabled, children }: TriggerProps) {
@@ -119,6 +122,8 @@ WAI-ARIA's Tabs pattern: **Tab** moves into the tab list (only the selected tab 
 
 ### 5. Export styles
 
+Both styles are fine — `Tabs.Trigger` reads nicely, while separate `TabsTrigger` exports are friendlier to bundlers and auto-import. Pick one and stay consistent.
+
 | Style | Example | Notes |
 |---|---|---|
 | Static properties | `Tabs.Trigger` | discoverable; needs care with `"use client"` boundaries and tree-shaking |
@@ -131,7 +136,9 @@ WAI-ARIA's Tabs pattern: **Tab** moves into the tab list (only the selected tab 
 - **Render props**: `<Combobox>{({ open }) => …}</Combobox>` exposes internal state for custom rendering.
 - **Prop getters** (hooks): `getTabProps(value)` — the headless variant from the previous lesson.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | | ✅ | ❌ |
 |---|---|---|
@@ -139,12 +146,17 @@ WAI-ARIA's Tabs pattern: **Tab** moves into the tab list (only the selected tab 
 | Config props (`tabs=[…]`) | short for simple cases, easy to generate from data | prop explosion for anything custom |
 | Headless hooks | maximum control | caller must wire ARIA correctly |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Components with related parts: tabs, accordion, menu, select, dialog, stepper, card with header/body/footer.
 - ✅ Design-system components used in many different layouts.
 - 🚫 Simple leaf components (`<Badge tone="success">`) — props are clearer.
 - 🚫 Rebuilding complex widgets (combobox, date picker) from scratch in a product team — use Radix/React Aria.
+
+## ⚠️ Common mistakes
+
+- Using array indexes to match triggers and panels (breaks when parts are reordered) — use explicit `value`s.
+- Every tab focusable with Tab (no roving tabindex) → keyboard users tab through 10 tabs.
+- Hard-coded ids → duplicates when the component appears twice.
+- Relying on `React.Children.map` to inject props — breaks with fragments and wrapper components; use context.
 
 ## 🏆 Best practices
 
@@ -155,19 +167,6 @@ WAI-ARIA's Tabs pattern: **Tab** moves into the tab list (only the selected tab 
 - [ ] Pass through native props (`aria-label`, `className`) with `...props`.
 - [ ] Memoize context values if parts are many or expensive.
 - [ ] Prefer battle-tested primitives (Radix, React Aria) for complex widgets; build your own for learning or simple cases.
-
-## 🏭 How it's used in industry
-
-- Radix UI, Headless UI, Reach UI, Ark UI and shadcn/ui expose compound APIs (`Dialog.Root/Trigger/Content`).
-- Company design systems (e.g. GitHub Primer, Atlassian) use compound components for menus, tabs and forms.
-- The WAI-ARIA Authoring Practices Guide is the reference teams use for keyboard and ARIA behavior.
-
-## ⚠️ Common mistakes
-
-- Using array indexes to match triggers and panels (breaks when parts are reordered) — use explicit `value`s.
-- Every tab focusable with Tab (no roving tabindex) → keyboard users tab through 10 tabs.
-- Hard-coded ids → duplicates when the component appears twice.
-- Relying on `React.Children.map` to inject props — breaks with fragments and wrapper components; use context.
 
 ::part[Explain & Design]{n="2"}
 
@@ -238,16 +237,6 @@ What does `aria-controls` on a tab point to, and why does it matter?
 The id of the panel it shows. Assistive technology can announce and navigate the relationship between tab and panel.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Compound component | Komponen majemuk (beberapa bagian bekerja bersama) |
-| Prop explosion | Ledakan jumlah props |
-| Roving tabindex | Tabindex berpindah (hanya satu elemen bisa di-Tab) |
-| Tab panel | Panel isi tab |
-| Design system | Sistem desain |
-| WAI-ARIA | Standar aksesibilitas untuk aplikasi web |
 
 ## 📚 Keep learning
 

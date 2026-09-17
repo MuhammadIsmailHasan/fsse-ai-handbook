@@ -19,29 +19,31 @@ tags: [architecture, react, state-management, url-state, nextjs, tanstack-query,
 - Lifting state up vs pushing it down (colocation)
 - Refactors that fix common "state in the wrong place" bugs
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Server state** | Data that really lives in the backend; the client holds a copy | Data milik server |
+| **URL state** | State kept in the address, so links can be shared | State di alamat halaman |
+| **Form state** | What the user is typing right now | State isian form |
+| **Local state** | State one component keeps to itself | State satu komponen |
+| **Lifted state** | State moved up to the nearest shared parent | State dipindah ke atas |
+| **Colocation** | Keeping state as close to where it's used as possible | Menaruh state sedekat mungkin |
+| **Derived state** | A value you should calculate, not store | Nilai hasil hitungan |
+| **Client store** | A shared store (Zustand) for browser-only state | Wadah state bersama |
+| **`push` vs `replace`** | Add a history entry / replace the current one | Tambah riwayat / ganti riwayat |
+
 ## 🧠 The big idea
 
 State is like **belongings in a house**. Your passport (server data) is kept in the bank's vault — you carry a **copy**. The house address (URL) is what you give friends so they arrive at the same place. Your shopping list (form input) is on the fridge until you go shopping. The TV remote (local UI state) stays in the living room. Putting things in the wrong place — the passport on the fridge, the remote in the vault — makes daily life painful.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Most React bugs and complexity come from state that's **duplicated**, **in the wrong place** or **too global**: stale copies of server data, filters lost on refresh, a global store re-rendering the whole app on every keystroke, effects syncing two states that should be one.
+Most React bugs and most React complexity come from state that is **duplicated**, **in the wrong place**, or **too global**: a stale copy of server data, filters lost on refresh, a global store re-rendering the whole app on every keystroke, effects syncing two states that should have been one.
 
-## 💥 What happens if we DON'T?
+The house picture makes the decision quick: the passport belongs in the vault (server), the address is what you give friends (URL), the shopping list lives on the fridge (form), and the remote stays in the living room (local).
 
-```tsx
-"use client";
-export function JobSearch() {
-  const [jobs, setJobs] = useState<Job[]>([]);                // server data copy, never refreshed
-  const [query, setQuery] = useState("");                     // shareable filter lost on refresh
-  const [filtered, setFiltered] = useState<Job[]>([]);        // derived → out of sync
-  const [count, setCount] = useState(0);                      // derived → out of sync
-  useEffect(() => { setFiltered(jobs.filter((j) => j.title.includes(query))); setCount(filtered.length); }, [jobs, query]);  // stale count bug
-  …
-}
-```
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The kinds of state
 
@@ -57,6 +59,8 @@ export function JobSearch() {
 | **Session/auth** | who is logged in | httpOnly cookie on the server; a DTO passed down |
 
 ### 2. A decision guide
+
+Use this list in code review. Most arguments about state management disappear once you ask "who really owns this value?" first.
 
 ```mermaid
 flowchart TD
@@ -136,9 +140,13 @@ Use `useMemo` only if the computation is measurably expensive.
 
 ### 6. Server state is a cache, not your state
 
+Copying server data into your own store makes you responsible for keeping it fresh — a job TanStack Query already does, and does better.
+
 Don't copy API data into `useState`/Zustand and mutate it. Fetch in Server Components or TanStack Query, mutate through Server Actions/mutations, and **invalidate** (`updateTag`, `invalidateQueries`) so the source of truth wins.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Home | ✅ | ❌ |
 |---|---|---|
@@ -149,12 +157,18 @@ Don't copy API data into `useState`/Zustand and mutate it. Fetch in Server Compo
 | TanStack Query | caching, refetching, dedupe | concepts to learn; client JS |
 | Server Components | no client JS, secure | request-time only; interactivity needs client islands |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Run the decision guide in code review for every new `useState` or store field.
 - ✅ URL for anything a user might share, bookmark or expect Back to restore.
 - 🚫 Don't put secrets or personal data in URLs (they end up in logs and analytics).
 - 🚫 Don't create a global store "for later".
+
+## ⚠️ Common mistakes
+
+- Storing derived values and syncing them with effects.
+- Pushing a history entry per keystroke — Back becomes useless.
+- Trusting `searchParams` without validation (`page=-1`, `sort=DROP TABLE`).
+- Copying props into state (`useState(props.value)`) and wondering why it doesn't update.
+- Using Zustand/Context as a cache for API data.
 
 ## 🏆 Best practices
 
@@ -165,20 +179,6 @@ Don't copy API data into `useState`/Zustand and mutate it. Fetch in Server Compo
 - [ ] Colocate state as low as possible; lift only when needed.
 - [ ] Context for stable app-wide values; Zustand with selectors for frequently changing shared client state.
 - [ ] No `useEffect` whose only job is to copy one state into another.
-
-## 🏭 How it's used in industry
-
-- E-commerce, job boards and dashboards keep filters in the URL for SEO, sharing and analytics; `nuqs` is a popular Next.js library for type-safe search params.
-- The "server state vs client state" split popularized by TanStack Query changed how teams use Redux — many removed most of their global store.
-- Code review checklists at many companies include "is this state derivable?" and "should this be in the URL?".
-
-## ⚠️ Common mistakes
-
-- Storing derived values and syncing them with effects.
-- Pushing a history entry per keystroke — Back becomes useless.
-- Trusting `searchParams` without validation (`page=-1`, `sort=DROP TABLE`).
-- Copying props into state (`useState(props.value)`) and wondering why it doesn't update.
-- Using Zustand/Context as a cache for API data.
 
 ::part[Explain & Design]{n="2"}
 
@@ -239,16 +239,6 @@ Why use `router.replace` (not `push`) while the user types in a search box?
 `push` would add a history entry per update, so the Back button would step through partial searches instead of returning to the previous page.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Server state | State milik server (data dari API) |
-| URL state | State yang disimpan di URL |
-| Derived state | State turunan (dihitung dari data lain) |
-| Colocation | Menempatkan state dekat dengan pemakainya |
-| Source of truth | Sumber kebenaran data |
-| Lifting state up | Mengangkat state ke komponen induk |
 
 ## 📚 Keep learning
 
