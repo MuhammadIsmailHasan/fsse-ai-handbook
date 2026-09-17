@@ -20,22 +20,45 @@ tags: [aws, vpc, networking, security-groups, regions]
 - **VPC endpoints** (gateway and interface), and IPv4 vs IPv6
 - A **cost-aware** network design for RevoShop in Weeks 3 and 4
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Region** | A group of AWS data centres in one part of the world (Singapore, Jakarta) | Wilayah data center |
+| **Availability Zone (AZ)** | One isolated location inside a region, with its own power | Zona terpisah |
+| **VPC** | Your own private network inside AWS | Jaringan privat sendiri |
+| **CIDR block** | The range of IP addresses a network uses, like `10.20.0.0/16` | Rentang alamat IP |
+| **Subnet** | A smaller slice of that network, living in one AZ | Bagian jaringan |
+| **Route table** | The signpost that tells traffic where to go next | Tabel arah lalu lintas |
+| **Internet gateway** | The door between your VPC and the internet | Pintu ke internet |
+| **NAT gateway** | A paid service that lets private servers reach the internet one-way | Pintu keluar berbayar |
+| **Security group** | A firewall around one resource; it can allow traffic from another group | Firewall per sumber daya |
+| **VPC endpoint** | A private shortcut to an AWS service without going over the internet | Jalur privat ke layanan AWS |
+
 ## 🧠 The big idea
 
-A **region** is a city, an **Availability Zone** is a separate industrial park in that city (own power, own flood defenses), and a **VPC** is your private gated estate spanning several parks. **Subnets** are streets inside the estate; a **route table** is the street's signpost; the **internet gateway** is the estate's main gate. **Security groups** are the locks on each building's doors — and they can say "only people from building API may enter".
+Picture a city:
 
-## ❓ Why does this matter?
+- a **region** is the city,
+- an **Availability Zone** is a separate industrial park in it, with its own power and flood defences,
+- a **VPC** is your private gated estate spanning several parks,
+- **subnets** are streets inside the estate,
+- a **route table** is the signpost on each street,
+- the **internet gateway** is the estate's main gate,
+- **security groups** are the locks on each building's door — and they can say "only people coming from the API building may enter".
 
-Every AWS resource you'll deploy (EC2, RDS, load balancers, ECS tasks) lives in a VPC. Network mistakes cause the worst outcomes: a database reachable from the internet, an app that can't reach Midtrans, or a NAT gateway that costs more than the whole application.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T?
+Every AWS resource you deploy (EC2, RDS, load balancers, ECS tasks) lives inside a VPC. Network mistakes cause the worst outcomes: a database reachable from the internet, an app that can't reach Midtrans, or a NAT gateway that costs more than the whole application.
 
-- RDS created with **Public access: Yes** and a security group allowing `0.0.0.0/0` on 5432.
-- VPC `10.0.0.0/16` in AWS and `10.0.0.0/16` in your office or a partner network — they can never be connected.
-- Everything in one subnet in one AZ — an AZ incident takes the whole shop down.
-- The console's "VPC and more" wizard with a NAT gateway per AZ, left running for a month.
+Done carelessly:
 
-## 📖 How it works, step by step
+- RDS created with **Public access: Yes** and a security group allowing `0.0.0.0/0` on port 5432.
+- `10.0.0.0/16` in AWS and `10.0.0.0/16` in your office network — the two can never be connected, like two houses with the same address.
+- Everything in one subnet in one AZ, so one AZ incident takes the whole shop down.
+- The console's "VPC and more" wizard creating a NAT gateway per AZ, left running for a month.
+
+## 📖 Step by step
 
 ### 1. Regions and AZs
 
@@ -65,7 +88,7 @@ VPC 10.20.0.0/16  (65,536 addresses)
 
 ### 3. What makes a subnet public
 
-A subnet is **public** only because its **route table** sends `0.0.0.0/0` to an **internet gateway** (and resources have public IPs). "Private" subnets have no such route.
+A subnet is **public** only because its **route table** sends `0.0.0.0/0` to an **internet gateway** — and because the resources in it have public IP addresses. The name means nothing; the signpost decides. A "private" subnet simply has no such route.
 
 ```mermaid
 flowchart LR
@@ -100,7 +123,7 @@ flowchart LR
 | **Interface endpoints** (ECR, SSM, Secrets Manager, CloudWatch Logs) | hourly per AZ + per GB | private access to AWS APIs; several add up quickly |
 | IPv6 + egress-only internet gateway | no NAT charge | when your dependencies support IPv6 |
 
-For RevoShop's learning deployments you'll use **public subnets for the compute** (protected by security groups) and **private data subnets without internet routes** — no NAT gateway.
+For RevoShop's learning deployments you'll put **the compute in public subnets** (protected by tight security groups) and keep **data subnets with no internet route at all** — so no NAT gateway, and no surprise bill.
 
 ### 5. Security groups vs network ACLs
 
@@ -112,7 +135,7 @@ For RevoShop's learning deployments you'll use **public subnets for the compute*
 | Sources | CIDRs **or other security groups** | CIDRs only |
 | Default | inbound none, outbound all | allow all |
 
-The pattern: **chain security groups by reference**:
+The pattern is to **chain security groups by reference** — each door only opens for people coming from the previous building:
 
 | Group | Inbound |
 |---|---|
@@ -121,7 +144,7 @@ The pattern: **chain security groups by reference**:
 | `sg-db` | 5432 from `sg-api` |
 | `sg-redis` | 6379 from `sg-api` |
 
-No SSH rule at all: use **SSM Session Manager** to get a shell (lesson 03).
+Notice there is no SSH rule at all: you get a shell through **SSM Session Manager** instead (lesson 03), so port 22 never needs to be open.
 
 ### 6. Other building blocks you'll meet
 
@@ -130,7 +153,9 @@ No SSH rule at all: use **SSM Session Manager** to get a shell (lesson 03).
 - **Route 53**: DNS; private hosted zones for internal names.
 - **VPC peering / Transit Gateway**: connect VPCs (why non-overlapping CIDRs matter).
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -139,12 +164,17 @@ No SSH rule at all: use **SSM Session Manager** to get a shell (lesson 03).
 | Two AZs | survives an AZ failure | more subnets, some services cost more (Multi-AZ RDS) |
 | Custom VPC vs default VPC | clear tiers, planned CIDRs | more setup |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ A custom VPC with public/app/data tiers in two AZs for anything beyond an experiment.
 - ✅ Security-group references instead of IP ranges inside the VPC.
 - 🚫 Don't give databases public access, ever — even "temporarily".
 - 🚫 Don't create NAT gateways "because the wizard suggested it" in learning accounts.
+
+## ⚠️ Common mistakes
+
+- Thinking a subnet is private because of its name.
+- Opening `0.0.0.0/0` on 5432 "to connect from my laptop" — use Session Manager port forwarding instead.
+- Placing RDS in only one subnet (a DB subnet group needs subnets in at least two AZs).
+- Forgetting `::/0` rules when IPv6 is enabled.
 
 ## 🏆 Best practices
 
@@ -156,19 +186,6 @@ No SSH rule at all: use **SSM Session Manager** to get a shell (lesson 03).
 - [ ] Avoid NAT costs where you can (public compute with tight SGs, gateway endpoints); add NAT consciously for production.
 - [ ] Tag networks and name resources consistently (`revoshop-public-a`).
 - [ ] Enable Flow Logs when debugging or for production (with retention).
-
-## 🏭 How it's used in industry
-
-- Typical production VPCs use three tiers across two or three AZs, with NAT gateways per AZ and interface endpoints for AWS services.
-- Enterprises assign CIDR ranges centrally (IPAM) so hundreds of VPCs can connect through Transit Gateway.
-- Security reviews check for public databases, wide-open security groups and missing flow logs first.
-
-## ⚠️ Common mistakes
-
-- Thinking a subnet is private because of its name.
-- Opening `0.0.0.0/0` on 5432 "to connect from my laptop" — use Session Manager port forwarding instead.
-- Placing RDS in only one subnet (a DB subnet group needs subnets in at least two AZs).
-- Forgetting `::/0` rules when IPv6 is enabled.
 
 :::revoshop
 1. **Compose networks → security groups.** Your `compose.prod.yaml` has `frontend` (proxy, api) and `backend` (api, migrate, db, redis) networks, and only the proxy publishes ports. Translate that into security groups and rules (source → target → port) for the **Week 3** design (one EC2 instance running Caddy + API + Redis, RDS separate) and the **Week 4** design (ALB → ECS tasks → RDS).
@@ -234,16 +251,6 @@ Why reference `sg-api` in the database's security group instead of the API subne
 The rule follows the **role** of the resource: any instance or task with `sg-api` can connect, regardless of IP or subnet, and nothing else in that subnet can.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Region / Availability Zone | Wilayah / Zona Ketersediaan |
-| VPC | Jaringan privat virtual |
-| Subnet | Subjaringan |
-| Route table | Tabel rute |
-| Security group | Grup keamanan (firewall per sumber daya) |
-| NAT gateway | Gerbang NAT (akses keluar internet) |
 
 ## 📚 Keep learning
 
