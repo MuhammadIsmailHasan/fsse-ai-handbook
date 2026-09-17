@@ -19,26 +19,40 @@ lastReviewed: 2026-09
 - The **uv** workflow: `init`, `add`, `sync`, `run`, `lock`
 - How `requirements.txt` + `venv` + `pip` compare (you'll meet them in older projects, like RevoShop)
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Virtual environment** | A private folder of packages for one project only | Lingkungan terpisah per proyek |
+| **Dependency** | A library your project needs to run | Pustaka yang dibutuhkan |
+| **Transitive dependency** | A library that your library needs | Dependensi tidak langsung |
+| **Version specifier** | The rule for which versions are allowed (`flask>=3,<4`) | Aturan versi |
+| **Lock file** | The exact list of versions installed, so every machine matches | Daftar versi pasti |
+| **`pyproject.toml`** | The standard file describing the project and its dependencies | Berkas keterangan proyek |
+| **uv** | A fast modern tool that creates the environment, resolves and locks versions | Alat pengelola proyek Python |
+| **Sync** | Making your environment match the lock file exactly | Menyamakan dengan lock file |
+| **System Python** | The Python that came with your computer — don't install projects into it | Python bawaan sistem |
+
 ## 🧠 The big idea
 
-A virtual environment is a **separate toolbox per project**. Project A needs Flask 2, project B needs Flask 3. If both share the system's one toolbox, installing for one breaks the other.
+A virtual environment is a **separate toolbox per project**. Project A needs Flask 2, project B needs Flask 3 — if both share the one toolbox in the house, installing for one breaks the other.
 
-A :term[lock file]{bahasa="lock file — daftar versi pasti semua dependensi agar instalasi selalu sama di setiap komputer"} is the **exact shopping receipt**: not "some flour", but "Brand X flour, 1 kg, batch 2026-09". Everyone who installs gets the **same** versions — on your laptop, your teammate's, CI and production.
+A :term[lock file]{bahasa="lock file — daftar versi pasti semua dependensi agar instalasi selalu sama di setiap komputer"} is the **exact shopping receipt**: not "some flour", but "Brand X flour, 1 kg, batch 2026-09". Everyone who installs gets the **same** versions — your laptop, your teammate's, CI and production.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
 - Different projects need **different versions** of the same library.
 - `pip install flask` today and next month can install **different** versions → "works on my machine".
-- Libraries depend on other libraries (**transitive** dependencies) — you need those pinned too.
-- Installing into the system Python can break OS tools.
+- Libraries depend on other libraries, so those need pinning too.
+- Installing into the system Python can break tools your operating system needs.
 
-## 💥 What happens if we DON'T use them?
+Without this discipline:
 
-- `pip install` into the global Python; six months later three projects conflict and nothing runs.
-- `requirements.txt` says `flask` with no version; a new major release changes behavior; production breaks on the next deploy.
-- A new teammate spends a full day getting the project to run.
+- You `pip install` into the global Python; six months later three projects conflict and nothing runs.
+- `requirements.txt` says `flask` with no version; a new major release changes behaviour; production breaks on the next deploy.
+- A new teammate spends a whole day just getting the project to start.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The classic way: `venv` + `pip`
 
@@ -93,6 +107,8 @@ No manual activation needed: `uv run` always uses the right environment. (The ha
 
 ### 4. Version specifiers
 
+Think of it as ordering clothes: `>=3,<4` means "any size 3, but not size 4" — room for bug fixes, no surprise redesign.
+
 | Specifier | Means | Use for |
 |---|---|---|
 | `flask==3.1.3` | exactly this | lock files, reproducible apps |
@@ -104,6 +120,8 @@ Most libraries follow **semantic versioning**: `MAJOR.MINOR.PATCH` — major can
 
 ### 5. What to commit
 
+Simple rule: commit the **recipe and the receipt** (`pyproject.toml` and the lock file), never the **groceries** (`.venv/`).
+
 | File | Commit? |
 |---|---|
 | `pyproject.toml` | ✅ |
@@ -111,7 +129,9 @@ Most libraries follow **semantic versioning**: `MAJOR.MINOR.PATCH` — major can
 | `.python-version` | ✅ |
 | `.venv/` | ❌ never (it's machine-specific and large) |
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Tool | ✅ | ❌ |
 |---|---|---|
@@ -127,30 +147,11 @@ Most libraries follow **semantic versioning**: `MAJOR.MINOR.PATCH` — major can
 
 **Balance:** ranges in `pyproject.toml`, exact versions in the lock file, and a tool (Dependabot/Renovate) that proposes updates as PRs.
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Always: one environment per project.
 - ✅ Commit the lock file for **applications** (APIs, CLIs, services).
 - ✅ For **libraries** you publish, keep ranges flexible so users can combine them with other packages.
 - 🚫 Don't `sudo pip install` or install into the system Python.
 - 🚫 Don't commit `.venv/`.
-
-## 🏆 Best practices
-
-- [ ] Use **`pyproject.toml`** as the single source of project metadata and dependencies.
-- [ ] Commit the **lock file** and install with `uv sync` (or `pip install -r` a fully pinned file) in CI and Docker.
-- [ ] Separate **runtime** and **dev** dependencies (dependency groups).
-- [ ] Pin the **Python version** (`.python-version` / `requires-python`).
-- [ ] Update dependencies **regularly and deliberately**: automated PRs (Dependabot/Renovate) + tests.
-- [ ] Scan for known vulnerabilities (`pip-audit`, GitHub Dependabot alerts).
-- [ ] Never install project packages globally; run tools via `uv run` (or an activated venv).
-- [ ] Keep the dependency list lean — every package is code you trust and must update.
-
-## 🏭 How it's used in industry
-
-- CI pipelines run `uv sync --frozen` (fail if the lock file is out of date) before tests.
-- Docker images install from the lock file for identical builds.
-- Security teams track vulnerable dependency versions across all company repos.
 
 ## ⚠️ Common mistakes
 
@@ -163,6 +164,17 @@ Most libraries follow **semantic versioning**: `MAJOR.MINOR.PATCH` — major can
 :::revoshop
 Open RevoShop's `requirements.txt` and `requirements-dev.txt`. Notice the comments ("Production runtime dependencies only", "Shared transitive runtime deps (pinned for reproducible installs)") and `-r requirements.txt` at the top of the dev file. Explain in your own words: why are **transitive** deps like `Werkzeug` and `Jinja2` pinned too? Why is `locust` only in the dev file? Then sketch how the same split would look in a `pyproject.toml` with dependency groups.
 :::
+
+## 🏆 Best practices
+
+- [ ] Use **`pyproject.toml`** as the single source of project metadata and dependencies.
+- [ ] Commit the **lock file** and install with `uv sync` (or `pip install -r` a fully pinned file) in CI and Docker.
+- [ ] Separate **runtime** and **dev** dependencies (dependency groups).
+- [ ] Pin the **Python version** (`.python-version` / `requires-python`).
+- [ ] Update dependencies **regularly and deliberately**: automated PRs (Dependabot/Renovate) + tests.
+- [ ] Scan for known vulnerabilities (`pip-audit`, GitHub Dependabot alerts).
+- [ ] Never install project packages globally; run tools via `uv run` (or an activated venv).
+- [ ] Keep the dependency list lean — every package is code you trust and must update.
 
 ::part[Explain & Design]{n="2"}
 
@@ -232,15 +244,6 @@ Why shouldn't `.venv/` be committed?
 It's large, machine- and OS-specific, and fully reproducible from `pyproject.toml` + the lock file.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Virtual environment | Lingkungan Python terisolasi per proyek |
-| Dependency | Dependensi — pustaka yang dibutuhkan proyek |
-| Transitive dependency | Dependensi dari dependensi |
-| Lock file | File berisi versi pasti semua dependensi |
-| Semantic versioning | Penomoran versi MAJOR.MINOR.PATCH |
 
 ## 📚 Keep learning
 

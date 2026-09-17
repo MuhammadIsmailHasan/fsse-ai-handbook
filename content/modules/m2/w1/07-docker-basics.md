@@ -20,25 +20,39 @@ lastReviewed: 2026-09
 - **Ports**, **environment variables** and **volumes**
 - Running an app + database together with **Docker Compose**
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Container** | Your app plus everything it needs, running in its own isolated box | Paket aplikasi yang berjalan |
+| **Image** | The read-only template a container starts from | Cetakan container |
+| **Dockerfile** | The recipe that builds an image, step by step | Resep membuat image |
+| **Layer** | One saved step of that recipe; unchanged layers are reused | Lapisan hasil langkah |
+| **Registry** | An online store for images (Docker Hub, GHCR) | Gudang image |
+| **Port mapping** | Connecting a port on your computer to one inside the container | Menyambungkan port |
+| **Volume** | Storage that lives outside the container, so data survives | Penyimpanan tetap |
+| **`.dockerignore`** | The list of files that must not be copied into the image | Daftar file yang tidak disalin |
+| **Docker Compose** | One file that runs several containers together (app + database) | Menjalankan beberapa container |
+
 ## 🧠 The big idea
 
 Before shipping containers, cargo was loaded piece by piece — sacks, barrels, crates of every shape — slow and fragile. The **standard shipping container** changed everything: pack anything inside, and every ship, crane and truck in the world can move it.
 
-A :term[container]{bahasa="container — paket berisi aplikasi beserta semua kebutuhannya, berjalan terisolasi dan sama di mana pun"} does the same for software: your app, its Python version, its libraries and settings in one standard box that runs the same on your laptop, a teammate's Windows PC, CI, and a cloud server.
+A :term[container]{bahasa="container — paket berisi aplikasi beserta semua kebutuhannya, berjalan terisolasi dan sama di mana pun"} does the same for software: your app, its Python version, its libraries and its settings in one standard box that behaves the same on your laptop, a teammate's Windows PC, CI, and a cloud server.
 
-## ❓ Why does this exist?
+The image is the **sealed box**; the container is that box **opened and working**.
 
-- "Works on my machine" — different OS, Python version, missing system library.
+## ❓ Why it matters
+
+- "Works on my machine" — a different operating system, Python version, or a missing system library.
 - Onboarding: installing PostgreSQL, Redis and the right Python by hand takes hours.
-- Deployments need a **repeatable** artifact: what was tested is exactly what runs in production.
+- Deployments need a **repeatable** package: what you tested is exactly what runs in production.
 
-## 💥 What happens if we DON'T use it (or use it badly)?
+Without containers, production has Python 3.10 while you developed on 3.12, a dependency needs a system library nobody wrote down, and the deployment steps live in one person's head.
 
-Without containers: production has Python 3.10 but you developed on 3.12; a dependency needs a system library nobody documented; deployment steps live in one person's head.
+With a **badly written** Dockerfile you get new problems: a 2 GB image based on `python:latest` (which quietly changes), all dependencies rebuilt on every code change, the app running as `root`, and a `.env` full of secrets baked into the image and pushed to a registry.
 
-With a **bad** Dockerfile: a 2 GB image based on `python:latest` (which silently changes), rebuilding all dependencies on every code change, running as `root`, and the `.env` file with secrets baked into the image and pushed to a registry.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Containers vs virtual machines
 
@@ -66,6 +80,8 @@ flowchart LR
 - **Registry** — where images are stored and shared
 
 ### 3. A good Dockerfile for a Python API
+
+Order matters like packing a suitcase: put the things that rarely change (dependencies) at the bottom, and your code on top. Then a code change repacks only the top layer.
 
 ```dockerfile
 # 1. Pin a small, specific base image (never "latest")
@@ -133,6 +149,8 @@ docker images && docker system df               # what's using disk space
 
 ### 7. Volumes: data that outlives containers
 
+The container's own disk is a **hotel room** — cleaned when you check out. A volume is a **storage locker** that stays yours between stays, which is where database data belongs.
+
 Containers are **disposable**: delete one and its internal files are gone. Databases need a **volume**:
 
 ```bash
@@ -184,7 +202,9 @@ docker compose down            # stop (add -v to also delete volumes — careful
 
 Inside Compose, services reach each other by **service name**: the API connects to host `db`, not `localhost`.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -194,14 +214,24 @@ Inside Compose, services reach each other by **service name**: the API connects 
 | Code mounted as a volume in dev | live reload | differs from production image |
 | Database in Docker for **dev** | zero install | for **production**, managed databases are usually safer |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Local dev dependencies (PostgreSQL, Redis) — no manual installs.
 - ✅ Packaging APIs and workers for deployment.
 - ✅ Making CI identical to production.
 - 🚫 Don't containerize just to run a one-file script once.
 - 🚫 Don't store important data inside a container without a volume.
 - 🚫 Don't bake secrets or environment-specific config into images.
+
+## ⚠️ Common mistakes
+
+- `COPY . .` before installing dependencies (slow rebuilds).
+- Using `localhost` to reach another container instead of the service name.
+- Port confusion: forgetting `-p`, or mixing up host and container ports.
+- `docker compose down -v` and losing the development database.
+- Images growing to gigabytes (no `.dockerignore`, full base image, caches kept).
+
+:::revoshop
+Your RevoShop `Dockerfile` already follows several best practices: `python:3.12-slim`, `PYTHONDONTWRITEBYTECODE`/`PYTHONUNBUFFERED`, `requirements.txt` copied **before** the code, `--no-cache-dir`, cleaning apt lists, a non-root `appuser`, exec-form `CMD` with gunicorn. Find each one and explain **why** it's there. Then open `docker-compose.yml`: the database has a **healthcheck** with `pg_isready`, and the web service connects to host `db`. One question for you: the default `JWT_SECRET_KEY` is `dev-secret-key-change-me` — what stops that default from reaching production, and how would you enforce it? (Hint: `${VAR:?error}` syntax.)
+:::
 
 ## 🏆 Best practices
 
@@ -215,24 +245,6 @@ Inside Compose, services reach each other by **service name**: the API connects 
 - [ ] One process per container; add a **healthcheck**; log to stdout.
 - [ ] Use **multi-stage builds** to keep build tools out of the final image (Module 5).
 - [ ] Scan images for vulnerabilities (`docker scout`, Trivy) and keep base images updated.
-
-## 🏭 How it's used in industry
-
-- Almost every modern backend job listing mentions Docker; it's the input format for Kubernetes, AWS ECS, Cloud Run and most PaaS platforms.
-- CI builds an image per commit, tags it with the git SHA, pushes it to a registry, and deploys that exact image.
-- `docker compose` is the standard way to run a project's local stack.
-
-## ⚠️ Common mistakes
-
-- `COPY . .` before installing dependencies (slow rebuilds).
-- Using `localhost` to reach another container instead of the service name.
-- Port confusion: forgetting `-p`, or mixing up host and container ports.
-- `docker compose down -v` and losing the development database.
-- Images growing to gigabytes (no `.dockerignore`, full base image, caches kept).
-
-:::revoshop
-Your RevoShop `Dockerfile` already follows several best practices: `python:3.12-slim`, `PYTHONDONTWRITEBYTECODE`/`PYTHONUNBUFFERED`, `requirements.txt` copied **before** the code, `--no-cache-dir`, cleaning apt lists, a non-root `appuser`, exec-form `CMD` with gunicorn. Find each one and explain **why** it's there. Then open `docker-compose.yml`: the database has a **healthcheck** with `pg_isready`, and the web service connects to host `db`. One question for you: the default `JWT_SECRET_KEY` is `dev-secret-key-change-me` — what stops that default from reaching production, and how would you enforce it? (Hint: `${VAR:?error}` syntax.)
-:::
 
 ::part[Explain & Design]{n="2"}
 
@@ -303,16 +315,6 @@ Why is `ENV SECRET_KEY=abc123` in a Dockerfile a problem?
 The value is stored inside the image layers; anyone who can pull the image can read it. Secrets must be provided at runtime.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Image | Template aplikasi siap jalan |
-| Container | Instance image yang sedang berjalan |
-| Layer | Lapisan hasil tiap instruksi Dockerfile |
-| Registry | Tempat penyimpanan image |
-| Volume | Penyimpanan data di luar container |
-| Port mapping | Pemetaan port host ke port container |
 
 ## 📚 Keep learning
 
