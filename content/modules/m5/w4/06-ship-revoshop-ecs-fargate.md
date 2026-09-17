@@ -10,7 +10,9 @@ tags: [revoshop, aws, ecs, fargate, alb, ecr, project]
 
 ## 🎯 Goal
 
-RevoShop runs as **two Fargate tasks in two Availability Zones** behind an **HTTPS Application Load Balancer**, deploys with **zero downtime** and automatic rollback, runs migrations and scheduled jobs as **one-off tasks**, and gets secrets injected from SSM — no servers to patch. Then you **tear everything down** (or keep it deliberately) with a checklist.
+RevoShop runs as **two Fargate tasks in two Availability Zones** behind an **HTTPS load balancer**. Deploys have **no downtime** and roll back by themselves, migrations and scheduled jobs run as **one-off tasks**, and secrets are injected from SSM — with no servers for you to patch. At the end you **tear it all down** (or keep it on purpose) using a checklist.
+
+Lab 3 rented you a shop unit and you did the caretaking. This lab moves the same shop into a food court: two stalls in two buildings, a guard checking they're open, and the mall handling the floors.
 
 ```mermaid
 flowchart LR
@@ -25,6 +27,21 @@ flowchart LR
     SCH[EventBridge Scheduler] -->|RunTask: expire payments| J[one-off task]
     GHA[GitHub Actions] -->|OIDC: ECR push · RunTask migrate · UpdateService| ECS[(ECS service)]
 ```
+
+## 🔤 Key words
+
+| Word | In simple words |
+|---|---|
+| **ECR** | AWS's registry where your container images are stored |
+| **Immutable tag** | A tag that can never point to a different image later |
+| **Task definition** | The recipe ECS uses: image, CPU, memory, environment, secrets, logs |
+| **Service** | The rule that keeps N tasks running and replaces unhealthy ones |
+| **Target group** | The list of task addresses the load balancer sends traffic to |
+| **ACM certificate** | The free AWS certificate that gives your load balancer HTTPS |
+| **Rolling deploy** | Replacing tasks gradually, with rollback if the new ones fail |
+| **One-off task** | A task run once for a job (migrations, expiring payments) |
+| **EventBridge Scheduler** | AWS's cron: it starts a task on a schedule |
+| **Teardown** | Deleting everything you created so it stops costing money |
 
 :::danger[Costs]
 An ALB has an hourly minimum even with no traffic, and each Fargate task bills per vCPU and GB per hour; tasks in public subnets also pay for public IPv4 addresses. With exercise 02's sample prices: 2 × (0.5 vCPU, 1 GB) tasks ≈ USD 36 + ALB ≈ 16 + RDS ≈ 14 + about 4 public IPv4 addresses (tasks and ALB) ≈ 15 + logs ≈ **USD 80/month** before data transfer — more than double Lab 3. Plan to finish this lab in a few days, then tear down or scale to a cheaper setup. Update your budget alert **before** starting.
@@ -50,6 +67,8 @@ aws ecr put-lifecycle-policy --region $REGION --repository-name revoshop-api --l
 In `.github/workflows/ci-cd.yml`, the `build` job pushes to **ECR** instead of (or in addition to) GHCR: add `aws-actions/configure-aws-credentials` (OIDC, role below) and `aws ecr get-login-password | docker login` before `docker/build-push-action`, set `images: <ACCOUNT_ID>.dkr.ecr.<region>.amazonaws.com/revoshop-api`, and give the job `id-token: write`. The job output stays the image **digest** reference. Because tags are immutable, keep `type=sha` tags and drop mutable tags like `main` for ECR (or use a separate mutable repository).
 
 ### C2 · Roles (1 h)
+
+Two badges, two jobs: the **execution** role is for the delivery crew that sets the stall up (pull the image, read secrets, write logs); the **task** role is worn by your code when it calls AWS.
 
 **`revoshop-task-execution`** — trusted by `ecs-tasks.amazonaws.com`; managed policy **`AmazonECSTaskExecutionRolePolicy`** plus:
 
@@ -164,6 +183,8 @@ Run both through `review()` from Week 3 exercise 01. You'll get two **medium** f
 Prove it with `evaluate()`: passing an `AdminRole` → `ImplicitDeny`; updating `api-staging` → `ImplicitDeny`.
 
 ### C3 · Networking and the load balancer (1.5 h)
+
+The load balancer is the mall's traffic director: it holds the HTTPS certificate, knocks on each stall's door (the health check) and only sends customers to stalls that answer.
 
 **Security groups**
 
@@ -294,6 +315,8 @@ Replace the region in the parameter ARNs if you don't use `ap-southeast-1`. `LOG
 
 ### C5 · Cluster, first migration, service (1.5 h)
 
+Order matters: rearrange the kitchen first (the migration task), then let the new staff start serving (the service). Never both at once.
+
 ```bash
 aws ecs create-cluster --region $REGION --cluster-name revoshop --settings name=containerInsights,value=disabled
 ```
@@ -370,6 +393,8 @@ Wait until both targets are **healthy** in the target group. Test through the AL
 
 ### C6 · Switch traffic (30 min)
 
+This is the moment you move the entrance sign from the old EC2 shop to the new food-court stalls. Keep the old one running until you're sure — moving a sign back is easy, rebuilding a shop is not.
+
 1. DNS: change `api.<domain>` from the Elastic IP `A` record to the ALB — an **alias `A`** record (Route 53) or a **CNAME** (other DNS providers).
 2. The Midtrans notification URL stays the same (`https://api.<domain>/api/v1/payments/webhook/midtrans`).
 3. Smoke tests: `REVOSHOP_URL=https://api.<domain> REVOSHOP_EXPECT_HTTPS=1 uv run pytest m5/w1/05-revoshop-smoke -v`. The HSTS test fails until you add the header — add it in the app (a small `after_request` hook) or with ALB/CloudFront response headers; the HTTP→HTTPS redirect test passes because of the listener rule.
@@ -413,6 +438,8 @@ Environment variables on `production`: `AWS_ROLE_ARN`, `AWS_REGION`, `AWS_ACCOUN
 - Retire EC2: set the old instance's termination protection off → **terminate** → **release the Elastic IP** → remove `revoshop-web` from `revoshop-db` inbound → delete `revoshop-ec2` role → remove the SSM `send-command` permission from the GitHub role.
 
 ### C10 · Cost review and teardown (1 h)
+
+This lab is the most expensive one in the module, so treat teardown as part of the work, not an afterthought. Walk the checklist and confirm in Cost Explorer a day later that spending really stopped.
 
 After 24–48 hours, Cost Explorer → group by service: compare ALB, Fargate, RDS, public IPv4, CloudWatch with your estimate. Decide:
 
