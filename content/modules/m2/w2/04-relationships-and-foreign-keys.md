@@ -20,25 +20,41 @@ tags: [postgresql, relationships, foreign-keys, referential-integrity]
 - Self-referencing relationships
 - Why foreign key columns need **indexes**
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Relationship** | A link between rows in two tables | Hubungan antar tabel |
+| **One-to-many** | One user has many applications | Satu ke banyak |
+| **Many-to-many** | Jobs need many skills; a skill fits many jobs | Banyak ke banyak |
+| **Junction table** | The in-between table that stores a many-to-many link | Tabel penghubung |
+| **Composite primary key** | A key made of two columns together | Kunci gabungan |
+| **Referential integrity** | The guarantee that every link points at a row that exists | Jaminan tautan valid |
+| **Orphan row** | A row pointing at something that was deleted | Baris menggantung |
+| **`ON DELETE CASCADE`** | Delete the parent and its children go too | Hapus induk, anak ikut terhapus |
+| **`ON DELETE RESTRICT`** | Refuse to delete a parent that still has children | Tolak hapus jika masih ada anak |
+| **`ON DELETE SET NULL`** | Keep the child but forget the link | Simpan anak, hapus tautannya |
+
 ## 🧠 The big idea
 
-A :term[foreign key]{bahasa="foreign key — kolom yang harus berisi id yang benar-benar ada di tabel lain"} is a **reference that must point to something real** — like a library card number that must belong to an actual library member.
+A :term[foreign key]{bahasa="foreign key — kolom yang harus berisi id yang benar-benar ada di tabel lain"} is a **reference that must point to something real** — like a library card number that must belong to an actual member.
 
-The database refuses:
-- adding a card for a member that doesn't exist (an **orphan**),
-- and — depending on your rules — deleting a member who still has borrowed books.
+The database then refuses to:
 
-## ❓ Why does this exist?
+- add a card for a member who doesn't exist (an **orphan**),
+- and, depending on the rule you choose, delete a member who still has borrowed books.
 
-Data is connected: users have applications, applications have interviews, jobs require skills. Without enforced references you get **orphans** (interviews for deleted applications), **broken pages** (a company that no longer exists), and **silent data loss** or leftovers when something is deleted.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T enforce relationships?
+Data is connected: users have applications, applications have interviews, jobs require skills. Without enforced references you get **orphans** (interviews belonging to deleted applications), **broken pages** (a company that no longer exists), and either silent data loss or leftovers when something is deleted.
 
-- A bug deletes a company; 300 applications now point to `company_id = 17`, which doesn't exist. The applications page crashes.
+Concretely:
+
+- A bug deletes a company; 300 applications now point at `company_id = 17`, which doesn't exist, and the applications page crashes.
 - A user deletes their account, but their CVs, interviews and notes stay forever — a **privacy** problem.
-- Two requests save the same skill link at the same time → duplicate rows inflate "top skills" counts.
+- Two requests save the same skill link at the same moment → duplicate rows inflate the "top skills" counts.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. One-to-many (the most common)
 
@@ -59,6 +75,8 @@ erDiagram
 ```
 
 ### 2. Many-to-many: a junction table
+
+A junction table is the **attendance sheet** between two lists: one line per pairing, plus extra facts about that pairing (when it was saved, how important the skill is).
 
 An application requires many skills; a skill appears in many applications. Neither table can hold the other's id — so add a table **in between**:
 
@@ -108,6 +126,8 @@ CREATE TABLE comments (
 
 ### 5. ON DELETE: decide what deleting a parent means
 
+This is a business decision, not a technical one: deleting a user *should* remove their private notes (cascade), but must not silently erase paid invoices (restrict).
+
 | Option | When the parent row is deleted… | Good for |
 |---|---|---|
 | `CASCADE` | children are deleted too | things that **belong** to the parent: a user's applications, an application's interviews |
@@ -120,6 +140,8 @@ One `DELETE FROM users WHERE id = 7` can remove thousands of rows across many ta
 :::
 
 ### 6. Index your foreign keys
+
+PostgreSQL indexes the primary key for you, but not the column pointing at it — so "all applications for user 7" scans the whole table until you add that index yourself.
 
 PostgreSQL automatically indexes **primary keys** and **unique constraints**, but **not** foreign key columns. Without an index:
 
@@ -142,7 +164,9 @@ JOIN skills s ON s.id = x.skill_id
 WHERE a.user_id = 7;
 ```
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -153,29 +177,10 @@ WHERE a.user_id = 7;
 | Junction table | flexible, can store relationship data | an extra join |
 | Array column (`skill_ids bigint[]`) | fewer tables | no FK enforcement, harder queries and counts |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Add foreign keys for **every** real relationship in transactional data.
 - ✅ `CASCADE` for owned children; `RESTRICT` for shared/reference data; `SET NULL` for optional links.
 - 🚫 Don't model many-to-many with comma-separated ids or arrays when you need to query or enforce it.
 - 🚫 Don't forget that data warehouses and some very high-scale systems skip FKs deliberately — that's an informed exception, not a default.
-
-## 🏆 Best practices
-
-- [ ] Declare a foreign key for every relationship; name columns `<singular>_id`.
-- [ ] Choose `ON DELETE` **explicitly** for each FK and document why.
-- [ ] **Index every foreign key column** that isn't the leading column of an existing index.
-- [ ] Use a **composite primary key** (or `UNIQUE`) on junction tables to prevent duplicate links.
-- [ ] Keep historical records (orders, invoices) safe from cascades — use `RESTRICT` and/or soft delete, plus snapshots.
-- [ ] Model one-to-one with the FK as the primary key (or `UNIQUE`).
-- [ ] Test deletion paths (account deletion, removing a company) — they're easy to get wrong.
-- [ ] For GDPR-style "delete my data" requests, list every table holding personal data and how it's removed.
-
-## 🏭 How it's used in industry
-
-- ORMs (SQLAlchemy in Week 4) mirror these relationships as `relationship()` objects, including cascade rules — mistakes there cause surprise deletes or orphans.
-- Performance reviews of slow endpoints often find **unindexed foreign keys**.
-- Privacy regulations (e.g. Indonesia's **UU PDP**) make correct deletion of personal data a legal requirement.
 
 ## ⚠️ Common mistakes
 
@@ -188,6 +193,17 @@ WHERE a.user_id = 7;
 :::revoshop
 In RevoShop's `queries/schema.sql`, find every `FOREIGN KEY … REFERENCES` and the four `CREATE INDEX` lines at the bottom — they index exactly the foreign key columns. Now check the models in `app/models/` (e.g. `orders.py`, `carts.py`): which `ondelete=` or `cascade=` options did you use? What should happen to a user's **carts**, **addresses** and **orders** when the account is deleted — and does your code do that? Why might orders need `RESTRICT` + soft delete rather than `CASCADE`?
 :::
+
+## 🏆 Best practices
+
+- [ ] Declare a foreign key for every relationship; name columns `<singular>_id`.
+- [ ] Choose `ON DELETE` **explicitly** for each FK and document why.
+- [ ] **Index every foreign key column** that isn't the leading column of an existing index.
+- [ ] Use a **composite primary key** (or `UNIQUE`) on junction tables to prevent duplicate links.
+- [ ] Keep historical records (orders, invoices) safe from cascades — use `RESTRICT` and/or soft delete, plus snapshots.
+- [ ] Model one-to-one with the FK as the primary key (or `UNIQUE`).
+- [ ] Test deletion paths (account deletion, removing a company) — they're easy to get wrong.
+- [ ] For GDPR-style "delete my data" requests, list every table holding personal data and how it's removed.
 
 ::part[Explain & Design]{n="2"}
 
@@ -258,16 +274,6 @@ Which `ON DELETE` option would you use for `orders.product_id`, and why?
 `RESTRICT` (plus soft-deleting products) — past orders are business records and must never disappear or lose their product reference when the catalog changes.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Relationship | Relasi — hubungan antar tabel |
-| One-to-many / Many-to-many | Satu-ke-banyak / Banyak-ke-banyak |
-| Junction table | Tabel penghubung |
-| Referential integrity | Integritas referensial — referensi selalu valid |
-| Orphan | Baris yatim — merujuk data yang sudah tidak ada |
-| Cascade | Ikut terhapus berantai |
 
 ## 📚 Keep learning
 

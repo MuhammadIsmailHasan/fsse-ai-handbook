@@ -19,9 +19,24 @@ tags: [sql, postgresql, crud, aggregates]
 - Summarizing data with `COUNT`, `SUM`, `AVG`, `GROUP BY` and `HAVING`
 - Making `UPDATE`/`DELETE` safe, and why **parameterized queries** prevent SQL injection
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **CRUD** | The four basic actions: create, read, update, delete | Empat operasi dasar data |
+| **Declarative** | You say *what* you want; the database decides *how* | Menyatakan hasil, bukan caranya |
+| **`WHERE`** | The filter that picks which rows | Penyaring baris |
+| **`NULL`** | "Unknown" — not zero, and not equal to anything, even itself | Nilai tidak diketahui |
+| **Aggregate** | A function that summarises many rows (`COUNT`, `SUM`, `AVG`) | Fungsi peringkas |
+| **`GROUP BY`** | Making one result row per group | Mengelompokkan hasil |
+| **`HAVING`** | A filter applied *after* grouping | Penyaring setelah pengelompokan |
+| **Pagination** | Showing results page by page (`LIMIT` / `OFFSET`) | Membagi hasil per halaman |
+| **Parameterized query** | Passing values separately so they can never become SQL code | Kueri dengan nilai terpisah |
+| **SQL injection** | An attack where user text becomes part of your SQL | Penyisipan perintah SQL |
+
 ## 🧠 The big idea
 
-SQL is **declarative**: you describe **what** you want, and the database figures out **how** to get it.
+SQL is **declarative**: you describe **what** you want, and the database works out **how** to get it.
 
 > "Give me the titles of open remote jobs, sorted by title."
 
@@ -29,13 +44,13 @@ SQL is **declarative**: you describe **what** you want, and the database figures
 SELECT title FROM job_listings WHERE status = 'open' AND is_remote ORDER BY title;
 ```
 
-You didn't write a loop, an index lookup or a sort algorithm (you did those in Module 1 — now the database does them for you, very efficiently).
+You wrote no loop, no index lookup and no sorting algorithm. It's like ordering *nasi goreng* instead of explaining every step of cooking it — you did the cooking yourself in Module 1; now the database does it, very efficiently.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Every screen in an app is a query: a list page is `SELECT … ORDER BY … LIMIT`, a form submit is `INSERT`, an edit is `UPDATE`, a remove button is `DELETE`, a dashboard is `GROUP BY`. SQL has been the standard language for this for decades — it works almost the same in PostgreSQL, MySQL, SQLite and data warehouses.
+Every screen in an app is a query: a list page is `SELECT … ORDER BY … LIMIT`, a submitted form is `INSERT`, an edit is `UPDATE`, a remove button is `DELETE`, a dashboard is `GROUP BY`. SQL has been the standard language for this for decades, and works almost the same in PostgreSQL, MySQL, SQLite and data warehouses.
 
-## 💥 What happens if we DON'T use it carefully?
+Used carelessly, it's also the fastest way to destroy data:
 
 ```sql
 UPDATE job_listings SET status = 'closed';          -- forgot WHERE: closed ALL jobs
@@ -50,7 +65,7 @@ And in application code:
 cursor.execute(f"SELECT * FROM users WHERE email = '{email}'")
 ```
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. INSERT
 
@@ -101,6 +116,8 @@ That's why you can't use a `SELECT` alias inside `WHERE`, but you can in `ORDER 
 | combine | `AND`, `OR`, `NOT` — use parentheses when mixing |
 
 ### 4. NULL means "unknown"
+
+`NULL` behaves like a sealed envelope: you can't compare two sealed envelopes and say they're equal, so use `IS NULL` instead of `= NULL`.
 
 `NULL` isn't zero or empty text — it's **unknown**. Any comparison with unknown is unknown, so:
 
@@ -156,6 +173,8 @@ A safe routine for manual changes:
 
 ### 8. Parameterized queries (from Python)
 
+A parameterized query keeps the **question** and the **answer slot** separate, like a form with blank fields. Text typed into a blank field can never become a new instruction.
+
 ```python
 # ✅ The driver sends the value separately — it can never become SQL
 conn.execute("SELECT id, full_name FROM users WHERE email = %s", (email,))
@@ -166,7 +185,9 @@ conn.execute(f"SELECT id FROM users WHERE email = '{email}'")
 
 ORMs like SQLAlchemy (Week 4) parameterize automatically — but the moment you write raw SQL, this rule is yours.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -179,30 +200,10 @@ ORMs like SQLAlchemy (Week 4) parameterize automatically — but the moment you 
 | Filtering in SQL | uses indexes, less data transferred | logic split between SQL and app |
 | Filtering in Python | flexible | loads too much data |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Filter, sort, aggregate and paginate **in the database**, not after loading everything into Python.
 - ✅ Use `RETURNING` to avoid a second query after insert/update/delete.
 - 🚫 Don't run `UPDATE`/`DELETE` without a `WHERE` you've tested with a `SELECT`.
 - 🚫 Don't concatenate user input into SQL. Ever.
-
-## 🏆 Best practices
-
-- [ ] **Parameterize every query** that includes external input.
-- [ ] List columns explicitly in `SELECT` and `INSERT` in application code.
-- [ ] Always `ORDER BY` when order matters (without it, row order is **not guaranteed**), with a unique tie-breaker for pagination.
-- [ ] Test `WHERE` clauses with `SELECT` before `UPDATE`/`DELETE`; wrap manual changes in a transaction.
-- [ ] Include **ownership checks** (`AND user_id = :current_user`) in queries on user data.
-- [ ] Handle `NULL` deliberately (`IS NULL`, `COALESCE`, `COUNT(column)` vs `COUNT(*)`).
-- [ ] Use `RETURNING` instead of re-selecting.
-- [ ] Format SQL for humans: one clause per line, uppercase keywords, meaningful aliases.
-- [ ] Never run ad-hoc writes on production without a backup/review process.
-
-## 🏭 How it's used in industry
-
-- ORMs generate most CRUD SQL, but engineers read the generated SQL to debug performance and correctness.
-- Analysts and data engineers write `GROUP BY` queries all day; backend engineers are expected to as well.
-- SQL injection is still in the **OWASP Top 10** security risks — interviewers ask about it.
 
 ## ⚠️ Common mistakes
 
@@ -215,6 +216,18 @@ ORMs like SQLAlchemy (Week 4) parameterize automatically — but the moment you 
 :::revoshop
 Open `queries/queries.sql` and `queries/tests.sql` in RevoShop. For each query, identify: is it C, R, U or D? Does it filter with `WHERE`, sort, aggregate? Then open one repository file, e.g. `app/repositories/order_repository.py`: find a place where a query filters by the **current user** (an ownership check). Could any endpoint let user A read or update user B's order? Write down how you verified it.
 :::
+
+## 🏆 Best practices
+
+- [ ] **Parameterize every query** that includes external input.
+- [ ] List columns explicitly in `SELECT` and `INSERT` in application code.
+- [ ] Always `ORDER BY` when order matters (without it, row order is **not guaranteed**), with a unique tie-breaker for pagination.
+- [ ] Test `WHERE` clauses with `SELECT` before `UPDATE`/`DELETE`; wrap manual changes in a transaction.
+- [ ] Include **ownership checks** (`AND user_id = :current_user`) in queries on user data.
+- [ ] Handle `NULL` deliberately (`IS NULL`, `COALESCE`, `COUNT(column)` vs `COUNT(*)`).
+- [ ] Use `RETURNING` instead of re-selecting.
+- [ ] Format SQL for humans: one clause per line, uppercase keywords, meaningful aliases.
+- [ ] Never run ad-hoc writes on production without a backup/review process.
 
 ::part[Explain & Design]{n="2"}
 
@@ -310,16 +323,6 @@ How do parameterized queries prevent SQL injection?
 The SQL text and the values are sent separately; the database treats values strictly as data, so input can't change the query's structure.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Query | Kueri — perintah untuk mengambil/mengubah data |
-| Filter / Sort | Menyaring / Mengurutkan |
-| Aggregate | Fungsi ringkasan (COUNT, SUM, AVG) |
-| NULL | Nilai tidak diketahui/kosong |
-| SQL injection | Serangan menyisipkan perintah SQL lewat input |
-| Pagination | Pembagian hasil per halaman |
 
 ## 📚 Keep learning
 
