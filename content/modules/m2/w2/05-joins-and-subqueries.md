@@ -20,20 +20,35 @@ tags: [sql, postgresql, joins, subqueries, cte, window-functions]
 - **CTEs** (`WITH`) to make complex queries readable
 - A first look at **window functions** (`ROW_NUMBER`, "latest per group")
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **JOIN** | Combining rows from two tables that belong together | Menggabungkan tabel |
+| **`INNER JOIN`** | Keep only rows that exist in both tables | Hanya yang cocok di keduanya |
+| **`LEFT JOIN`** | Keep every row from the left table, matched or not | Semua dari tabel kiri |
+| **Anti-join** | Finding rows that have **no** match | Mencari yang tidak punya pasangan |
+| **Cartesian product** | Every row paired with every row — what a missing join condition gives you | Semua kombinasi (salah) |
+| **Double counting** | A sum inflated because a join multiplied the rows | Penjumlahan ganda |
+| **Subquery** | A query written inside another query | Kueri di dalam kueri |
+| **`EXISTS`** | "Is there at least one matching row?" | Apakah ada yang cocok |
+| **CTE (`WITH`)** | A named step at the top of a query, to keep it readable | Langkah bernama |
+| **Window function** | A calculation across related rows, without collapsing them | Perhitungan antar baris |
+
 ## 🧠 The big idea
 
-Normalization split data into tables. **JOIN** puts it back together for a specific question.
+Normalization split your data into tables. **JOIN** puts it back together for one specific question.
 
-Think of two lists at a school event: **students** and **registrations**. A JOIN is walking down the registrations and, for each one, looking up the student's name by their id.
+Picture two lists at a school event: **students** and **registrations**. A join is walking down the registrations and looking up each student's name by their id.
 
 - **INNER JOIN**: only people who appear in **both** lists.
-- **LEFT JOIN**: **everyone** from the left list, with registration info if they have any (blank otherwise).
+- **LEFT JOIN**: **everyone** from the left list, with registration details if they have any, and blanks if they don't.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Almost every useful screen needs data from several tables: *"applications with company names and required skills"*, *"companies with zero applicants"*, *"each user's latest application"*. Doing this in Python means loading whole tables and matching them in loops (Module 1 showed how slow that gets). The database does it with indexes, in one round trip.
+Almost every useful screen needs data from several tables: *"applications with company names and required skills"*, *"companies with zero applicants"*, *"each user's latest application"*. Doing that in Python means loading whole tables and matching them in loops — Module 1 showed how slow that gets. The database does it with indexes, in one round trip.
 
-## 💥 What happens if we DON'T understand joins?
+Misunderstood joins give **wrong numbers, silently**:
 
 ```sql
 -- "Companies with their application counts" — but Batik Soft (0 applications) disappears
@@ -49,9 +64,7 @@ JOIN application_skills x ON x.application_id = a.id
 GROUP BY u.full_name;                    -- offers counted once PER SKILL 😬
 ```
 
-Wrong numbers on a dashboard, silently.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. INNER JOIN
 
@@ -109,6 +122,8 @@ GROUP BY c.id, c.name;
 
 ### 4. Anti-join: "which ones have none?"
 
+This is how you answer "who didn't come?" — keep everyone from the left list, then keep only the rows where the match came back empty.
+
 ```sql
 -- LEFT JOIN + IS NULL
 SELECT u.full_name
@@ -141,6 +156,8 @@ WHERE EXISTS (SELECT 1 FROM applications a WHERE a.user_id = u.id AND a.status =
 ```
 
 ### 6. CTEs: name the steps
+
+A CTE is like writing a recipe in steps instead of one long sentence: "first make the sauce, then cook the noodles, then combine". Same result, far easier to read and debug.
 
 A :term[CTE]{bahasa="Common Table Expression — hasil query sementara yang diberi nama dengan WITH, agar query kompleks mudah dibaca"} lets you write a query as readable steps:
 
@@ -194,7 +211,9 @@ FROM applications a1
 JOIN applications a2 ON a2.company_id = a1.company_id AND a2.user_id > a1.user_id;
 ```
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -205,30 +224,11 @@ JOIN applications a2 ON a2.company_id = a1.company_id AND a2.user_id > a1.user_i
 | Window functions | powerful "per group" logic without self-joins | new syntax to learn |
 | `NOT EXISTS` vs `LEFT JOIN … IS NULL` | both fine; `NOT EXISTS` is NULL-safe and clear | — |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Join in the database instead of in Python loops.
 - ✅ `LEFT JOIN` when the question includes "all …, even without …".
 - ✅ CTEs when a query has more than one logical step.
 - 🚫 Don't join tables you don't need.
 - 🚫 Don't `SUM` across a join that multiplies rows — aggregate first.
-
-## 🏆 Best practices
-
-- [ ] Always write explicit `JOIN … ON …` (never comma joins without conditions).
-- [ ] Use short, meaningful aliases and **qualify every column** (`a.status`).
-- [ ] Choose `INNER` vs `LEFT` deliberately; put right-table filters in `ON` for LEFT joins.
-- [ ] Count with `COUNT(child.id)` in LEFT JOIN aggregates.
-- [ ] Use `EXISTS` / `NOT EXISTS` for "has any / has none"; avoid `NOT IN` with subqueries.
-- [ ] Aggregate **before** joining when a join would multiply rows.
-- [ ] Index join columns (foreign keys!) and check plans with `EXPLAIN ANALYZE` (next lesson).
-- [ ] Break complex queries into CTEs; test each step on its own.
-
-## 🏭 How it's used in industry
-
-- Reporting endpoints, admin dashboards and analytics are mostly joins, CTEs and window functions.
-- Data engineers write the same SQL in warehouses (BigQuery, Snowflake) and tools like dbt.
-- Interview SQL rounds love: "second highest salary", "latest record per group", "customers with no orders", "running totals".
 
 ## ⚠️ Common mistakes
 
@@ -241,6 +241,17 @@ JOIN applications a2 ON a2.company_id = a1.company_id AND a2.user_id > a1.user_i
 :::revoshop
 Pick an endpoint in RevoShop that returns an order with its items, e.g. in `app/repositories/order_repository.py` or `app/services/order_service.py`. Write down the SQL it effectively runs (hint: temporarily log SQLAlchemy queries with `SQLALCHEMY_ECHO=True`, or reason from the ORM calls). Is it one query with a JOIN, or one query for the order plus one per item? You'll analyze that "N+1" pattern in Week 4.
 :::
+
+## 🏆 Best practices
+
+- [ ] Always write explicit `JOIN … ON …` (never comma joins without conditions).
+- [ ] Use short, meaningful aliases and **qualify every column** (`a.status`).
+- [ ] Choose `INNER` vs `LEFT` deliberately; put right-table filters in `ON` for LEFT joins.
+- [ ] Count with `COUNT(child.id)` in LEFT JOIN aggregates.
+- [ ] Use `EXISTS` / `NOT EXISTS` for "has any / has none"; avoid `NOT IN` with subqueries.
+- [ ] Aggregate **before** joining when a join would multiply rows.
+- [ ] Index join columns (foreign keys!) and check plans with `EXPLAIN ANALYZE` (next lesson).
+- [ ] Break complex queries into CTEs; test each step on its own.
 
 ::part[Explain & Design]{n="2"}
 
@@ -337,16 +348,6 @@ What causes double counting in joined aggregates, and how do you fix it?
 A one-to-many join repeats parent rows once per child, so sums over parent columns are inflated. Aggregate in a CTE/subquery first, then join the results.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| JOIN | Menggabungkan baris dari beberapa tabel |
-| Anti-join | Mencari data yang tidak punya pasangan |
-| Subquery | Query di dalam query |
-| CTE | Query bernama sementara dengan WITH |
-| Window function | Fungsi yang menghitung per kelompok tanpa meringkas baris |
-| Cartesian product | Semua kombinasi baris (biasanya kesalahan) |
 
 ## 📚 Keep learning
 

@@ -18,23 +18,37 @@ tags: [postgresql, indexes, performance, explain, bonus]
 - **Expression** and **partial** indexes
 - What indexes **cost** (writes, disk, memory) and how to avoid over-indexing
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Index** | An extra sorted structure that lets the database jump straight to rows | Struktur pencarian cepat |
+| **B-tree** | The tree shape most indexes use, so lookups take a few steps | Bentuk pohon indeks |
+| **Sequential scan** | Reading every row to find matches | Membaca semua baris |
+| **Index scan** | Using the index to go straight to matching rows | Membaca lewat indeks |
+| **`EXPLAIN ANALYZE`** | Asking the database to show its plan and how long it really took | Menampilkan rencana kueri |
+| **Composite index** | One index over several columns, in a chosen order | Indeks gabungan kolom |
+| **Expression index** | An index on a calculation, like `lower(email)` | Indeks atas hasil perhitungan |
+| **Partial index** | An index that covers only some rows (`WHERE status = 'open'`) | Indeks sebagian baris |
+| **Selectivity** | How few rows a condition matches — the fewer, the more an index helps | Ketajaman penyaringan |
+
 ## 🧠 The big idea
 
-An :term[index]{bahasa="indeks — struktur data tambahan yang membuat pencarian baris jauh lebih cepat"} is the **index at the back of a textbook**. To find "foreign key", you don't read 600 pages (a **sequential scan**); you look it up alphabetically and jump to page 214 (an **index scan**).
+An :term[index]{bahasa="indeks — struktur data tambahan yang membuat pencarian baris jauh lebih cepat"} is the **index at the back of a textbook**. To find "foreign key" you don't read 600 pages (a **sequential scan**) — you look it up alphabetically and jump to page 214 (an **index scan**).
 
-It's the same idea as building a dictionary index for searches in Module 1 — but maintained by the database automatically, on disk, for millions of rows.
+It's the same idea as the dictionary index you built for searching in Module 1, except the database maintains it automatically, on disk, for millions of rows.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Queries that are instant with 1,000 rows take seconds with 10 million. The usual cause isn't the server — it's reading every row to find a handful. Indexes turn O(n) scans into roughly O(log n) lookups (binary search, again!).
+A query that is instant with 1,000 rows can take seconds with 10 million. The cause usually isn't a weak server — it's reading every row to find a handful. Indexes turn "check them all" into "jump to the right page" (binary search, again).
 
-## 💥 What happens if we DON'T use them (or use them badly)?
+Used badly, they cause their own problems:
 
-- The application list page runs `WHERE user_id = ? ORDER BY created_at DESC` — a full table scan plus a sort on every request. At 500 users online the database CPU hits 100%.
-- Someone adds an index on **every** column "to be safe": inserts become slow, the database grows, and most indexes are never used.
-- An index on `email` exists, but the query uses `lower(email)` — the index is ignored.
+- The application list page runs `WHERE user_id = ? ORDER BY created_at DESC` — a full table scan plus a sort on every request. With 500 users online the database CPU hits 100%.
+- Someone adds an index on **every** column "to be safe": inserts get slow, the database grows, and most of those indexes are never used.
+- An index on `email` exists, but the query uses `lower(email)` — so the index is ignored.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. How a B-tree index works (simplified)
 
@@ -51,6 +65,8 @@ flowchart TD
 The default index type is a **B-tree**: a sorted, balanced tree. A few steps down the tree lead to the matching entries, which point to the table rows. Because it's **sorted**, it helps with `=`, `<`, `>`, `BETWEEN`, `ORDER BY` and prefix `LIKE 'abc%'` (with the right settings).
 
 ### 2. EXPLAIN and EXPLAIN ANALYZE
+
+This is the database showing its working. Read it bottom-up, and look for the step where the row count suddenly becomes huge — that's where the time goes.
 
 ```sql
 EXPLAIN ANALYZE
@@ -81,6 +97,8 @@ The planner decides based on **statistics**. After loading lots of data, run `AN
 :::
 
 ### 3. Composite indexes: order matters
+
+A composite index works like a phone book sorted by surname then first name: great for "all the Santosos", useless for "everyone called Budi". Put the column you filter by exactly first.
 
 ```sql
 CREATE INDEX applications_user_created_idx ON applications (user_id, created_at DESC);
@@ -124,6 +142,8 @@ Smaller, faster, and cheaper to maintain than indexing every row. Great for "act
 
 ### 7. What indexes cost
 
+Every index is a second copy that must be updated on every write — like keeping a card catalogue next to the shelves. Useful for a library, wasteful if you keep twelve catalogues nobody reads.
+
 | Cost | Why |
 |---|---|
 | Slower `INSERT`/`UPDATE`/`DELETE` | every index must be updated too |
@@ -139,7 +159,9 @@ Find unused indexes with `pg_stat_user_indexes` (`idx_scan = 0`) and remove them
 - Queries that return most of the table anyway.
 - Functions on the column that don't match an expression index.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -150,31 +172,10 @@ Find unused indexes with `pg_stat_user_indexes` (`idx_scan = 0`) and remove them
 | Index everything | "fast"… in theory | slow writes, bloat, many unused indexes |
 | No indexes on a small table | simpler | fine until the table grows — revisit |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Index **foreign keys**, columns in frequent `WHERE`/`JOIN`/`ORDER BY`, and unique business keys.
 - ✅ Design indexes from **real queries** — ideally the slowest/most frequent ones from monitoring.
 - 🚫 Don't add indexes without checking the plan before and after.
 - 🚫 Don't index columns that are rarely queried or have very few distinct values (on their own).
-
-## 🏆 Best practices
-
-- [ ] **Measure first**: `EXPLAIN (ANALYZE, BUFFERS)` on realistic data volumes.
-- [ ] Index foreign keys and the columns of your most frequent filters/sorts.
-- [ ] Put **equality columns before range/sort columns** in composite indexes.
-- [ ] Match expression indexes to the exact expression in queries (`lower(email)`).
-- [ ] Use **partial indexes** for hot subsets (active, not deleted).
-- [ ] Name indexes consistently: `<table>_<columns>_idx`.
-- [ ] On big production tables, use `CREATE INDEX CONCURRENTLY` to avoid blocking writes (inside migrations that allow it).
-- [ ] Review unused indexes periodically (`pg_stat_user_indexes`) and remove them.
-- [ ] Enable `pg_stat_statements` in production to find the queries that actually cost the most.
-
-## 🏭 How it's used in industry
-
-- "The endpoint is slow" investigations very often end with **one missing composite index**.
-- Teams track slow queries with `pg_stat_statements`, APM tools (Datadog, New Relic) and database dashboards.
-- ORMs hide SQL, so engineers read logged SQL and plans to decide indexes — a core backend skill in interviews ("how would you speed up this query?").
-- Vector indexes (**HNSW** in pgvector) apply the same idea to AI similarity search (Module 7).
 
 ## ⚠️ Common mistakes
 
@@ -187,6 +188,18 @@ Find unused indexes with `pg_stat_user_indexes` (`idx_scan = 0`) and remove them
 :::revoshop
 RevoShop's `queries/schema.sql` ends with indexes on `products(category_id)`, `orders(user_id)`, `order_items(order_id)` and `order_items(product_id)` — all foreign keys. Now think about real endpoints: the product list filtered by category **and sorted by newest**, and "my orders, newest first". Which **composite** indexes would serve those queries better? Load RevoShop's seed data, run `EXPLAIN ANALYZE` on those queries, and write down the plan before and after.
 :::
+
+## 🏆 Best practices
+
+- [ ] **Measure first**: `EXPLAIN (ANALYZE, BUFFERS)` on realistic data volumes.
+- [ ] Index foreign keys and the columns of your most frequent filters/sorts.
+- [ ] Put **equality columns before range/sort columns** in composite indexes.
+- [ ] Match expression indexes to the exact expression in queries (`lower(email)`).
+- [ ] Use **partial indexes** for hot subsets (active, not deleted).
+- [ ] Name indexes consistently: `<table>_<columns>_idx`.
+- [ ] On big production tables, use `CREATE INDEX CONCURRENTLY` to avoid blocking writes (inside migrations that allow it).
+- [ ] Review unused indexes periodically (`pg_stat_user_indexes`) and remove them.
+- [ ] Enable `pg_stat_statements` in production to find the queries that actually cost the most.
 
 ::part[Explain & Design]{n="2"}
 
@@ -260,16 +273,6 @@ What's a partial index and when is it useful?
 An index that covers only rows matching a `WHERE` condition — useful when queries always target a small subset (active, pending, not deleted).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Index | Indeks — struktur untuk pencarian cepat |
-| Sequential scan | Membaca seluruh tabel baris demi baris |
-| Query plan | Rencana eksekusi query |
-| Composite index | Indeks gabungan beberapa kolom |
-| Partial index | Indeks untuk sebagian baris saja |
-| Selectivity | Selektivitas — seberapa sedikit baris yang cocok |
 
 ## 📚 Keep learning
 

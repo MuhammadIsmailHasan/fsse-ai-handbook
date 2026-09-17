@@ -19,17 +19,31 @@ tags: [postgresql, transactions, acid, concurrency, bonus]
 - **Isolation levels** and **deadlocks**, at a practical level
 - Using transactions from Python with **psycopg**
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Transaction** | A group of steps that must all succeed, or all be undone | Kelompok langkah utuh |
+| **`COMMIT` / `ROLLBACK`** | Save everything / undo everything | Simpan semua / batalkan semua |
+| **Atomic** | All or nothing, never half | Utuh, tidak separuh |
+| **ACID** | The four promises: atomic, consistent, isolated, durable | Empat jaminan database |
+| **Race condition** | Two requests doing "check then update" at the same time | Bentrokan dua permintaan |
+| **Atomic update** | Letting the database do the arithmetic (`stock = stock - 1`) | Perhitungan di database |
+| **Row lock (`FOR UPDATE`)** | Holding a row so nobody else can change it until you finish | Menahan satu baris |
+| **Isolation level** | How much one transaction can see of another's work in progress | Tingkat keterpisahan |
+| **Deadlock** | Two transactions each waiting for the other's lock | Saling menunggu selamanya |
+
 ## 🧠 The big idea
 
-A :term[transaction]{bahasa="transaksi — sekelompok perintah database yang berhasil semua atau gagal semua"} is a **bank transfer**: taking money from account A and adding it to account B are two steps, but they must behave like **one**. If the power goes out between them, the money must not vanish.
+A :term[transaction]{bahasa="transaksi — sekelompok perintah database yang berhasil semua atau gagal semua"} is a **bank transfer**: taking money out of account A and adding it to account B are two steps, but they must behave like **one**. If the power goes out in between, the money must not vanish.
 
-> **All or nothing.** Either every step is saved (`COMMIT`), or none are (`ROLLBACK`).
+> **All or nothing.** Either every step is saved (`COMMIT`), or none of them are (`ROLLBACK`).
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Real operations have several steps: create an order, decrease stock, record a payment, write an audit log. Failures happen **between** steps (bugs, timeouts, crashes). And thousands of users act **at the same time** — two people buying the last item, two tabs updating the same application.
+Real operations have several steps: create an order, reduce stock, record a payment, write an audit log. Failures happen **between** steps — bugs, timeouts, crashes. And thousands of users act **at the same time**: two people buying the last item, two tabs updating the same application.
 
-## 💥 What happens if we DON'T use transactions?
+Without transactions:
 
 ```python
 stock = db.execute("SELECT stock FROM products WHERE id = 5").fetchone()[0]   # both requests read 1
@@ -38,9 +52,9 @@ if stock >= 1:
     db.execute("INSERT INTO orders ...")                                         # two orders, stock = -1
 ```
 
-And without grouping: the stock decrement succeeds, the order insert fails on a constraint → an item disappears from inventory with no order. Customers get charged for things that don't exist, or warehouses ship phantom orders.
+And without grouping the steps, the stock decrement succeeds while the order insert fails on a constraint → an item disappears from inventory with no order behind it. Customers get charged for things that don't exist, or the warehouse ships phantom orders.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. BEGIN, COMMIT, ROLLBACK
 
@@ -69,6 +83,8 @@ If any statement inside a transaction **fails**, PostgreSQL marks the transactio
 | **D**urability | committed data survives crashes | once "order confirmed", it's on disk |
 
 ### 3. Race conditions and three ways to prevent them
+
+The root cause is always the same: two people read the same number before either writes. The fixes are "let the database do the maths", "let a constraint refuse the bad state", or "hold the row while you decide".
 
 A :term[race condition]{bahasa="kondisi balapan — hasil salah karena dua proses berjalan bersamaan dan saling mendahului"} happens when the result depends on timing.
 
@@ -151,9 +167,13 @@ ORMs have the same idea: SQLAlchemy's `session.begin()` / commit-rollback (Week 
 
 ### 7. Keep transactions short
 
+A transaction holds locks, so a long one is like standing at the counter with your wallet open while you call a friend for advice: everybody behind you waits. Do the slow work (API calls, image processing) outside it.
+
 A transaction holds locks. Never do slow things inside one: calling a payment API, sending emails, waiting for user input, or calling an LLM. Do those **before** (prepare) or **after** (via an outbox table/queue — Module 5).
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Approach | ✅ | ❌ |
 |---|---|---|
@@ -163,29 +183,10 @@ A transaction holds locks. Never do slow things inside one: calling a payment AP
 | Constraints | always enforced | errors must be handled nicely in the app |
 | Long transactions | "simpler" code | locks, contention, timeouts, bloat |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Wrap every multi-step write that must be consistent in a transaction.
 - ✅ Use atomic updates for counters, stock, balances, quotas.
 - 🚫 Don't hold a transaction open across network calls or user interactions.
 - 🚫 Don't rely on "check in Python, then write" for anything concurrent.
-
-## 🏆 Best practices
-
-- [ ] Group related writes in **one transaction**; commit once per unit of work (often once per request).
-- [ ] Make check-and-change **atomic** (`UPDATE … WHERE condition RETURNING`) instead of read-then-write.
-- [ ] Back critical invariants with **constraints** (`CHECK`, `UNIQUE`, FK) — they're your last line of defense.
-- [ ] Keep transactions **short**; no external API calls, emails or LLM calls inside them.
-- [ ] Lock rows in a **consistent order** to avoid deadlocks; handle deadlock/serialization errors with a **retry**.
-- [ ] Use **idempotency keys** for operations clients may retry (payments, order submission) — Week 5.
-- [ ] Test concurrency explicitly (two connections/threads) for money, stock and quotas.
-- [ ] Snapshot prices and totals inside the same transaction as the order.
-
-## 🏭 How it's used in industry
-
-- Payments, e-commerce checkout, ticket booking and inventory systems live and die by these patterns.
-- Payment webhooks (like Midtrans callbacks) are processed in transactions together with idempotency checks, so duplicates don't double-credit.
-- The **outbox pattern** writes "event to publish" rows in the same transaction as business data, then a worker sends them — reliable messaging without distributed transactions (Module 5).
 
 ## ⚠️ Common mistakes
 
@@ -198,6 +199,17 @@ A transaction holds locks. Never do slow things inside one: calling a payment AP
 :::revoshop
 RevoShop handles money and stock. In `app/services/order_service.py` and `app/services/payment_service.py`, find: (1) where an order is created and stock is reduced — are both in **one** commit? (2) Is the stock check atomic, or "read stock, then update"? What happens if two buyers checkout the last item at the same moment? (3) In the Midtrans webhook handling (`app/integrations/midtrans.py`), what prevents the **same notification** from being processed twice? Write down your findings and one fix you'd make.
 :::
+
+## 🏆 Best practices
+
+- [ ] Group related writes in **one transaction**; commit once per unit of work (often once per request).
+- [ ] Make check-and-change **atomic** (`UPDATE … WHERE condition RETURNING`) instead of read-then-write.
+- [ ] Back critical invariants with **constraints** (`CHECK`, `UNIQUE`, FK) — they're your last line of defense.
+- [ ] Keep transactions **short**; no external API calls, emails or LLM calls inside them.
+- [ ] Lock rows in a **consistent order** to avoid deadlocks; handle deadlock/serialization errors with a **retry**.
+- [ ] Use **idempotency keys** for operations clients may retry (payments, order submission) — Week 5.
+- [ ] Test concurrency explicitly (two connections/threads) for money, stock and quotas.
+- [ ] Snapshot prices and totals inside the same transaction as the order.
 
 ::part[Explain & Design]{n="2"}
 
@@ -271,16 +283,6 @@ Why shouldn't you call a payment API inside a database transaction?
 It can be slow or hang, keeping locks and connections busy; and if the transaction later rolls back, the external call can't be undone. Do external calls before/after, with idempotency and an outbox.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Transaction | Transaksi — semua berhasil atau semua batal |
-| Commit / Rollback | Simpan permanen / Batalkan |
-| Race condition | Kondisi balapan |
-| Lock | Kunci baris agar tidak diubah bersamaan |
-| Deadlock | Saling tunggu tanpa akhir |
-| Isolation level | Tingkat isolasi transaksi |
 
 ## 📚 Keep learning
 
