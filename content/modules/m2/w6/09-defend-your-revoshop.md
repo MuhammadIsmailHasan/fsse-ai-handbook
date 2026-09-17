@@ -18,6 +18,8 @@ Much of RevoShop was generated with Kiro. That's normal in 2026 — companies **
 
 This session turns RevoShop from "code I have" into "a system I understand".
 
+Think of it like a driving test: you already drive every day, but now someone asks *why* you checked that mirror. Knowing the answer is what turns a driver into a licensed one.
+
 :::warning[The rules]
 1. 🚫🤖 **No AI** while answering. Open the code, read it, answer in your own words.
 2. **Answer out loud** (or record a voice memo), then write 3–5 bullet points. Speaking reveals gaps that silent reading hides.
@@ -25,6 +27,19 @@ This session turns RevoShop from "code I have" into "a system I understand".
 4. When you don't know: write "I don't know yet", find out, then answer. That's the point.
 5. Only after a section is done, reveal the guidance and grade yourself.
 :::
+
+## 🔤 Key words
+
+| Word | In simple words |
+|---|---|
+| **Technical interview** | A conversation where you explain and defend how something works |
+| **Project walkthrough** | Telling the story of your project: problem, design, result |
+| **Trade-off** | What you gave up to get something else |
+| **Design decision** | A choice you made on purpose, with a reason |
+| **D-T-C** | Decision → Trade-off → Change: the shape of a good answer |
+| **Weak spot** | A part you know isn't good enough yet |
+| **Improvement backlog** | Your own list of what to fix next, in order |
+| **Pitch** | A short, clear summary of the project for someone new |
 
 ## 🧭 How to answer: the D-T-C framework
 
@@ -36,7 +51,7 @@ For every "why" question, answer in three parts:
 | **T**rade-off | Why this and not the alternative? | "Floats can't represent 0.1 exactly; money must be exact. The cost is converting carefully in JSON." |
 | **C**hange | What would I improve now, knowing more? | "`to_dict()` converts to `float` — I'd serialize as a string or integer rupiah." |
 
-Interviewers love **C**: it shows judgment and growth. "I'd change X because Y" beats pretending everything is perfect.
+Interviewers love the **C** part: it shows judgement and growth. "I'd change X because Y" beats pretending everything is perfect — nobody believes a project with no weak spots, and saying one out loud makes the rest of your answers more credible.
 
 ## 🗺️ Part 1 — The 2-minute pitch
 
@@ -165,6 +180,8 @@ For each of the 20 questions give yourself:
 Add every 0 or 1 question to the **review queue** (mark the related lessons done-but-review) so spaced repetition brings them back.
 
 ## 🛠️ Part 4 — Your RevoShop improvement backlog
+
+Every weak spot you found is now a task, not a worry. A written backlog is also an interview answer in itself: it shows you know where the project stands.
 
 Turn weak spots into GitHub issues in your RevoShop repo. Suggested backlog — pick at least **three** to implement yourself (No-AI for the first draft):
 
