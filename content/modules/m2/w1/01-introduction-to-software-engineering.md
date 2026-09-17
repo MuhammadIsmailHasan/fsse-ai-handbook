@@ -19,30 +19,44 @@ tags: [software-engineering, sdlc, agile, teamwork]
 - The roles you'll work with, and where you fit
 - What "done" really means
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Software engineering** | Building software that stays correct and changeable while a team works on it for years | Rekayasa perangkat lunak |
+| **SDLC** | The cycle a feature goes through: idea → build → release → learn | Siklus hidup pengembangan |
+| **Agile** | Working in short cycles and adjusting, instead of planning everything up front | Cara kerja bertahap |
+| **Scrum / Kanban** | Two common ways teams organise that work: fixed sprints, or a flowing board | Dua metode mengatur kerja |
+| **Ticket / user story** | One written piece of work, described from the user's point of view | Satu unit pekerjaan |
+| **Backlog** | The waiting list of work, most important first | Daftar tunggu pekerjaan |
+| **Code review** | A teammate reading your change before it is merged | Pemeriksaan kode |
+| **Definition of Done** | The team's agreement on what "finished" means | Kesepakatan arti "selesai" |
+| **Technical debt** | Shortcuts today that make changes slower tomorrow | Utang teknis |
+
 ## 🧠 The big idea
 
-Coding is **laying bricks**. Software engineering is **building a house people will live in for 20 years**: understanding what the family needs, planning, building safely, inspecting, fixing leaks, and adding a room later without the roof collapsing.
+Coding is **laying bricks**. Software engineering is **building a house people will live in for 20 years**: understanding what the family needs, planning, building safely, inspecting the work, fixing leaks, and adding a room later without the roof falling in.
 
 > Software engineering = building software that is **correct**, **maintainable**, **secure** and **useful** — with a **team**, over **time**.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Small scripts written by one person for one afternoon don't need process. Real products do:
+A script you write for one afternoon needs no process. A real product does:
 
 - Many people change the same code every day.
-- The code lives for years; the original author leaves.
+- The code lives for years, and the person who wrote it leaves.
 - Mistakes cost money, data or trust.
-- Requirements change constantly.
+- What users need keeps changing.
 
-Engineering practices — version control, reviews, tests, planning, monitoring — exist so teams can keep changing software **quickly without breaking it**.
+Engineering practices — version control, reviews, tests, planning, monitoring — exist so a team can keep changing software **quickly without breaking it**. They are the building inspections, not extra paperwork.
 
-## 💥 What happens if we DON'T work like engineers?
+Without them, a startup ships fast by "just coding": no tests, no reviews, secrets in the code, one developer who understands the payment flow. Six months later every release breaks something, that developer quits, a leaked API key costs Rp 80 juta in cloud bills, and new features take weeks because nobody dares touch anything.
 
-A startup ships fast by "just coding": no tests, no reviews, secrets in the code, one developer who understands the payment flow. Six months later: every release breaks something, the payment developer quits, a leaked API key costs Rp 80 juta in cloud bills, and new features take weeks because nobody dares to touch anything.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The software development lifecycle
+
+Think of it as a loop, not a line: you learn something from real users and start the next turn with better information.
 
 ```mermaid
 flowchart LR
@@ -104,6 +118,8 @@ Tools: Jira, Linear, GitHub Projects, Trello.
 
 ### 5. Definition of Done
 
+"Done" is like handing over a rented room: not just "I stopped working", but cleaned, checked, and with the keys handed over — merged, tested, documented and released.
+
 "It works on my laptop" isn't done. A typical team's **Definition of Done**:
 
 - [ ] Acceptance criteria met
@@ -113,7 +129,9 @@ Tools: Jira, Linear, GitHub Projects, Trello.
 - [ ] Docs/README updated if behavior changed
 - [ ] Deployed and verified (or ready to deploy)
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -124,29 +142,10 @@ Tools: Jira, Linear, GitHub Projects, Trello.
 
 The right amount of process **grows with the team, the risk and the product**.
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Apply lightweight engineering habits even to solo projects (Git, tests, README) — they become your portfolio signal.
 - ✅ Write acceptance criteria before building anything non-trivial.
 - 🚫 Don't copy big-company ceremonies into a two-person project.
 - 🚫 Don't treat "process" as a substitute for talking to users and teammates.
-
-## 🏆 Best practices
-
-- [ ] **Clarify before coding**: restate the requirement and list acceptance criteria and edge cases.
-- [ ] **Small batches**: small tickets, small branches, small pull requests (ideally under ~400 changed lines).
-- [ ] **Automate the boring checks**: tests, linting and formatting run in CI, not in reviewers' heads.
-- [ ] **Write things down**: README, decision notes (ADRs), runbooks. Future-you is a teammate.
-- [ ] **Make work visible**: update the ticket/board; raise blockers early at stand-up, not at the deadline.
-- [ ] **Own it end to end**: after merging, check that it actually works in the deployed environment.
-- [ ] **Blameless culture**: when things break, fix the system (tests, checks, docs), not the person.
-- [ ] **Security and privacy from day one**: no secrets in code, least privilege, validate input.
-
-## 🏭 How it's used in industry
-
-- Most Indonesian tech companies (and remote international teams) use Agile with Jira or Linear, GitHub/GitLab PRs, and CI/CD.
-- Interviews include **behavioral questions** about exactly this: *"Tell me about a time you disagreed in a code review"*, *"How do you handle unclear requirements?"*
-- AI coding tools (Module 6) sit **inside** this lifecycle — they speed up building, but planning, review, testing and ownership stay human responsibilities.
 
 ## ⚠️ Common mistakes
 
@@ -159,6 +158,17 @@ The right amount of process **grows with the team, the risk and the product**.
 :::revoshop
 Open your RevoShop repo and look for evidence of the lifecycle: the `jira/` folder (planning), `docs/` and the README's *Architecture* section (design), `tests/` (build), `.pylintrc` and the *Code Quality & Security* section (review), `Dockerfile` and `Procfile` (release), `app/logging_config.py` and the `/health` route in `app/routes/health.py` (operate). Which phase is the **weakest** in your project, and what would you add?
 :::
+
+## 🏆 Best practices
+
+- [ ] **Clarify before coding**: restate the requirement and list acceptance criteria and edge cases.
+- [ ] **Small batches**: small tickets, small branches, small pull requests (ideally under ~400 changed lines).
+- [ ] **Automate the boring checks**: tests, linting and formatting run in CI, not in reviewers' heads.
+- [ ] **Write things down**: README, decision notes (ADRs), runbooks. Future-you is a teammate.
+- [ ] **Make work visible**: update the ticket/board; raise blockers early at stand-up, not at the deadline.
+- [ ] **Own it end to end**: after merging, check that it actually works in the deployed environment.
+- [ ] **Blameless culture**: when things break, fix the system (tests, checks, docs), not the person.
+- [ ] **Security and privacy from day one**: no secrets in code, least privilege, validate input.
 
 ::part[Explain & Design]{n="2"}
 
@@ -233,16 +243,6 @@ What does "blameless" mean after an incident?
 The team focuses on what in the system allowed the mistake (missing test, unclear docs, no alert) and fixes that, instead of punishing an individual.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| SDLC | Siklus hidup pengembangan perangkat lunak |
-| User story | Cerita kebutuhan dari sudut pandang pengguna |
-| Acceptance criteria | Kriteria penerimaan |
-| Backlog | Daftar pekerjaan yang diprioritaskan |
-| Definition of Done | Definisi "selesai" yang disepakati tim |
-| Pull request | Permintaan untuk menggabungkan perubahan kode |
 
 ## 📚 Keep learning
 
