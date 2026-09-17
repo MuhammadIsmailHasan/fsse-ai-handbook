@@ -84,31 +84,28 @@ Common failures:
 
 Counts are lessons (files), from `npm run -s i18n`.
 
-| Area | Total | Rewritten + translated | Status |
-|---|---|---|---|
-| Module 4 (frontend) | 50 | 50 | ✅ done |
-| Module 5 (deployment) | 27 | 5 | 🚧 in progress |
-| Module 1 | 14 | 0 | ⬜ |
-| Module 2 | 52 | 0 | ⬜ |
-| Module 8 | 12 | 0 | ⬜ low priority |
-| Tracks: architecture | 19 | 0 | ⬜ |
-| Tracks: DSA | 12 | 0 | ⬜ |
-| Projects (careerpilot, studymind, supportdesk-ai) | 6 | 0 | ⬜ |
-| Guides | 2 | 0 | ⬜ |
+| Area | Total | English rewritten | Indonesian | Status |
+|---|---|---|---|---|
+| Module 4 (frontend) | 50 | 50 | 50 | ✅ done |
+| Module 5 (deployment) | 27 | 27 | 5 | ✅ English done · Indonesian pending |
+| Module 1 | 14 | 0 | 0 | ⬜ |
+| Module 2 | 52 | 0 | 0 | ⬜ |
+| Module 8 | 12 | 0 | 0 | ⬜ low priority |
+| Tracks: architecture | 19 | 0 | 0 | ⬜ |
+| Tracks: DSA | 12 | 0 | 0 | ⬜ |
+| Projects (careerpilot, studymind, supportdesk-ai) | 6 | 0 | 0 | ⬜ |
+| Guides | 2 | 0 | 0 | ⬜ |
 
-### Module 5 checklist (current work)
+### Module 5 checklist — English pass ✅ complete
 
-- [x] w1/00 placement check
-- [x] w1/01 Docker in Depth
-- [x] w1/02 Multi-stage: targets, tags, registries
-- [x] w1/03 Docker Compose full stack
-- [x] w1/04 Redis caching and queues
-- [ ] w1/05 Ship RevoShop production containers
-- [ ] w2/00 placement check · w2/01 pipeline concepts · w2/02 GitHub Actions · w2/03 environments · w2/04 secrets & OIDC · w2/05 Ship RevoShop CI/CD
-- [ ] w3/00 placement check · w3/01 IAM & budgets · w3/02 regions & VPC · w3/03 EC2 · w3/04 RDS · w3/05 S3 & CloudFront · w3/06 AWS/GCP/Azure table · w3/07 Ship RevoShop EC2+RDS
-- [ ] w4/00 placement check · w4/01 frontend on S3/CloudFront · w4/02 backend on EC2 · w4/03 ECS · w4/04 Lambda · w4/05 Parameter Store & Secrets Manager · w4/06 Ship RevoShop ECS Fargate
+- [x] w1: 00 placement · 01 Docker in depth · 02 targets/tags/registries · 03 Compose full stack · 04 Redis · 05 Ship RevoShop containers
+- [x] w2: 00 placement · 01 pipeline concepts · 02 GitHub Actions · 03 environments · 04 secrets & OIDC · 05 Ship RevoShop CI/CD
+- [x] w3: 00 placement · 01 IAM & budgets · 02 regions & VPC · 03 EC2 · 04 RDS · 05 S3 & CloudFront · 06 cloud translation table · 07 Ship RevoShop EC2+RDS
+- [x] w4: 00 placement · 01 frontends on AWS · 02 backend on EC2 · 03 ECS Fargate · 04 Lambda jobs · 05 Parameter Store & Secrets Manager · 06 Ship RevoShop ECS
 
-After Module 5: Module 2 (largest, 52), Module 1, tracks, projects, guides; Module 8 last. Then new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) — written in the new style in both languages from the start.
+Indonesian versions exist only for w1 00–04; the rest are a later pass (see section 0 and template C2).
+
+Next in the English pass: Module 2 (largest, 52), Module 1, tracks, projects, guides; Module 8 last. Then new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) — written in the new style in both languages from the start.
 
 ---
 
