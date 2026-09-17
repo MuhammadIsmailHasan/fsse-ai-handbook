@@ -16,20 +16,34 @@ tags: [aws, gcp, azure, cloud, multi-cloud]
 - **Conceptual differences** that trip people up (projects vs accounts, identity models, networking scope)
 - How to talk about multi-cloud experience honestly in interviews
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Cloud provider** | A company renting you servers, databases and storage (AWS, Google Cloud, Azure) | Penyedia cloud |
+| **Account / project / subscription** | The billing and access boundary — AWS calls it an account, GCP a project, Azure a subscription | Batas tagihan dan akses |
+| **Resource group** (Azure) | A folder that holds related resources and can be deleted as one | Wadah sumber daya |
+| **Managed service** | Something the provider runs for you (a database, a queue) | Layanan yang dikelola provider |
+| **Serverless** | You deploy code or containers and the provider handles the servers | Tanpa mengelola server |
+| **IaC (infrastructure as code)** | Describing your cloud setup in files instead of clicking | Infrastruktur sebagai kode |
+| **Multi-cloud** | Using more than one provider on purpose | Memakai beberapa cloud |
+
 ## 🧠 The big idea
 
-Clouds are like **car brands**: steering wheel, brakes and fuel gauge exist in all of them, just in different places with different names. If you understand *why* a car has brakes (the concept), switching brands takes a few days, not months. Learn concepts on AWS; translate names when a job needs GCP or Azure.
+Clouds are like **car brands**. A steering wheel, brakes and a fuel gauge exist in all of them — just in slightly different places, with different names.
 
-## ❓ Why does this matter?
+If you understand *why* a car has brakes (the concept), switching brands takes a few days, not months. So learn the concepts once on AWS, and translate the names when a job asks for GCP or Azure.
 
-Indonesian job listings mention AWS most often, but also GCP (common in startups and data teams) and Azure (common in enterprises and banks). Knowing the mapping lets you apply confidently and ramp up quickly.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T?
+Job ads in Indonesia mention AWS most often, but also GCP (common in startups and data teams) and Azure (common in big companies and banks). Remote roles in the US are the same story. Knowing the mapping lets you apply with confidence and get productive quickly.
 
-- You think "I only know AWS" disqualifies you from a GCP role.
-- Or you claim "multi-cloud" on your CV and can't answer what a GCP project or an Azure resource group is.
+Without it, one of two things happens:
 
-## 📖 How it works, step by step
+- You think "I only know AWS", and skip a GCP role you could do.
+- Or you write "multi-cloud" on your CV and then can't explain what a GCP project or an Azure resource group is.
+
+## 📖 Step by step
 
 ### 1. The translation table
 
@@ -69,6 +83,8 @@ Service names change occasionally — check the provider's current docs when you
 
 ### 2. Differences that matter
 
+These are the places where the "same car, different brand" idea breaks down: the pedals really are somewhere else, and assuming otherwise causes confusion in interviews.
+
 | Topic | Difference |
 |---|---|
 | Boundaries | GCP **projects** are lightweight and common per app/environment; Azure groups everything in **resource groups** inside subscriptions |
@@ -88,7 +104,9 @@ Service names change occasionally — check the provider's current docs when you
 | Images | S3 + CloudFront | Cloud Storage + Cloud CDN | Blob Storage + Front Door |
 | CI deploy identity | GitHub OIDC → IAM role | GitHub OIDC → Workload Identity Federation | GitHub OIDC → federated credential on a managed identity/app registration |
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Approach | ✅ | ❌ |
 |---|---|---|
@@ -96,23 +114,9 @@ Service names change occasionally — check the provider's current docs when you
 | Shallow on three clouds | more keywords | weak interviews |
 | Multi-cloud architecture for one app | vendor independence | much more complexity and cost — rarely worth it for small teams |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Use the table to prepare for a job post that names GCP or Azure.
 - ✅ Keep your code portable (containers, PostgreSQL, OpenTelemetry, Terraform).
 - 🚫 Don't design RevoShop to run on three clouds at once.
-
-## 🏆 Best practices
-
-- [ ] Learn concepts deeply on one provider, then map names.
-- [ ] Prefer portable building blocks (containers, PostgreSQL, OIDC, Terraform, OpenTelemetry).
-- [ ] Say "deployed on AWS; familiar with the GCP/Azure equivalents" — not "multi-cloud expert".
-- [ ] Before a GCP/Azure interview, deploy one small container app there (Cloud Run / Container Apps) to back your claim.
-
-## 🏭 How it's used in industry
-
-- Many companies are primarily on one cloud, with a second cloud for a specific service (e.g. BigQuery, Azure OpenAI) or an acquisition.
-- Platform teams abstract providers with Terraform modules and Kubernetes, but still use provider-specific managed services.
 
 ## ⚠️ Common mistakes
 
@@ -125,6 +129,13 @@ Service names change occasionally — check the provider's current docs when you
 2. Pick the one job post from your Module 8 target list that mentions GCP or Azure. Write three sentences for your CV or interview that honestly connect your AWS RevoShop deployment to that cloud.
 3. Stretch: deploy RevoShop's `prod` image to Google Cloud Run with a free trial or credits (no database — point `DATABASE_URL` at a temporary Cloud SQL or skip the DB-backed smoke tests). Write down the three biggest differences you noticed compared to ECS. **Tear it down the same day.**
 :::
+
+## 🏆 Best practices
+
+- [ ] Learn concepts deeply on one provider, then map names.
+- [ ] Prefer portable building blocks (containers, PostgreSQL, OIDC, Terraform, OpenTelemetry).
+- [ ] Say "deployed on AWS; familiar with the GCP/Azure equivalents" — not "multi-cloud expert".
+- [ ] Before a GCP/Azure interview, deploy one small container app there (Cloud Run / Container Apps) to back your claim.
 
 ::part[Explain & Design]{n="2"}
 
@@ -177,15 +188,6 @@ Why do CIDR plans work differently on GCP?
 A GCP VPC is global: one VPC can contain subnets in many regions, so address planning happens once across regions rather than per regional VPC.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Multi-cloud | Multi-awan (lebih dari satu penyedia cloud) |
-| Resource group | Grup sumber daya (Azure) |
-| Project | Proyek (batas sumber daya di GCP) |
-| Managed identity | Identitas terkelola |
-| Vendor lock-in | Ketergantungan pada satu vendor |
 
 ## 📚 Keep learning
 
