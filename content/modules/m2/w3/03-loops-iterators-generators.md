@@ -19,15 +19,27 @@ tags: [python, iterators, generators, itertools, memory]
 - `itertools` essentials: `islice`, `batched`, `chain`, `groupby`, `accumulate`
 - `for`/`while` extras: `else` on loops, sentinel loops, and when to stop iterating
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Iterable** | Anything you can loop over (list, file, database rows) | Bisa dilalui loop |
+| **Iterator** | The thing that hands you one item at a time | Pemberi nilai satu per satu |
+| **Generator** | A function that produces values one by one with `yield` | Fungsi penghasil nilai bertahap |
+| **`yield`** | Hand back one value and pause here until asked again | Berikan satu nilai lalu jeda |
+| **Lazy** | Nothing is computed until you ask for the next item | Dihitung saat diminta |
+| **Generator expression** | A comprehension in round brackets — lazy, not stored | Comprehension yang hemat memori |
+| **Pipeline** | Small generator steps chained together | Rangkaian langkah pengolahan |
+| **`itertools`** | The standard toolbox for slicing, batching and grouping iterables | Kotak alat untuk iterasi |
+| **Streaming** | Processing data as it arrives instead of loading it all | Mengolah sambil mengalir |
+
 ## 🧠 The big idea
 
-A list is a **box of 1 million oranges** delivered to your door — heavy, and you must store all of them. A :term[generator]{bahasa="generator — fungsi yang menghasilkan nilai satu per satu saat diminta, bukan sekaligus"} is a **conveyor belt** from the orchard: one orange arrives whenever you're ready for the next, and you never need space for all of them.
+A list is a **box of one million oranges** delivered to your door: heavy, and you must find space for all of them. A :term[generator]{bahasa="generator — fungsi yang menghasilkan nilai satu per satu saat diminta, bukan sekaligus"} is a **conveyor belt** from the orchard: one orange arrives whenever you're ready for the next, and you never need room for the whole harvest.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Backend work constantly processes data bigger than memory, or data that never ends: a 5 GB log file, a CSV export of every order, rows streamed from a database, a stream of events, or tokens streaming from an LLM. Loading everything into a list first is slow and can crash the process.
-
-## 💥 What happens if we DON'T use them?
+Backend work constantly handles data bigger than memory, or data that never ends: a 5 GB log file, a CSV export of every order, rows streamed from a database, a queue of events, or tokens streaming from an LLM. Loading it all into a list first is slow and can kill the process.
 
 ```python
 lines = open("access.log").readlines()          # loads the whole 5 GB file into RAM 💥
@@ -41,11 +53,13 @@ for row in rows:
     export(row)
 ```
 
-The server runs out of memory, or everything grinds to a halt while users wait.
+The server runs out of memory, or everything freezes while users wait.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. What `for` really does
+
+A `for` loop is just politely asking "next, please" until the iterator says there's nothing left.
 
 ```python
 for skill in ["python", "sql"]:
@@ -101,6 +115,8 @@ has_remote = any(job["remote"] for job in jobs)          # stops at the first Tr
 ```
 
 ### 4. Pipelines
+
+Each step is one machine on the belt: read, filter, transform, batch. Nothing moves until the end of the belt pulls — so memory stays flat no matter how big the file is.
 
 Chain small generators — each step does one job:
 
@@ -173,7 +189,9 @@ while (chunk := file.read(8192)):     # read a binary file in chunks until empty
 - Flask can stream responses from a generator; FastAPI's `StreamingResponse` too.
 - LLM APIs stream tokens — you'll iterate over them in Module 7.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -182,28 +200,10 @@ while (chunk := file.read(8192)):     # read a binary file in chunks until empty
 | Pipeline of generators | composable, testable steps | errors surface late (when consumed) |
 | `batched` processing | fewer round trips, bounded memory | need to handle partial final batch |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Generators for large files, database exports, streaming APIs, and data pipelines.
 - ✅ Generator expressions inside `sum`, `any`, `all`, `max`, `"".join`.
 - 🚫 Use a list when you need to iterate **several times**, index, or know the length.
 - 🚫 Don't use `groupby` on unsorted data (it only groups **consecutive** equal keys).
-
-## 🏆 Best practices
-
-- [ ] Iterate files line by line (`for line in file`), never `readlines()` on big files.
-- [ ] Stream database results in batches for exports/background jobs instead of `fetchall()`.
-- [ ] Keep each generator step small and single-purpose; test steps with small lists.
-- [ ] Use `itertools.batched` (3.12+) for bulk inserts and API calls.
-- [ ] Remember iterators are one-shot — convert to a list if you need to reuse the data.
-- [ ] Close resources properly: open files inside the generator with `with`, and fully consume or close generators.
-- [ ] Prefer `enumerate`, `zip`, `itertools` over manual counters and indexes.
-
-## 🏭 How it's used in industry
-
-- Data export endpoints stream CSV rows so a million-row report doesn't need a million rows in memory.
-- ETL jobs process event streams in batches.
-- AI features stream model output to users token by token (Server-Sent Events) — a generator from backend to browser.
 
 ## ⚠️ Common mistakes
 
@@ -215,6 +215,16 @@ while (chunk := file.read(8192)):     # read a binary file in chunks until empty
 :::revoshop
 Look at how RevoShop's seeders or list endpoints load data (`seeders/seeders.py`, list functions in `app/repositories/`). Do any of them call `.all()` on potentially large tables? For an "export all orders to CSV" admin feature, sketch how you'd stream rows in batches with a generator instead of loading everything.
 :::
+
+## 🏆 Best practices
+
+- [ ] Iterate files line by line (`for line in file`), never `readlines()` on big files.
+- [ ] Stream database results in batches for exports/background jobs instead of `fetchall()`.
+- [ ] Keep each generator step small and single-purpose; test steps with small lists.
+- [ ] Use `itertools.batched` (3.12+) for bulk inserts and API calls.
+- [ ] Remember iterators are one-shot — convert to a list if you need to reuse the data.
+- [ ] Close resources properly: open files inside the generator with `with`, and fully consume or close generators.
+- [ ] Prefer `enumerate`, `zip`, `itertools` over manual counters and indexes.
 
 ::part[Explain & Design]{n="2"}
 
@@ -287,15 +297,6 @@ What does `groupby` require to group correctly?
 The input must be sorted (or at least grouped) by the same key; it only groups consecutive items.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Iterable / Iterator | Objek yang bisa diulang / Penunjuk posisi pengulangan |
-| Generator | Penghasil nilai satu per satu |
-| Lazy evaluation | Evaluasi malas — dihitung hanya saat dibutuhkan |
-| Pipeline | Rangkaian tahapan pemrosesan |
-| Batch | Kelompok item yang diproses bersama |
 
 ## 📚 Keep learning
 

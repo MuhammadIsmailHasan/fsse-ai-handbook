@@ -20,18 +20,37 @@ tags: [python, pep8, ruff, idioms]
 - **PEP 8** and automatic enforcement with **Ruff**
 - **EAFP** vs **LBYL** — the Python way of handling "what if it isn't there?"
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Interpreter** | The program that reads and runs your Python code | Penjalan kode Python |
+| **REPL** | The interactive prompt where you type one line and see the result | Mode interaktif Python |
+| **Object** | Everything in Python is one: numbers, strings, functions, classes | Segala nilai di Python |
+| **Name (variable)** | A label pointing at an object, not a box holding it | Label penunjuk nilai |
+| **Mutable / immutable** | Can be changed in place / cannot | Bisa diubah / tidak |
+| **Pythonic** | Written the way experienced Python developers expect | Gaya khas Python |
+| **Comprehension** | Building a list or dict in one readable line | Membuat list dalam satu baris |
+| **Truthiness** | Empty things count as false; no need to compare with `== True` | Nilai dianggap benar/salah |
+| **PEP 8** | The community style guide for Python code | Panduan gaya Python |
+| **Ruff** | A fast tool that checks and formats your code to that style | Alat pemeriksa dan perapi |
+| **EAFP** | "Try it and handle the error" instead of checking everything first | Coba dulu, tangani error |
+
 ## 🧠 The big idea
 
-Two sentences can mean the same thing, but one sounds natural to native speakers. :term[Pythonic]{bahasa="Pythonic — gaya menulis yang wajar dan idiomatis menurut komunitas Python"} code is Python written the way experienced Python developers expect to read it. It's not about being clever — it's about being **instantly understood** by the next person.
+Two sentences can mean the same thing, but one sounds natural to a native speaker. :term[Pythonic]{bahasa="Pythonic — gaya menulis yang wajar dan idiomatis menurut komunitas Python"} code is Python written the way experienced Python developers expect to read it.
 
-## ❓ Why does this exist?
+It isn't about being clever. It's about being **understood immediately** by the next person — including you in six months.
 
-Python has many ways to do the same thing. Teams need a shared style so that:
-- code reviews focus on logic, not formatting,
+## ❓ Why it matters
+
+Python offers many ways to do the same thing, so a team needs a shared style. Then:
+
+- code reviews talk about logic instead of formatting,
 - anyone can read anyone's code quickly,
-- common bugs (mutable defaults, `== None`, shadowed built-ins) get caught automatically.
+- and common bugs (mutable default arguments, `== None`, shadowed built-ins) get caught automatically.
 
-## 💥 What happens if we DON'T write Pythonic code?
+Non-Pythonic code still runs, but it hides bugs:
 
 ```python
 i = 0
@@ -43,13 +62,13 @@ while i < len(jobs):
     i = i + 1
 ```
 
-It works — and it's five potential bugs long (off-by-one, `== True`, index errors). The Pythonic version:
+Five chances to make a mistake (off-by-one, `== True`, index errors). The Pythonic version says the same thing in one line:
 
 ```python
 result = [job["title"].upper() for job in jobs if job["remote"] and job["skills"]]
 ```
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Running Python
 
@@ -61,6 +80,8 @@ result = [job["title"].upper() for job in jobs if job["remote"] and job["skills"
 | IPython / Jupyter | exploration, data work |
 
 ### 2. Names point to objects
+
+A name is a **luggage tag**, not a suitcase: two tags can hang on the same bag, so changing the bag through one tag changes what the other tag sees.
 
 Recap from DSA Stage 1: variables are **names bound to objects**. Every object has a **type**, a **value**, and an **identity**.
 
@@ -117,6 +138,8 @@ has_python = any("python" in job["skills"] for job in jobs)
 
 ### 4. EAFP vs LBYL
 
+LBYL is checking the road ten times before crossing; EAFP is crossing carefully and knowing what to do if a car appears. Python prefers the second, because the situation can change between your check and your action.
+
 | Style | Meaning | Example |
 |---|---|---|
 | **LBYL** — Look Before You Leap | check first | `if key in data: value = data[key]` |
@@ -165,7 +188,9 @@ select = ["E", "F", "I", "B", "UP", "SIM"]   # errors, pyflakes, isort, bugbear,
 
 `B` (bugbear) catches things like mutable default arguments; `UP` modernizes syntax; `SIM` suggests simpler code.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -175,29 +200,10 @@ select = ["E", "F", "I", "B", "UP", "SIM"]   # errors, pyflakes, isort, bugbear,
 | LBYL | explicit | races for external resources; duplicate lookups |
 | Strict lint rules | catches bugs early | initial noise on old code |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Use idioms that make intent obvious (`enumerate`, unpacking, `any`, `with`).
 - ✅ Automate style with a formatter + linter in the editor **and** CI.
 - 🚫 Don't write one-liners that need a comment to explain them.
 - 🚫 Don't use comprehensions for side effects (`[print(x) for x in items]`).
-
-## 🏆 Best practices
-
-- [ ] Format with **`ruff format`** and lint with **`ruff check`** (or Black + Flake8) — same config locally and in CI.
-- [ ] Follow **PEP 8** naming; never shadow built-ins (`list`, `dict`, `id`, `type`, `input`).
-- [ ] `is None` / `is not None`; truthiness for empty checks.
-- [ ] Use `with` for files, locks, database sessions — anything that must be closed.
-- [ ] Prefer `enumerate`/`zip(strict=True)` over index arithmetic.
-- [ ] Always pass `encoding="utf-8"` when opening text files.
-- [ ] Keep comprehensions to one `for` and one `if`; otherwise use a loop.
-- [ ] Target a modern Python (3.12+) and let `ruff`'s `UP` rules modernize syntax.
-
-## 🏭 How it's used in industry
-
-- Python teams almost universally run a formatter and linter in **pre-commit hooks** and CI; unformatted code simply fails the pipeline.
-- Code review comments like "use `enumerate`", "this shadows `id`", "prefer `is None`" are exactly what linters automate.
-- Readable Python matters even more with AI coding tools: you must quickly verify generated code.
 
 ## ⚠️ Common mistakes
 
@@ -210,6 +216,17 @@ select = ["E", "F", "I", "B", "UP", "SIM"]   # errors, pyflakes, isort, bugbear,
 :::revoshop
 RevoShop has `.pylintrc` and a *Code Quality & Security* section in its README. Run `pylint app` (or `uv run ruff check app` if you try Ruff) in the repo. Pick **three** warnings and explain what each one protects against. Do you find any shadowed built-ins (`id`, `type`, `filter`) in your routes or services?
 :::
+
+## 🏆 Best practices
+
+- [ ] Format with **`ruff format`** and lint with **`ruff check`** (or Black + Flake8) — same config locally and in CI.
+- [ ] Follow **PEP 8** naming; never shadow built-ins (`list`, `dict`, `id`, `type`, `input`).
+- [ ] `is None` / `is not None`; truthiness for empty checks.
+- [ ] Use `with` for files, locks, database sessions — anything that must be closed.
+- [ ] Prefer `enumerate`/`zip(strict=True)` over index arithmetic.
+- [ ] Always pass `encoding="utf-8"` when opening text files.
+- [ ] Keep comprehensions to one `for` and one `if`; otherwise use a loop.
+- [ ] Target a modern Python (3.12+) and let `ruff`'s `UP` rules modernize syntax.
 
 ::part[Explain & Design]{n="2"}
 
@@ -288,15 +305,6 @@ What does `zip(a, b, strict=True)` add?
 It raises `ValueError` if the iterables have different lengths, instead of silently dropping extra items.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Idiomatic / Pythonic | Sesuai gaya alami bahasa |
-| Linter / Formatter | Pemeriksa kode / Perapi format otomatis |
-| PEP 8 | Panduan gaya resmi Python |
-| EAFP / LBYL | Coba dulu, tangani error / Cek dulu sebelum bertindak |
-| Shadowing | Menimpa nama bawaan dengan variabel sendiri |
 
 ## 📚 Keep learning
 

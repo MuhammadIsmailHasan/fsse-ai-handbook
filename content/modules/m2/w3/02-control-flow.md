@@ -20,19 +20,31 @@ tags: [python, control-flow, match, state-machine]
 - Modeling business rules as a **state machine** (allowed status transitions)
 - Guard clauses and the walrus operator, used sparingly
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Control flow** | The order in which your code decides what to do next | Alur keputusan program |
+| **Guard clause** | Handling the bad case early and returning, to avoid deep nesting | Keluar awal untuk kasus khusus |
+| **Pattern matching (`match`)** | Choosing a branch by the *shape* of the data, not just its value | Mencocokkan bentuk data |
+| **Dispatch table** | A dictionary mapping a key to the function that handles it | Tabel pemetaan penangan |
+| **State machine** | A written list of states and which moves between them are allowed | Mesin status |
+| **Transition** | One allowed move from one state to another | Perpindahan status |
+| **Walrus operator (`:=`)** | Assigning a value inside a condition | Menetapkan nilai di dalam kondisi |
+
 ## 🧠 The big idea
 
-Long `if/elif` chains are like a receptionist reading a 40-item checklist for every visitor. Better options:
+A long `if/elif` chain is like a receptionist reading a 40-item checklist for every visitor. Three better tools:
 
-- **Pattern matching** — a sorting machine that recognizes the *shape* of what arrives ("a letter with a stamp", "a box with two labels").
-- **A dispatch table** — a directory board: look up the department, go straight there.
-- **A state machine** — the rules of a board game: from this square, you may only move to these squares.
+- **Pattern matching** — a sorting machine that recognises the *shape* of what arrives ("a letter with a stamp", "a box with two labels").
+- **A dispatch table** — the directory board in a mall: look up the department, go straight there.
+- **A state machine** — the rules of a board game: from this square you may only move to those squares.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Backend code is full of decisions: which handler for which event, which command did the user type, is this status change allowed? When each new case means editing a giant `if` chain, bugs and merge conflicts pile up. Clear decision structures make rules **visible**, **testable** and **easy to extend**.
+Backend code is full of decisions: which handler for which event, which command the user typed, whether this status change is allowed. When every new case means editing one giant `if` chain, bugs and merge conflicts pile up. Clear decision structures make the rules **visible**, **testable** and easy to extend.
 
-## 💥 What happens if we DON'T structure decisions?
+Here's what unstructured decisions allow:
 
 ```python
 def change_status(application, new_status):
@@ -46,9 +58,9 @@ def change_status(application, new_status):
         application["status"] = "applied"
 ```
 
-This lets a **rejected** application jump straight to **offer**, or an **offer** go back to **applied**. The real rule ("which moves are allowed?") exists only in people's heads — and in bug reports.
+A **rejected** application can jump straight to **offer**, and an **offer** can go back to **applied**. The real rule — which moves are allowed — exists only in people's heads, and in bug reports.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Guard clauses (recap) and conditional expressions
 
@@ -96,6 +108,8 @@ Great for parsing **commands**, **events**, and **JSON-like** data. For simple r
 
 ### 3. Dispatch tables
 
+Adding a new case then means adding one entry to the table, not editing a chain everyone else is also editing.
+
 When each case just calls a different function, map keys to functions:
 
 ```python
@@ -120,6 +134,8 @@ def export(report, fmt: str):
 Adding a format = adding one line. The list of supported formats is **data** you can show in an error message or API docs. (Flask's URL routing is essentially a big dispatch table from paths to view functions!)
 
 ### 4. State machines
+
+Writing the allowed moves as data turns "we think that shouldn't happen" into "the code refuses it" — and the table doubles as documentation for the whole team.
 
 A :term[state machine]{bahasa="mesin status — model yang menentukan status apa saja yang boleh dituju dari status sekarang"} lists the allowed **transitions**:
 
@@ -174,7 +190,9 @@ domain = match.group("domain")
 
 Use it where it removes duplication; avoid it where it makes lines dense.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Tool | ✅ | ❌ |
 |---|---|---|
@@ -184,29 +202,11 @@ Use it where it removes duplication; avoid it where it makes lines dense.
 | State machine table | rules explicit, fully testable | must be kept in sync with the database `CHECK`/enum |
 | Walrus | removes duplicate calls | easy to overuse |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ `match` for commands, events, and nested JSON shapes.
 - ✅ Dispatch tables for pluggable behaviors (exporters, handlers, notification channels).
 - ✅ State machines for anything with a **lifecycle**: orders, payments, applications, tickets.
 - 🚫 Don't use `match` just to replace a two-branch `if`.
 - 🚫 Don't hide business rules in UI code — enforce transitions in the backend.
-
-## 🏆 Best practices
-
-- [ ] Keep business rules (allowed transitions, limits) in **one place** as data, not scattered across endpoints.
-- [ ] Always include a **default** (`case _:` / unknown key handling) that fails clearly.
-- [ ] Raise **specific exceptions** (`InvalidTransition`) that the API layer turns into `409`/`400` responses.
-- [ ] Test **every allowed and a sample of disallowed** transitions (parametrized tests make this cheap).
-- [ ] Keep the database `CHECK` constraint and the Python status list in sync (one source of truth where possible, e.g. an `Enum`).
-- [ ] Use guard clauses to keep functions flat.
-- [ ] Prefer readability over cleverness for `match` and `:=`.
-
-## 🏭 How it's used in industry
-
-- Order, payment and shipping lifecycles are implemented as state machines (sometimes with libraries or workflow engines).
-- Webhook handlers and message consumers dispatch on `event["type"]`.
-- CLIs and chatbots parse commands with pattern matching; AI agents dispatch **tool calls** by name — a dispatch table (Module 7).
 
 ## ⚠️ Common mistakes
 
@@ -218,6 +218,16 @@ Use it where it removes duplication; avoid it where it makes lines dense.
 :::revoshop
 RevoShop's README has an **Order Lifecycle** section, and the database has `CHECK (status IN ('waitingForPayment', 'processing', 'shipped', 'delivered', 'cancelled'))`. Open `app/services/order_service.py`: where are allowed transitions enforced? Is it a table of transitions, a series of `if`s, or partly missing? Can a `delivered` order become `cancelled`? Draw the lifecycle as a Mermaid `stateDiagram` and compare it with the code.
 :::
+
+## 🏆 Best practices
+
+- [ ] Keep business rules (allowed transitions, limits) in **one place** as data, not scattered across endpoints.
+- [ ] Always include a **default** (`case _:` / unknown key handling) that fails clearly.
+- [ ] Raise **specific exceptions** (`InvalidTransition`) that the API layer turns into `409`/`400` responses.
+- [ ] Test **every allowed and a sample of disallowed** transitions (parametrized tests make this cheap).
+- [ ] Keep the database `CHECK` constraint and the Python status list in sync (one source of truth where possible, e.g. an `Enum`).
+- [ ] Use guard clauses to keep functions flat.
+- [ ] Prefer readability over cleverness for `match` and `:=`.
 
 ::part[Explain & Design]{n="2"}
 
@@ -287,16 +297,6 @@ What's the main benefit of storing transitions in a dictionary instead of `if` s
 The rules become visible data: easy to review, test exhaustively, extend, and expose to the API (e.g. "allowed next statuses").
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Pattern matching | Pencocokan pola/bentuk data |
-| Dispatch table | Tabel pemetaan kunci ke fungsi |
-| State machine | Mesin status |
-| Transition | Transisi — perpindahan status |
-| Terminal state | Status akhir |
-| Guard | Syarat tambahan pada sebuah case |
 
 ## 📚 Keep learning
 
