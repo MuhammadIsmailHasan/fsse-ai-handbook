@@ -6,15 +6,24 @@
 
 ---
 
+## 0. English first (current policy, from Module 5 onwards)
+
+The learner decided: **rewrite the English lessons only, and translate later** with a separate cheaper model of their own. Good English material is the priority. So from Module 5 on:
+
+- Rewrite `<lesson>.md` only. Do **not** create `<lesson>.id.md`.
+- If an Indonesian file already exists for that lesson (Module 4, and Module 5 W1 00–04), rewriting the English file makes it **stale** — so re-run `npm run -s i18n -- hash <file>` and update that file's `sourceHash`, or `content:check` will fail.
+- Commit messages: `Rewrite M5 W2 lesson 01 (pipeline concepts) in plain language (EN)`.
+- The Indonesian pass happens later as its own batch, using the templates in section 6 (C2 is the prompt for whichever model does it).
+
 ## 1. What "done" means for one lesson
 
 A lesson counts as done only when **all** of these are true:
 
 1. The English file follows the style rules below.
-2. A `<lesson>.id.md` exists with a `sourceHash` matching the English file.
-3. `npm run -s content:check` passes.
-4. Mermaid diagrams parse (if the lesson has any).
-5. It is committed with the standard trailers.
+2. `npm run -s content:check` passes (including no stale translation, if an `.id.md` exists).
+3. Mermaid diagrams parse (if the lesson has any).
+4. It is committed with the standard trailers.
+5. *(Indonesian pass, later)* a `<lesson>.id.md` exists with a `sourceHash` matching the English file.
 
 ### Style rules, short version
 
