@@ -18,6 +18,19 @@ tags: [architecture, coupling, cohesion, dependency-injection]
 - Passing dependencies in (**dependency injection**) to make code testable
 - Recognizing the smells: god modules, hidden globals, "shotgun surgery"
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Cohesion** | How well the things inside one module belong together | Keterkaitan isi modul |
+| **Coupling** | How much one module depends on another's details | Ketergantungan antar modul |
+| **Module** | One file or package with a purpose | Satu unit kode |
+| **Interface** | The small, stable surface others are allowed to use | Permukaan yang dipakai pihak lain |
+| **Dependency injection** | Passing in what a piece of code needs, instead of it fetching them | Menyuntikkan kebutuhan |
+| **God module** | One file that knows and does everything | Modul serba tahu |
+| **Shotgun surgery** | One small change forcing edits in many files | Satu perubahan, banyak berkas |
+| **Hidden global** | A shared value code reaches for invisibly | Nilai global tersembunyi |
+
 ## 🧠 The big idea
 
 Think of a well-run restaurant:
@@ -27,29 +40,13 @@ Think of a well-run restaurant:
 
 In code: each module should have **one clear purpose** (cohesion), and talk to others through **small, stable interfaces** (low coupling).
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-The real cost of software is change. If changing how emails are sent requires edits in the checkout, the reports, the admin panel and 12 tests, the system is **tightly coupled**. Good structure keeps a change **local**: one reason to change → one place to edit.
+The real cost of software is change. If changing how emails are sent requires edits in checkout, in reports, in the admin panel and in twelve tests, the system is **tightly coupled**.
 
-## 💥 What happens if we DON'T care?
+Good structure keeps a change **local**: one reason to change means one place to edit. That's the restaurant again — the kitchen can buy a new stove without retraining the waiters, because all they exchange is an order slip.
 
-```python
-# reminders.py
-import smtplib
-from datetime import date
-
-def send_follow_up_reminders():
-    conn = psycopg.connect("postgres://prod-db...")            # talks to the real DB
-    rows = conn.execute("SELECT * FROM applications").fetchall()
-    for row in rows:
-        if row[3] == "applied" and (date.today() - row[4]).days > 14:   # business rule
-            server = smtplib.SMTP("smtp.gmail.com")             # real email server
-            server.sendmail("bot@x.com", row[1], f"Follow up with {row[2]}!")
-```
-
-To test the "> 14 days" rule you need a production-like database, a real mail server, and a specific **today**. Switching from email to WhatsApp means editing the same function that holds the business rule. Everything is tangled: **low cohesion, high coupling**.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Cohesion: group by reason to change
 
@@ -73,6 +70,8 @@ Types of coupling, from worse to better:
 | 🟢 Depending on a small interface passed in | `send_reminders(apps, today, notifier)` where notifier has `.send(to, text)` |
 
 ### 3. Dependency injection (DI)
+
+DI sounds grand but is just this: hand the code what it needs, rather than letting it reach out and grab it. That one habit is what makes tests possible without a database.
 
 Instead of creating dependencies **inside** a function, receive them as **parameters**:
 
@@ -125,12 +124,16 @@ Each layer only talks to the one below through a small interface. This is the **
 
 ### 5. Smells to recognize
 
+You don't measure coupling with a tool — you notice it: "why do I have to edit six files for this?" is the signal.
+
 - **Shotgun surgery**: one small change requires edits in many files.
 - **God module/class**: one file everyone imports, doing everything.
 - **Hidden dependencies**: a function that secretly reads the clock, a global, or the network.
 - **Train wrecks**: `order.customer.address.city.name` — knowing too much about other objects' structure.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -139,18 +142,11 @@ Each layer only talks to the one below through a small interface. This is the **
 | Many small cohesive modules | Changes stay local | More files and imports to navigate |
 | Interfaces/Protocols everywhere | Maximum flexibility | Indirection that's unnecessary for simple code (YAGNI!) |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Inject anything **slow, external or non-deterministic**: databases, HTTP clients, email, the clock, random numbers.
 - ✅ Keep business rules in pure functions that receive plain data.
 - 🚫 Don't inject simple pure helpers (`format_date`) — just import them.
 - 🚫 Don't create an interface for something with exactly one implementation *and* no testing need.
 
-## 🏭 How it's used in industry
-
-- Frameworks provide DI containers (FastAPI `Depends`, NestJS, Spring).
-- Tests use fakes/mocks for external services, so CI runs in seconds without real infrastructure.
-- Microservices (Module 5) are coupling and cohesion at **system** scale: each service owns one business capability and communicates through APIs.
 
 ## ⚠️ Common mistakes
 
@@ -224,15 +220,6 @@ Why pass `today` into a function instead of calling `date.today()` inside?
 The function becomes deterministic: tests can use any fixed date, and results don't change depending on when the test runs.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Coupling | Keterikatan antar-modul |
-| Cohesion | Kekompakan isi satu modul |
-| Dependency injection | Memberikan dependensi dari luar |
-| Fake / Mock | Objek tiruan untuk pengujian |
-| Deterministic | Selalu menghasilkan output sama untuk input sama |
 
 ## 📚 Keep learning
 

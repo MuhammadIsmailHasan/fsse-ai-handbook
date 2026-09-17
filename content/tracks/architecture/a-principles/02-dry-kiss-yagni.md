@@ -18,6 +18,18 @@ tags: [architecture, dry, kiss, yagni, design-principles]
 - The **Rule of Three** for when to remove duplication
 - Why applying these rules blindly causes new problems
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **DRY** | Don't repeat the same *knowledge* in several places | Jangan ulangi pengetahuan |
+| **KISS** | Keep it simple: the plainest thing that works | Buat sesederhana mungkin |
+| **YAGNI** | Don't build what nobody has asked for yet | Jangan bangun yang belum perlu |
+| **Rule of Three** | Wait until something appears three times before extracting it | Aturan tiga kali |
+| **Accidental duplication** | Code that looks the same but means different things | Mirip tapi beda makna |
+| **Premature abstraction** | Creating a shared helper too early, and regretting it | Penyatuan terlalu dini |
+| **Over-engineering** | Building for imaginary future needs | Terlalu rumit untuk kebutuhan kini |
+
 ## 🧠 The big idea
 
 All three rules protect the same thing: **your future time**.
@@ -28,30 +40,19 @@ All three rules protect the same thing: **your future time**.
 | **KISS** | Spending a day understanding something that could be 10 obvious lines |
 | **YAGNI** | Building, testing and maintaining features nobody ends up using |
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Software changes constantly. Every duplicated rule, clever trick and speculative feature makes the **next** change slower and riskier. These principles are short names for lessons the industry learned the hard way.
+Software changes constantly. Every duplicated rule, clever trick and "we might need it" feature makes the **next** change slower and riskier. These three short names are lessons the industry learned the hard way.
 
-## 💥 What happens if we DON'T follow them?
+| Rule | The waste it prevents |
+|---|---|
+| **DRY** | Fixing the same bug in five places — and missing one |
+| **KISS** | Spending a day understanding what could have been ten obvious lines |
+| **YAGNI** | Building, testing and maintaining features nobody ends up using |
 
-**Not DRY** — the tax rate lives in three files:
+But each rule has a failure mode too: DRY applied to code that only *looks* similar creates a shared function with five flags; KISS used as an excuse skips necessary structure; YAGNI taken to the extreme ignores changes you already know are coming.
 
-```python
-# checkout.py
-total = subtotal * 111 // 100
-# invoice.py
-tax = subtotal * 11 // 100
-# reports.py
-revenue_before_tax = total * 100 // 110   # 🐛 someone typed 110
-```
-
-The tax changes to 12%. Someone updates two of three. Reports are wrong for months.
-
-**Not KISS** — a "flexible" pricing engine with plugin registries, a rule DSL and 6 abstract classes… for a shop with **two** discount rules.
-
-**Not YAGNI** — "Let's support multiple currencies, dark mode and a GraphQL API from day one." The launch slips by 2 months; no user ever switches currency.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. DRY is about **knowledge**, not text
 
@@ -77,6 +78,8 @@ def max_cart_items() -> int:
 These are not duplication — they'll change for different reasons. Merging them into `MAX_THINGS = 30` would couple unrelated rules. **Ask: "If one changes, must the other change too?"** Only then is it real duplication.
 
 ### 2. The Rule of Three
+
+Two similar pieces of code might be a coincidence; three is a pattern. Waiting for the third saves you from merging two things that were never really the same.
 
 - **1st time**: just write it.
 - **2nd time**: notice the duplication, tolerate it.
@@ -117,7 +120,9 @@ When tempted to add something "because we might need it":
 
 YAGNI does **not** mean "write code that's impossible to extend". Clean, well-named, tested code is easy to extend later. It means: don't build the extension **before** it's needed.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Principle | Taken too far | Balance |
 |---|---|---|
@@ -127,19 +132,12 @@ YAGNI does **not** mean "write code that's impossible to extend". Clean, well-na
 
 Security, data integrity and backups are **not** YAGNI. "We'll add authentication later" is how breaches happen.
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ DRY for business rules, constants, validation, formatting.
 - ✅ KISS by default, especially while learning and prototyping.
 - ✅ YAGNI for features, configuration options and "flexibility".
 - 🚫 Don't DRY up test code so much that each test becomes hard to read — some repetition in tests is healthy.
 - 🚫 Don't use YAGNI as an excuse to skip validation, tests or security.
 
-## 🏭 How it's used in industry
-
-- Configuration and constants in one module or environment variables (Module 2).
-- Code review comments: *"This is the third copy of this logic — extract it"* and *"Do we need this option now?"*
-- Startups ship **MVPs** (minimum viable products) — YAGNI at company scale.
 
 ## ⚠️ Common mistakes
 
@@ -213,15 +211,6 @@ What is the Rule of Three?
 Tolerate duplication the first two times; extract a shared abstraction on the third, when you can see what really varies.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| DRY | Jangan mengulang pengetahuan/aturan yang sama |
-| KISS | Buat sesederhana mungkin |
-| YAGNI | Jangan buat fitur yang belum dibutuhkan |
-| Abstraction | Abstraksi — menyembunyikan detail di balik nama/antarmuka |
-| MVP | Produk minimum yang sudah bisa dipakai |
 
 ## 📚 Keep learning
 

@@ -18,34 +18,37 @@ tags: [architecture, clean-code, naming, refactoring]
 - Which comments help and which ones hurt
 - Refactoring safely: tests first, small steps
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Clean code** | Code the next person understands in one read | Kode yang mudah dibaca |
+| **Intent** | What the code is *trying* to do, not how | Maksud kode |
+| **Level of abstraction** | How zoomed-in the code is: strategy vs tiny details | Tingkat kedalaman detail |
+| **Guard clause** | Handling the odd case first and returning early | Keluar awal untuk kasus khusus |
+| **Magic number** | An unexplained number in the code (`* 0.11`) | Angka tanpa penjelasan |
+| **Refactor** | Improving the code without changing what it does | Merapikan tanpa mengubah perilaku |
+| **Code smell** | A sign that something will hurt later | Tanda kode bermasalah |
+
 ## 🧠 The big idea
 
 Code has two audiences: the **computer** (which runs anything that's valid) and **humans** (who have to understand, change and fix it). Clean code optimizes for the humans.
 
 A good kitchen has labeled jars and one tool per drawer. You can cook in a messy kitchen too — but every meal takes longer and someone eventually uses salt instead of sugar.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
 - Teams spend most of their time **reading** existing code before changing it.
-- Unclear code causes bugs because people misunderstand what it does.
+- Unclear code causes bugs, because people misunderstand what it does.
 - In interviews and code reviews, readability is judged as seriously as correctness.
 
-## 💥 What happens if we DON'T write clean code?
+It's the kitchen argument: you *can* cook in a messy kitchen, but every meal takes longer, and sooner or later someone reaches for salt and gets sugar.
 
-```python
-def calc(d, t):
-    r = 0
-    for x in d:
-        if x[2] and x[1] > t:
-            r += x[1] * 0.9 if x[3] else x[1]
-    return r
-```
-
-What's `d`? What's `x[2]`? Why `0.9`? It might be correct — but nobody can tell, so nobody dares to change it.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Names reveal intent
+
+A good name saves a comment and a question. `days_since_applied` needs no explanation; `d` needs a paragraph.
 
 ```python
 def total_discounted_revenue(orders: list[Order], minimum_amount: int) -> int:
@@ -106,6 +109,8 @@ If you need a comment to explain **what** a block does, try extracting it into a
 
 ### 5. Refactor safely
 
+Tests first, then small steps. Refactoring without tests is rearranging the kitchen in the dark — it may be tidier, and you won't know what you broke.
+
 :term[Refactoring]{bahasa="refactoring — memperbaiki struktur kode tanpa mengubah perilakunya"} = changing structure **without** changing behavior.
 
 1. Make sure **tests** cover the behavior (write them if missing).
@@ -113,7 +118,9 @@ If you need a comment to explain **what** a block does, try extracting it into a
 3. Run the tests.
 4. Commit. Repeat.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -122,18 +129,11 @@ If you need a comment to explain **what** a block does, try extracting it into a
 | Refactoring now | Easier future changes | Time now; risk without tests |
 | "It works, don't touch it" | No immediate risk | Every future change gets slower and riskier |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Rename and extract whenever you've just understood confusing code — leave it clearer than you found it.
 - ✅ Refactor **before** adding a feature to messy code, with tests.
 - 🚫 Don't refactor code without tests covering it.
 - 🚫 Don't mix a big refactor and a behavior change in one commit/PR — reviewers can't tell them apart.
 
-## 🏭 How it's used in industry
-
-- **Linters and formatters** (ruff, black, ESLint, Prettier) enforce the mechanical parts automatically — this handbook's app uses ESLint + Prettier.
-- Code review checklists include naming and function size.
-- Teams agree on a **style guide** (like PEP 8 for Python) so everyone's code looks the same.
 
 ## ⚠️ Common mistakes
 
@@ -211,15 +211,6 @@ When is a comment better than a better name?
 When it explains **why** — a business reason, an external constraint, a non-obvious decision — which code alone can't express.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Readability | Keterbacaan |
-| Magic number | Angka ajaib — angka tanpa nama/penjelasan di kode |
-| Refactoring | Merapikan struktur kode tanpa mengubah perilaku |
-| Level of abstraction | Tingkat detail |
-| Style guide | Panduan gaya penulisan kode |
 
 ## 📚 Keep learning
 
