@@ -20,22 +20,46 @@ tags: [aws, ec2, deployment, blue-green, ssm, cloudwatch, autoscaling]
 - **Auto Scaling groups** + **Application Load Balancer**: launch templates, health checks, instance refresh
 - Signals that it's time to move to containers on ECS
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Downtime** | Time when users get errors instead of your app | Waktu aplikasi tidak bisa dipakai |
+| **Recreate deploy** | Stop the old version, then start the new one | Matikan lalu nyalakan versi baru |
+| **Rolling deploy** | Replace copies one at a time while others serve traffic | Ganti bertahap |
+| **Blue/green** | Run the new version beside the old one, then switch traffic over | Dua versi berdampingan |
+| **Canary** | Send a small share of traffic to the new version first | Uji dengan sedikit traffic |
+| **Draining** | Letting requests already in progress finish before shutdown | Menunggu request selesai |
+| **Graceful shutdown** | Stopping the app cleanly after a "please stop" signal | Berhenti dengan rapi |
+| **SSM Run Command** | Running a command on the server through AWS, without SSH | Menjalankan perintah lewat AWS |
+| **Auto Scaling group** | A group of servers AWS keeps at the size you ask for | Kelompok server otomatis |
+| **Load balancer (ALB)** | The traffic director that spreads requests over healthy servers | Pembagi lalu lintas |
+
 ## 🧠 The big idea
 
-Deploying by recreating the only container is like **renovating a restaurant while customers eat**. Blue/green is **building the new dining room next door**: finish it, inspect it, move the entrance sign, let the last guests in the old room finish dessert, then close the old room. If the new room has a problem, you never moved the sign.
+Recreating your only container is like **renovating a restaurant while customers are eating**: for a few minutes nobody can be served.
 
-## ❓ Why does this matter?
+Blue/green is **building the new dining room next door**:
 
-Lab 3's deploy has a few seconds of errors per deploy and a real outage when an image is bad (until rollback finishes). For a shop that takes payments, even short gaps mean failed checkouts and failed Midtrans webhook deliveries (which Midtrans retries, but your customers see errors).
+1. finish it and inspect it (health checks),
+2. move the entrance sign (switch the proxy),
+3. let the last guests in the old room finish dessert (draining),
+4. then close the old room.
 
-## 💥 What happens if we DON'T?
+If the new room has a problem, you simply never move the sign — that's your rollback.
 
-- Deploys scheduled "at night" because they hurt — so they're rare, big and risky.
-- SIGKILL during a payment request: the charge succeeded at Midtrans, the order never updated.
+## ❓ Why it matters
+
+Lab 3's deploy causes a few seconds of errors every time, and a real outage when an image is bad (until the rollback finishes). For a shop that takes payments, even a short gap means failed checkouts and failed Midtrans webhook deliveries — Midtrans retries, but your customers still see errors.
+
+Without these techniques:
+
+- Deploys get scheduled "at night" because they hurt — so they become rare, big and risky.
+- A forced kill during a payment request: the charge succeeded at Midtrans, but the order was never updated.
 - Logs live only in `docker logs` on the instance; when it's replaced, the evidence is gone.
-- Traffic grows, one instance saturates, and scaling means a manual weekend migration.
+- Traffic grows, one instance runs out of capacity, and scaling turns into a manual weekend migration.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Strategies
 
@@ -75,6 +99,8 @@ api.example.com {
 
 ### 3. Graceful shutdown
 
+A polite stop has three parts: stop accepting new requests, finish the ones in progress, then exit. Without it, a deploy is a waiter who drops the tray on the way to the table.
+
 | Layer | Setting |
 |---|---|
 | Docker | `stop_grace_period: 30s` (Compose) — time between SIGTERM and SIGKILL |
@@ -97,11 +123,15 @@ aws ssm send-command \
 
 ### 5. Logs and metrics
 
+Logs on a replaceable server are notes written on a rental car's window. Ship them to CloudWatch so the evidence outlives the instance — and set a retention period so they don't bill forever.
+
 - Install the **CloudWatch agent**; ship `/var/lib/docker/containers/*/*.log` (or use the `awslogs` Docker log driver per container) to a log group like `/revoshop/production/api` with a **retention period** (e.g. 30 days).
 - Collect memory and disk metrics (not available by default on EC2).
 - Metric filters/alarms on log patterns (`" 5[0-9][0-9] "`), plus EC2 status checks and RDS alarms from Week 3.
 
 ### 6. Scaling out: Auto Scaling group + ALB
+
+One server with blue/green is a single stall with two counters. An Auto Scaling group behind a load balancer is a row of stalls: the traffic director sends customers only to the ones that are open, and the group replaces any stall that closes.
 
 ```mermaid
 flowchart LR
@@ -126,7 +156,9 @@ Redis on the instance no longer works with several instances (rate limits must b
 
 Move when you're rebuilding container orchestration by hand: multiple instances, rolling deploys, service discovery, per-service scaling, secrets injection, health-based replacement. That's next lesson.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -135,28 +167,10 @@ Move when you're rebuilding container orchestration by hand: multiple instances,
 | SSM Run Command deploys | auditable, no SSH | IAM setup; command size/output limits |
 | CloudWatch agent | central logs and memory/disk metrics | agent configuration and log costs |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Single-host blue/green for portfolio apps and small products.
 - ✅ ASG + ALB for stateless services that need high availability without containers orchestration.
 - 🚫 Don't scale out while Redis/session state lives on one instance.
 - 🚫 Don't run irreversible migrations in a blue/green switch.
-
-## 🏆 Best practices
-
-- [ ] Deploy by digest; keep the previous version runnable for instant rollback.
-- [ ] Zero-downtime strategy (blue/green or rolling) with health checks before switching traffic.
-- [ ] Backward-compatible migrations; run them once per deploy.
-- [ ] Graceful shutdown: grace periods longer than request timeouts; draining before stopping.
-- [ ] SSM Run Command (or cloud-native deploys) instead of SSH; restrict by tags.
-- [ ] Central logs with retention; memory/disk metrics; alarms on errors and health.
-- [ ] Immutable instances (launch templates, instance refresh) when you scale out.
-
-## 🏭 How it's used in industry
-
-- Blue/green and canary releases are standard in larger companies, often implemented with load balancer weights (ALB weighted target groups) or service meshes.
-- EC2 fleets managed by Auto Scaling groups with AMIs baked in CI remain common for workloads that predate containers.
-- Many teams move from single VMs to ECS/Kubernetes once they have several services and frequent deploys.
 
 ## ⚠️ Common mistakes
 
@@ -172,6 +186,16 @@ Move when you're rebuilding container orchestration by hand: multiple instances,
 4. **Logs off the box.** Add `logging: driver: awslogs` with `awslogs-group: /revoshop/production/api` and `awslogs-create-group: "false"` to the API service, create the log group with 30-day retention, and add `logs:CreateLogStream`/`logs:PutLogEvents` for that group to the instance role. Where do you look for the webhook logs now?
 5. **Scaling blockers.** List what prevents running two RevoShop instances behind an ALB today (Redis rate-limit state, `LOG_TO_FILE`, anything else?) and how Week 4 lesson 03 removes each.
 :::
+
+## 🏆 Best practices
+
+- [ ] Deploy by digest; keep the previous version runnable for instant rollback.
+- [ ] Zero-downtime strategy (blue/green or rolling) with health checks before switching traffic.
+- [ ] Backward-compatible migrations; run them once per deploy.
+- [ ] Graceful shutdown: grace periods longer than request timeouts; draining before stopping.
+- [ ] SSM Run Command (or cloud-native deploys) instead of SSH; restrict by tags.
+- [ ] Central logs with retention; memory/disk metrics; alarms on errors and health.
+- [ ] Immutable instances (launch templates, instance refresh) when you scale out.
 
 ::part[Explain & Design]{n="2"}
 
@@ -230,16 +254,6 @@ Why must graceful shutdown timeouts be longer than your longest normal request?
 Otherwise the process is killed (SIGKILL) while still handling requests, causing failed or half-completed operations such as payments.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Blue/green deployment | Penerapan biru/hijau |
-| Rolling deployment | Penerapan bergulir |
-| Graceful shutdown | Penghentian yang anggun (menyelesaikan permintaan dulu) |
-| Auto Scaling group | Grup penskalaan otomatis |
-| Launch template | Templat peluncuran instans |
-| Draining | Pengosongan koneksi sebelum dimatikan |
 
 ## 📚 Keep learning
 
