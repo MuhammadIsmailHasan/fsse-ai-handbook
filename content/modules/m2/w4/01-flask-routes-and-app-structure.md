@@ -20,17 +20,32 @@ tags: [flask, routing, blueprints, app-factory, configuration]
 - **Blueprints** to split an API into feature modules
 - Consistent **JSON error handlers** and a health check
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Web framework** | Code that turns incoming HTTP requests into calls to your functions | Kerangka kerja web |
+| **Route** | The rule "this URL and method → this function" | Aturan URL ke fungsi |
+| **URL variable** | A changing part of the path, like `/jobs/<int:job_id>` | Bagian URL yang berubah |
+| **Request** | What the client sent: path, method, query, headers, body | Permintaan dari klien |
+| **Response** | What you send back: body, status code, headers | Balasan ke klien |
+| **Status code** | The three-digit result: 200 ok, 404 not found, 422 invalid | Kode hasil HTTP |
+| **Configuration class** | Settings grouped per environment (development, production) | Kelas pengaturan |
+| **Application factory** | A function that builds the app, so tests can build their own | Fungsi pembuat aplikasi |
+| **Blueprint** | A group of related routes in its own file | Kelompok route |
+| **Error handler** | One place that turns an exception into a JSON response | Penangan kesalahan terpusat |
+
 ## 🧠 The big idea
 
-A web framework is a **receptionist for your code**. HTTP requests arrive at the front desk; the receptionist reads the path and method (`GET /api/v1/jobs`), finds the right person (your function), hands them the request, and delivers their answer back as an HTTP response.
+A web framework is a **receptionist for your code**. Requests arrive at the front desk; the receptionist reads the path and method (`GET /api/v1/jobs`), finds the right person (your function), hands them the request, and delivers the answer back as an HTTP response.
 
-:term[Flask]{bahasa="Flask — framework web Python yang ringan: menghubungkan URL ke fungsi Python"} is a *micro*-framework: a small, clear core (routing, requests, responses) plus extensions you add as needed (database, auth, validation).
+:term[Flask]{bahasa="Flask — framework web Python yang ringan: menghubungkan URL ke fungsi Python"} is a *micro*-framework: a small, clear core (routing, requests, responses) plus extensions you add when you need them (database, auth, validation).
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Without a framework you would parse raw HTTP text, match URLs by hand, set headers, handle errors and encodings yourself. Frameworks give you all that, battle-tested, so you focus on your application's behavior.
+Without a framework you would read raw HTTP text, match URLs by hand, set headers, and handle errors and encodings yourself. A framework gives you all of that, already tested by thousands of projects, so you can spend your time on what your app actually does.
 
-## 💥 What happens if we DON'T structure a Flask app?
+But the framework won't organise the app for you:
 
 ```python
 # app.py — 2,000 lines
@@ -43,9 +58,9 @@ def jobs(): ...
 # 80 more routes, all here…
 ```
 
-Tests hit the production database, every route lives in one file, configuration can't change between dev and prod, and errors return HTML pages to a JSON client.
+Tests hit the production database, every route lives in one file, settings can't change between development and production, and errors return HTML pages to a client expecting JSON.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The smallest Flask app
 
@@ -138,6 +153,8 @@ Settings come from **environment variables**; classes only choose sensible per-e
 
 ### 6. The application factory
 
+A factory is the difference between **one fixed building** and a **blueprint you can build from**: tests build a small app with a test database, production builds the real one, from the same code.
+
 ```python
 # jobboard/__init__.py
 from flask import Flask
@@ -193,6 +210,8 @@ One blueprint per feature; each file stays small.
 
 ### 8. JSON error handlers
 
+One handler is the shop's single complaints desk: whatever goes wrong inside, the customer always gets the same shape of answer.
+
 By default Flask returns **HTML** error pages. APIs should return JSON consistently:
 
 ```python
@@ -224,7 +243,9 @@ def test_health():
 
 No server needed — the test client calls the app directly.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -236,30 +257,10 @@ No server needed — the test client calls the app directly.
 | Plain function views | simple | method handling spread across functions |
 | `MethodView` classes | one class per resource, methods as `get/post` | a little more boilerplate |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Flask for REST APIs, internal services and projects where you want control over each component.
 - ✅ Factory + blueprints + config classes from the first day of a real project.
 - 🚫 Don't use `flask run --debug` or `app.run()` in production — use a WSGI server like Gunicorn (Week 6).
 - 🚫 Don't connect to databases or read secrets at import time.
-
-## 🏆 Best practices
-
-- [ ] Use an **application factory** and register blueprints/extensions inside it.
-- [ ] One **blueprint per feature**, with a versioned URL prefix (`/api/v1/...`).
-- [ ] Load settings from **environment variables**; keep config classes per environment; never commit secrets.
-- [ ] Return **JSON for every response**, including errors, with a consistent shape (`{"data": …}` / `{"error": {"code", "message"}}`).
-- [ ] Use correct **status codes** (`201` + `Location` on create, `204` on delete, `404`, `409`, `422`).
-- [ ] Keep route functions **thin**: parse input → call a service → format output (lesson 06).
-- [ ] Add a **health check** endpoint that also checks critical dependencies.
-- [ ] Test every endpoint with the **test client** and a testing config.
-- [ ] Never run the debug server in production.
-
-## 🏭 How it's used in industry
-
-- Many Indonesian startups and internal tools run Flask APIs; the factory/blueprint structure is the standard layout recruiters expect to see.
-- Health checks are called by load balancers and Kubernetes probes every few seconds (Module 5).
-- API teams publish OpenAPI docs generated from route + schema definitions (flask-smorest, used in RevoShop).
 
 ## ⚠️ Common mistakes
 
@@ -272,6 +273,18 @@ No server needed — the test client calls the app directly.
 :::revoshop
 Open `app/__init__.py` in RevoShop: `create_app(config_name=None)` loads `config_by_name[config_name]`, configures logging, calls `init_app` on `db`, `jwt`, `migrate` and `api`, adds a Bearer auth scheme to the OpenAPI spec, then **imports and registers 11 blueprints inside the function**. Explain why those imports are inside the function. Then open `config/base.py`: `JWT_SECRET_KEY` falls back to a hard-coded default when the environment variable is missing — what could happen in production, and how would you make the app refuse to start instead? Finally, compare `app/routes/health.py` with the health check in this lesson: why does yours return `503` when the database is down?
 :::
+
+## 🏆 Best practices
+
+- [ ] Use an **application factory** and register blueprints/extensions inside it.
+- [ ] One **blueprint per feature**, with a versioned URL prefix (`/api/v1/...`).
+- [ ] Load settings from **environment variables**; keep config classes per environment; never commit secrets.
+- [ ] Return **JSON for every response**, including errors, with a consistent shape (`{"data": …}` / `{"error": {"code", "message"}}`).
+- [ ] Use correct **status codes** (`201` + `Location` on create, `204` on delete, `404`, `409`, `422`).
+- [ ] Keep route functions **thin**: parse input → call a service → format output (lesson 06).
+- [ ] Add a **health check** endpoint that also checks critical dependencies.
+- [ ] Test every endpoint with the **test client** and a testing config.
+- [ ] Never run the debug server in production.
 
 ::part[Explain & Design]{n="2"}
 
@@ -351,16 +364,6 @@ Why shouldn't you use Flask's built-in server in production?
 It's designed for development: not tuned for performance, concurrency or security. Production uses a WSGI server such as Gunicorn behind a reverse proxy/load balancer.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Route | Rute — pemetaan URL + method ke fungsi |
-| Application factory | Fungsi pembuat aplikasi dengan konfigurasi tertentu |
-| Blueprint | Kelompok rute per fitur |
-| Configuration | Konfigurasi/pengaturan aplikasi |
-| Error handler | Penangan error terpusat |
-| Health check | Endpoint pengecekan kesehatan layanan |
 
 ## 📚 Keep learning
 

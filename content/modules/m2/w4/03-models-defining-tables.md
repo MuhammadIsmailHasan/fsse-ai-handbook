@@ -20,11 +20,25 @@ tags: [flask, sqlalchemy, models, orm, constraints]
 - Enums for statuses, money columns, and `__repr__`
 - Keeping models focused: what belongs in a model and what doesn't
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Model** | A Python class that describes one table | Kelas penggambar tabel |
+| **`Mapped[...]` / `mapped_column()`** | The modern way to declare a column and its type | Cara mendeklarasikan kolom |
+| **Nullable** | Whether the column may be empty | Boleh kosong atau tidak |
+| **Python default** | A value your code fills in when creating the row | Nilai bawaan dari kode |
+| **Server default** | A value the database fills in (`now()`) | Nilai bawaan dari database |
+| **Constraint** | A rule the database enforces (`UNIQUE`, `CHECK`) | Aturan yang dipaksakan database |
+| **Naming convention** | Predictable names for constraints and indexes | Pola penamaan |
+| **Enum** | A fixed set of allowed values (statuses) | Kumpulan nilai yang diizinkan |
+| **`__repr__`** | A readable text form of the object, for logs and debugging | Bentuk teks objek |
+
 ## 🧠 The big idea
 
-A model is a **contract written twice at once**: once in Python (so your code knows the shape of the data) and once in the database (so the rules are enforced). SQLAlchemy lets you write it **once** as a class, and generates the table (and later, migrations) from it.
+A model is a **contract written twice at once**: once in Python, so your code knows the shape of the data, and once in the database, so the rules are actually enforced. SQLAlchemy lets you write it **once** as a class and generates the table — and later the migrations — from it.
 
-The Week 2 table you wrote by hand in SQL becomes:
+The table you wrote by hand in SQL in Week 2 becomes:
 
 ```python
 class Application(db.Model):
@@ -35,13 +49,11 @@ class Application(db.Model):
     salary_expectation: Mapped[int | None]
 ```
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-- Your app needs Python objects with attributes; the database needs tables with columns and constraints.
-- Keeping both in sync by hand drifts over time.
-- Models become the input for **migrations** (lesson 04), **relationships** (lesson 05), and type checking in services.
+Your app needs Python objects with attributes; the database needs tables with columns and constraints. Keeping the two in step by hand drifts over time — and models are also the input for **migrations** (lesson 04), **relationships** (lesson 05) and type checking in your services.
 
-## 💥 What happens if we DON'T model carefully?
+Careless models cause quiet damage:
 
 ```python
 class Application(db.Model):
@@ -52,11 +64,11 @@ class Application(db.Model):
 ```
 
 - `status` accepts `NULL` and `"aplied"`.
-- Money rounding errors.
-- `default=datetime.now()` (with parentheses) freezes the time the app started — every row gets the same timestamp.
-- No constraint names → unreadable migration diffs and error messages.
+- Money gets rounding errors.
+- `default=datetime.now()` — with the parentheses — freezes the time the app started, so every row gets the same timestamp.
+- Unnamed constraints produce unreadable migrations and error messages.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The base and a first model
 
@@ -106,6 +118,8 @@ class Company(db.Model):
 The type hint is the **single source of truth** for nullability — and your type checker understands it too.
 
 ### 3. Defaults: Python side vs server side
+
+Remember the difference by who fills the form: a Python default is filled by your app before sending it; a server default is filled by the database when the row arrives — including for rows inserted by scripts or other services.
 
 ```python
 from sqlalchemy import DateTime, func
@@ -188,6 +202,8 @@ Since SQLAlchemy 1.4, a non-native `Enum` does **not** create a `CHECK` constrai
 
 ### 7. What belongs in a model?
 
+Keep a model close to the table: fields, rules and tiny helpers. Business processes that touch several tables belong in a service (lesson 06), or the model becomes a second, hidden application.
+
 | ✅ In the model | ❌ Not in the model |
 |---|---|
 | columns, constraints, relationships | HTTP request/response handling |
@@ -197,7 +213,9 @@ Since SQLAlchemy 1.4, a non-native `Enum` does **not** create a `CHECK` constrai
 
 Models that grow `to_dict_for_admin_page()`, `send_welcome_email()` and 30 query helpers become hard to change.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -208,30 +226,10 @@ Models that grow `to_dict_for_admin_page()`, `send_welcome_email()` and 30 query
 | Non-native enum (VARCHAR + CHECK via `create_constraint=True`) | easy to evolve | slightly larger storage; remember the opt-in flag |
 | Native PostgreSQL ENUM | compact | altering values needs special migrations |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Declare **every** rule that must always hold in the model/table (nullability, uniqueness, checks).
 - ✅ Use `server_default` for timestamps and important defaults.
 - 🚫 Don't use `db.create_all()` to manage production schemas — use migrations (lesson 04).
 - 🚫 Don't put business workflows or presentation logic in models.
-
-## 🏆 Best practices
-
-- [ ] Use **SQLAlchemy 2.0 typed models** (`Mapped`, `mapped_column`) for new code.
-- [ ] Configure a **naming convention** on the metadata before the first migration.
-- [ ] Let `Mapped[X | None]` define nullability — and allow `None` only when it's meaningful.
-- [ ] Timestamps: `DateTime(timezone=True)` with `server_default=func.now()`; `updated_at` with `onupdate`.
-- [ ] Money: `Numeric(precision, scale)` or integer smallest units — never `Float`.
-- [ ] Statuses as `StrEnum` (non-native **with `create_constraint=True`**) or an explicit `CHECK` — never free text.
-- [ ] Add `__table_args__` constraints and composite indexes that match real queries.
-- [ ] Give models a helpful `__repr__`; keep them small.
-- [ ] Pass callables to defaults (`func.now()`, `datetime.now`), never evaluated values.
-
-## 🏭 How it's used in industry
-
-- Models + Alembic migrations are how most Python teams evolve database schemas safely.
-- Reviewers check new models for missing indexes, nullable columns that shouldn't be, and money types.
-- Typed models make large refactors safe with mypy/pyright — and give AI coding tools precise context.
 
 ## ⚠️ Common mistakes
 
@@ -244,6 +242,18 @@ Models that grow `to_dict_for_admin_page()`, `send_welcome_email()` and 30 query
 :::revoshop
 Open `app/models/products.py` in RevoShop. It uses the legacy `db.Column` style: `price = db.Column(db.Numeric(11, 2), nullable=False)` (good — Numeric for money), a **named** check constraint `ck_products_price_non_negative`, foreign keys with `ondelete='SET NULL'` and `index=True`, `is_active` for soft deletes, and `created_at = db.Column(db.DateTime, default=utcnow)`. Answer: (1) Is `created_at` timezone-aware? (2) Which columns are nullable only because `nullable=False` was omitted? (3) Rewrite the model in the typed `Mapped` style — what changes? (4) `to_dict()` lives on the model: what are the pros and cons compared with a marshmallow schema?
 :::
+
+## 🏆 Best practices
+
+- [ ] Use **SQLAlchemy 2.0 typed models** (`Mapped`, `mapped_column`) for new code.
+- [ ] Configure a **naming convention** on the metadata before the first migration.
+- [ ] Let `Mapped[X | None]` define nullability — and allow `None` only when it's meaningful.
+- [ ] Timestamps: `DateTime(timezone=True)` with `server_default=func.now()`; `updated_at` with `onupdate`.
+- [ ] Money: `Numeric(precision, scale)` or integer smallest units — never `Float`.
+- [ ] Statuses as `StrEnum` (non-native **with `create_constraint=True`**) or an explicit `CHECK` — never free text.
+- [ ] Add `__table_args__` constraints and composite indexes that match real queries.
+- [ ] Give models a helpful `__repr__`; keep them small.
+- [ ] Pass callables to defaults (`func.now()`, `datetime.now`), never evaluated values.
 
 ::part[Explain & Design]{n="2"}
 
@@ -338,16 +348,6 @@ Why configure a naming convention for constraints?
 So every constraint and index gets a predictable name, which migrations need to alter or drop them and which makes errors readable.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Model | Kelas Python yang mewakili tabel |
-| Column | Kolom tabel |
-| Nullable | Boleh kosong (NULL) |
-| Server default | Nilai bawaan yang diisi oleh database |
-| Naming convention | Aturan penamaan constraint/indeks |
-| Enum | Daftar nilai yang diizinkan |
 
 ## 📚 Keep learning
 

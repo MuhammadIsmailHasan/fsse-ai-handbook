@@ -20,28 +20,38 @@ tags: [flask, sqlalchemy, orm, postgresql, sessions]
 - Wiring **Flask-SQLAlchemy** into an application factory
 - Session lifetime per request, and seeing the SQL that runs
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **ORM** | A translator between Python objects and database tables | Penerjemah objek ke tabel |
+| **Engine** | The object that knows how to talk to your database | Penghubung ke database |
+| **Connection pool** | A small set of reused connections instead of new ones each time | Kumpulan koneksi siap pakai |
+| **Session** | Your workspace for one request: it tracks changes and saves them together | Ruang kerja satu request |
+| **Unit of work** | The pattern: collect changes, then commit them as one transaction | Kumpulkan lalu simpan sekali |
+| **`flush` vs `commit`** | Send SQL now but stay in the transaction / finish the transaction | Kirim SQL / selesaikan transaksi |
+| **`rollback`** | Undo everything in this session's transaction | Batalkan perubahan |
+| **`select()`** | The modern SQLAlchemy way to write a query | Cara menulis kueri modern |
+| **N+1 query** | One query per row in a loop, instead of one query for all | Kueri berulang per baris |
+
 ## 🧠 The big idea
 
-An :term[ORM]{bahasa="Object-Relational Mapper — penerjemah antara objek Python dan tabel database"} is an **interpreter** between two languages: your Python objects and the database's tables and SQL. You say "save this `Application` object"; it writes the `INSERT`. You ask "give me user 7's applications"; it writes the `SELECT` and hands back objects.
+An :term[ORM]{bahasa="Object-Relational Mapper — penerjemah antara objek Python dan tabel database"} is an **interpreter** between two languages: your Python objects, and the database's tables and SQL. You say "save this `Application` object" and it writes the `INSERT`; you ask for "user 7's applications" and it writes the `SELECT` and hands back objects.
 
-An interpreter makes conversation easier — but you still need to know what's being said. Good ORM users **read the SQL** it generates.
+An interpreter makes the conversation easy — but you still need to know what is being said. Good ORM users **read the SQL** it generates.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Writing raw SQL for every operation means repetitive mapping code (rows → dicts → objects), manual parameter handling, and SQL strings scattered across files. An ORM gives:
-- Python classes for tables (lesson 03),
-- composable, parameterized queries,
-- a **session** that tracks changes and commits them in one transaction,
-- portability across databases (mostly).
+Writing raw SQL for everything means repetitive mapping code (rows → dicts → objects), handling parameters by hand, and SQL strings scattered across files. An ORM gives you Python classes for tables (lesson 03), queries you can build up in pieces, a **session** that tracks your changes and commits them in one transaction, and mostly-portable code.
 
-## 💥 What happens if we DON'T understand what's underneath?
+The danger is treating it as magic:
 
-- A new connection opened on **every request** without pooling → the database hits its connection limit under load.
+- A new connection opened on **every request** with no pool → the database hits its connection limit under load.
 - Forgetting `commit()` → "it saved in my tests but not in the database".
-- An exception mid-request leaves the session in a failed state → every following request errors until restart.
-- Loops that trigger hundreds of hidden queries (N+1, lesson 05).
+- An exception in the middle of a request leaves the session broken → every later request fails until a restart.
+- A loop that quietly runs hundreds of queries (the N+1 problem, lesson 05).
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The layers
 
@@ -83,6 +93,8 @@ with Session(engine) as session:                            # short-lived
 `pool_pre_ping=True` checks a pooled connection is still alive before using it (databases and proxies drop idle connections).
 
 ### 4. The unit of work
+
+Think of a shopping trolley: `add` puts items in, `flush` shows them to the cashier, and `commit` pays. Until you pay, nothing is final — and `rollback` empties the trolley.
 
 ```python
 with Session(engine) as session:
@@ -176,6 +188,8 @@ If anything raises before `commit()`, nothing is saved. In services that do seve
 
 ### 8. See the SQL
 
+Turn this on while learning. Every surprise in an ORM becomes obvious the moment you can see the query it actually sent.
+
 ```python
 app.config["SQLALCHEMY_ECHO"] = True        # logs every SQL statement (development only!)
 print(select(Application).where(Application.user_id == 7))   # shows the SQL of a statement
@@ -192,7 +206,9 @@ print(select(Application).where(Application.user_id == 7))   # shows the SQL of 
 
 Gunicorn with 4 workers × (5 + 10 overflow) can open up to **60** connections — check that fits your database's `max_connections` (Week 6 / Module 5).
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -202,29 +218,10 @@ Gunicorn with 4 workers × (5 + 10 overflow) can open up to **60** connections �
 | Hybrid: ORM + raw SQL for hard reports | best of both | two styles in one codebase |
 | Long-lived sessions | fewer objects created | stale data, memory growth, locks |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ The ORM for typical CRUD and business logic.
 - ✅ `text()` or Core for complex reports, bulk operations, or database-specific features.
 - 🚫 Don't create engines per request.
 - 🚫 Don't share one session across threads or keep a session open for minutes.
-
-## 🏆 Best practices
-
-- [ ] **One engine per process** (Flask-SQLAlchemy handles it); connection URL from `DATABASE_URL`.
-- [ ] Use **short-lived sessions** — one per request or unit of work.
-- [ ] Commit **once per unit of work**; roll back on errors (Flask-SQLAlchemy cleans up at request end).
-- [ ] Use **SQLAlchemy 2.0 style** (`select()`, `scalars()`, `session.get()`) in new code.
-- [ ] Turn on `SQLALCHEMY_ECHO` locally and **read the SQL** for important endpoints.
-- [ ] Set `pool_pre_ping=True` (via `SQLALCHEMY_ENGINE_OPTIONS`) and size pools against the database's connection limit.
-- [ ] Never build SQL with string formatting; use bound parameters (ORM expressions or `text(":param")`).
-- [ ] Keep database access out of route functions — use repositories/services (lesson 06).
-
-## 🏭 How it's used in industry
-
-- SQLAlchemy is the most widely used Python ORM (Flask and FastAPI projects alike).
-- Production incidents like "too many connections" or "idle in transaction" usually trace back to pool sizing and session lifetime.
-- Performance reviews start by logging SQL for a slow endpoint and counting queries.
 
 ## ⚠️ Common mistakes
 
@@ -237,6 +234,17 @@ Gunicorn with 4 workers × (5 + 10 overflow) can open up to **60** connections �
 :::revoshop
 RevoShop's `app/extensions.py` creates `db = SQLAlchemy()` without an app, and `create_app()` calls `db.init_app(flask_app)`. `config/base.py` reads `SQLALCHEMY_DATABASE_URI` from `DATABASE_URL`, and `config/development.py` sets `SQLALCHEMY_ECHO = True`. Open one repository (e.g. `app/repositories/product_repository.py`): is it using the legacy `Model.query` API or 2.0-style `select()`? Where are `commit()` calls — in repositories, services or routes? Is there any path where an exception after `add()` could leave a half-done unit of work committed?
 :::
+
+## 🏆 Best practices
+
+- [ ] **One engine per process** (Flask-SQLAlchemy handles it); connection URL from `DATABASE_URL`.
+- [ ] Use **short-lived sessions** — one per request or unit of work.
+- [ ] Commit **once per unit of work**; roll back on errors (Flask-SQLAlchemy cleans up at request end).
+- [ ] Use **SQLAlchemy 2.0 style** (`select()`, `scalars()`, `session.get()`) in new code.
+- [ ] Turn on `SQLALCHEMY_ECHO` locally and **read the SQL** for important endpoints.
+- [ ] Set `pool_pre_ping=True` (via `SQLALCHEMY_ENGINE_OPTIONS`) and size pools against the database's connection limit.
+- [ ] Never build SQL with string formatting; use bound parameters (ORM expressions or `text(":param")`).
+- [ ] Keep database access out of route functions — use repositories/services (lesson 06).
 
 ::part[Explain & Design]{n="2"}
 
@@ -330,16 +338,6 @@ What must you do after catching a database error inside a session?
 Call `session.rollback()`; otherwise the session stays in a failed transaction state and further queries fail.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| ORM | Pemeta objek-relasional |
-| Engine | Mesin koneksi database (dialek + pool) |
-| Connection pool | Kumpulan koneksi yang dipakai ulang |
-| Session | Sesi kerja yang melacak perubahan objek |
-| Unit of work | Satu kesatuan perubahan yang disimpan bersama |
-| Flush | Mengirim perubahan ke database tanpa commit |
 
 ## 📚 Keep learning
 
