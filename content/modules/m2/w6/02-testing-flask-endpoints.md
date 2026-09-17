@@ -20,23 +20,37 @@ tags: [testing, pytest, flask, integration-tests, postgresql, fixtures]
 - Testing auth, validation, error formats, **persistence** and "nothing changed" after failures
 - Mocks: when they help and when they lie
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Test client** | A fake browser that calls your app without starting a server | Browser palsu untuk tes |
+| **Unit test** | Tests one piece on its own | Uji satu bagian |
+| **Integration test** | Tests pieces working together, including the database | Uji gabungan |
+| **Fixture** | Reusable setup, like a clean database per test | Persiapan tiap tes |
+| **Isolation** | One test's data never affects another's | Tes tidak saling mengganggu |
+| **Factory** | A helper that creates test data with sensible defaults | Pembuat data uji |
+| **Persistence check** | Reading the data back to prove it was really saved | Memastikan benar tersimpan |
+| **Mock** | A stand-in for something outside your app | Pengganti layanan luar |
+| **Boundary** | The edge of your system — the only place mocks belong | Batas sistem |
+
 ## 🧠 The big idea
 
 Unit tests check the **engine** on a workbench. Integration tests take the **car for a drive**: steering, brakes and engine working together on a real road.
 
-For a web API, the "drive" is cheap: Flask gives you a fake browser (the **test client**) that sends real HTTP-shaped requests through routing, validation, services, SQLAlchemy and the database — without starting a server.
+For a web API that drive is cheap: Flask gives you a fake browser — the **test client** — that sends real HTTP-shaped requests through routing, validation, services, SQLAlchemy and the database, without starting a server.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Most API bugs live **between** pieces: a route forgets `commit()`, an error handler returns HTML instead of JSON, auth is applied to `POST` but not `PATCH`, a unique constraint behaves differently in PostgreSQL. Unit tests with mocked repositories can't see any of those.
+Most API bugs live **between** the pieces: a route forgets `commit()`, an error handler returns HTML instead of JSON, auth is applied to `POST` but not `PATCH`, a unique constraint behaves differently in PostgreSQL. Unit tests with mocked repositories can't see any of that.
 
-## 💥 What happens if we DON'T?
+Concretely:
 
-- A mocked `repository.save()` "was called", but the real route never commits — data vanishes in production.
-- Tests pass on SQLite; production crashes on a PostgreSQL-only behavior (case-sensitive `LIKE`, strict string lengths, `timestamptz`, `FOR UPDATE`).
-- Nobody tested the `401` path, and a refactor made an admin endpoint public.
+- A mocked `repository.save()` "was called", but the real route never commits — the data vanishes in production.
+- Tests pass on SQLite, and production breaks on something only PostgreSQL does (case-sensitive `LIKE`, strict string lengths, `timestamptz`, `FOR UPDATE`).
+- Nobody tested the `401` path, and a refactor quietly made an admin endpoint public.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The test client
 
@@ -65,6 +79,8 @@ Also available: `client.get(url, query_string={"status": "applied"})`, `data=` f
 | **Headers** that matter (`Location`, `Cache-Control`) | part of the contract |
 
 ### 3. Fixtures: a clean database per test
+
+Each test should start with a tidy room: same starting state, whatever ran before it. That's what makes a failure mean something.
 
 The handbook's `pg_url` fixture gives each test a fresh PostgreSQL schema. On top of it:
 
@@ -136,6 +152,8 @@ Test the matrix: **no token → 401**, **wrong role → 403**, **right role → 
 
 ### 8. Mocks: at the boundary only
 
+Mock the payment provider, not your own repository. A mock of your own code tests your assumptions about it, not the code itself — a rehearsal where you also play the other actor.
+
 Mock things you **don't own** and can't run locally: the payment provider, an email API, an LLM. Don't mock your own database layer in integration tests — then you're testing the mock.
 
 ```python
@@ -151,7 +169,9 @@ Even better: inject the client (`app.config["PAYMENT_CLIENT"] = FakeClient()`), 
 
 Business rules (price calculation, allowed transitions) are best tested as **pure functions**: fast, many cases. Then a **few** integration tests confirm routes wire them up correctly. The pyramid applies inside the API too.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -160,12 +180,21 @@ Business rules (price calculation, allowed transitions) are best tested as **pur
 | Mocked repositories | fastest, isolates service logic | misses SQL, transactions, commits |
 | Full integration tests for everything | realistic | slow suite, harder to pinpoint failures |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Integration tests for every endpoint's **happy path, auth and main errors**.
 - ✅ Unit tests for dense logic behind the endpoints.
 - 🚫 Don't cover every validation permutation through HTTP if a schema unit test already does.
 - 🚫 Don't call real third-party APIs from tests.
+
+## ⚠️ Common mistakes
+
+- Asserting only `status_code == 200`.
+- Sharing data between tests (test B only passes after test A).
+- `os.environ[...] = ...` at the top of `conftest.py` — affects every test and import order.
+- Tests that keep one session open and hide missing commits.
+
+:::revoshop
+Open RevoShop's `tests/conftest.py`: (1) Line 4 sets `DATABASE_URL` to **SQLite in memory** while production uses PostgreSQL. List two RevoShop features (search with `ILIKE`? `Numeric` prices? stock locking during checkout?) that could behave differently. (2) The `db` fixture does `with app.app_context(): ... yield _db` — the **long-lived context trap** from this lesson. Pick one route that writes data and temporarily replace its `commit()` with `flush()`: does any test fail? (3) Sketch how you'd switch the suite to PostgreSQL using `docker compose` and the `pg_url` idea.
+:::
 
 ## 🏆 Best practices
 
@@ -178,23 +207,6 @@ Business rules (price calculation, allowed transitions) are best tested as **pur
 - [ ] Configure the app for tests via the factory (`create_app(test_config)`), not by mutating globals or env at import time.
 - [ ] Mock only **external boundaries** (payments, email, LLMs); prefer injected fakes.
 - [ ] Keep the suite fast enough to run before every push; run it in CI (lesson 07).
-
-## 🏭 How it's used in industry
-
-- Backend teams usually run PostgreSQL (or **Testcontainers**) in CI for integration tests.
-- Contract tests (Schemathesis generates requests from your OpenAPI spec) fuzz endpoints for 500s.
-- API test suites double as the safety net for framework upgrades (Flask 2 → 3, SQLAlchemy 1 → 2).
-
-## ⚠️ Common mistakes
-
-- Asserting only `status_code == 200`.
-- Sharing data between tests (test B only passes after test A).
-- `os.environ[...] = ...` at the top of `conftest.py` — affects every test and import order.
-- Tests that keep one session open and hide missing commits.
-
-:::revoshop
-Open RevoShop's `tests/conftest.py`: (1) Line 4 sets `DATABASE_URL` to **SQLite in memory** while production uses PostgreSQL. List two RevoShop features (search with `ILIKE`? `Numeric` prices? stock locking during checkout?) that could behave differently. (2) The `db` fixture does `with app.app_context(): ... yield _db` — the **long-lived context trap** from this lesson. Pick one route that writes data and temporarily replace its `commit()` with `flush()`: does any test fail? (3) Sketch how you'd switch the suite to PostgreSQL using `docker compose` and the `pg_url` idea.
-:::
 
 ::part[Explain & Design]{n="2"}
 
@@ -270,16 +282,6 @@ Name one risk of running tests on SQLite when production uses PostgreSQL.
 Examples: SQLite doesn't enforce `VARCHAR` lengths, `LIKE` case rules differ, no `ILIKE`, different timezone/`timestamptz` handling, `SELECT ... FOR UPDATE` and locking not supported, different constraint/`ON CONFLICT` behavior.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Test client | Klien tiruan untuk mengirim request ke aplikasi dalam tes |
-| Integration test | Tes integrasi (beberapa komponen bekerja bersama) |
-| Test isolation | Isolasi tes — tiap tes mulai dari kondisi bersih |
-| Mock / Fake | Objek tiruan pengganti dependensi asli |
-| Persistence | Data benar-benar tersimpan permanen |
-| Mutant | Versi kode dengan bug buatan untuk menguji kualitas tes |
 
 ## 📚 Keep learning
 

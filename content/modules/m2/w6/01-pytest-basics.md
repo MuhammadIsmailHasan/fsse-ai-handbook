@@ -20,29 +20,44 @@ tags: [testing, pytest, fixtures, tdd, coverage]
 - Markers, running subsets, and reading failures
 - **Coverage** — and why **mutation testing** tells you more
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Automated test** | Code that checks your code, and can run again any time | Kode penguji otomatis |
+| **pytest** | The Python testing tool used here | Alat pengujian Python |
+| **Assertion** | The line that says what must be true | Pernyataan yang harus benar |
+| **Arrange–Act–Assert** | Set up, do the thing, check the result | Siapkan, lakukan, periksa |
+| **Fixture** | Reusable setup a test asks for by name | Persiapan yang dipakai ulang |
+| **Parametrize** | Running the same test with many inputs | Satu tes, banyak data |
+| **Marker** | A label to run or skip groups of tests | Penanda kelompok tes |
+| **Coverage** | How much code the tests executed | Persentase kode yang dijalankan |
+| **Mutation testing** | Adding small bugs on purpose to see if tests catch them | Menguji kualitas tes |
+| **Flaky test** | A test that passes and fails without code changes | Tes tidak stabil |
+
 ## 🧠 The big idea
 
-A test is a **smoke detector** for your code. You install it once; from then on it watches **every change**, day and night, and screams the moment something breaks — long before a user notices.
+A test is a **smoke detector** for your code. You install it once; from then on it watches **every change**, day and night, and shouts the moment something breaks — long before a user notices.
 
-A missing smoke detector costs nothing today. A fire without one costs everything. The same is true for the refactor you do next month without tests.
+A missing smoke detector costs nothing today. A fire without one costs everything. The same is true for the refactor you'll do next month without tests.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-You've been running tests since Module 1 — every exercise was checked by pytest. Now you write them yourself because:
+You've been running tests since Module 1 — every exercise was checked by pytest. Now you write them yourself, because:
 
 - Manual checking doesn't scale: 80 endpoints × 5 cases each, after **every** change.
-- Tests let you **refactor fearlessly** (Architecture Stage A).
-- Tests are **executable documentation**: they show how code is supposed to behave.
+- Tests let you **refactor without fear** (Architecture Stage A).
+- Tests are **documentation that runs**: they show how the code is supposed to behave.
 - CI (lesson 07) runs them on every pull request, so bugs are caught before merging.
-- With AI-generated code, tests are how you **verify** it does what you asked.
+- With AI-generated code, tests are how you **check** it really does what you asked.
 
-## 💥 What happens if we DON'T test (or test badly)?
+Bad tests are their own trap:
 
-- A "small" change to discount rounding silently undercharges every order for a week.
-- Tests exist but only check that functions **don't crash** (`assert result is not None`) — coverage is 95%, yet real bugs pass.
-- Tests depend on today's date, the network, or each other's order → they fail randomly ("flaky"), so the team starts ignoring red builds.
+- A "small" change to discount rounding quietly undercharges every order for a week.
+- Tests exist but only check that functions don't crash (`assert result is not None`) — coverage says 95%, and real bugs sail through.
+- Tests depend on today's date, the network, or each other's order → they fail randomly, so the team starts ignoring red builds.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The testing pyramid
 
@@ -110,6 +125,8 @@ Boundaries (`9`, `10`, `49`, `50`) are where bugs live — Module 1's problem-so
 
 ### 5. Fixtures: reusable setup
 
+A fixture is the **mise en place** of testing: the ingredients are prepared and handed to whichever test asks for them, so each test starts from a known, clean kitchen.
+
 ```python
 @pytest.fixture
 def sample_cart():
@@ -139,6 +156,8 @@ Inject the things that change: the **clock**, **random numbers**, **network clie
 
 ### 7. Coverage — useful, but not the goal
 
+Coverage tells you the smoke detector has power. It doesn't tell you it reacts to smoke — that's what a mutation test checks.
+
 ```bash
 uv run pytest --cov=pricing --cov-report=term-missing
 ```
@@ -160,7 +179,9 @@ Tools like **mutmut** or **cosmic-ray** generate mutants automatically. This les
 
 **Red** (write a failing test for the next small behavior) → **Green** (simplest code to pass) → **Refactor** (clean up with tests green). Great for business rules and bug fixes: reproduce the bug in a test first, then fix it.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -171,31 +192,10 @@ Tools like **mutmut** or **cosmic-ray** generate mutants automatically. This les
 | Coverage targets (e.g. 80%) | visible progress | encourages assertion-free tests if used alone |
 | TDD | better design, fewer bugs | slower at first; not ideal for exploratory spikes |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Unit tests for business rules, calculations, parsing, validation, state machines.
 - ✅ A regression test for **every** bug fix.
 - 🚫 Don't test framework internals or trivial getters.
 - 🚫 Don't assert on implementation details (private methods, exact SQL strings) — assert on behavior.
-
-## 🏆 Best practices
-
-- [ ] Name tests as **requirements**: `test_rejects_expired_token`, not `test_1`.
-- [ ] **One behavior per test**, Arrange–Act–Assert, meaningful assertions.
-- [ ] **Parametrize** boundaries and edge cases (empty, one, max, invalid).
-- [ ] Keep tests **deterministic**: inject clocks, randomness and external clients; no real network.
-- [ ] Share setup with **fixtures** in `conftest.py`; keep each test readable on its own.
-- [ ] Test **error paths** with `pytest.raises(..., match=...)`.
-- [ ] Use coverage to find **untested areas**, and mutation testing to check tests **actually catch bugs**.
-- [ ] Add a failing test **before** fixing a bug.
-- [ ] Run the full suite in **CI**; keep it fast (seconds for unit tests).
-
-## 🏭 How it's used in industry
-
-- Pull requests without tests for new behavior are usually sent back in review.
-- CI blocks merging on red tests; flaky tests get quarantined and fixed quickly.
-- Interviews increasingly include "write tests for this function" or "how would you test this endpoint?"
-- AI coding agents are most reliable when a test suite tells them (and you) whether a change works.
 
 ## ⚠️ Common mistakes
 
@@ -208,6 +208,18 @@ Tools like **mutmut** or **cosmic-ray** generate mutants automatically. This les
 :::revoshop
 RevoShop's README says: *"Fast unit tests (repositories mocked) and integration tests (full HTTP stack on in-memory SQLite)"*. Open `tests/unit/test_order_service.py`: (1) Pick three tests — do their names describe behavior? (2) Do they assert on **results** or mostly on "mock was called"? (3) Run `python -m pytest --cov=app --cov-report=term-missing` and find the least-covered service. (4) Choose one important rule (e.g. stock can't go negative, order status transitions) and write down a **mutant** — a one-character bug — then check whether any existing test fails. If none does, you've found your first missing test.
 :::
+
+## 🏆 Best practices
+
+- [ ] Name tests as **requirements**: `test_rejects_expired_token`, not `test_1`.
+- [ ] **One behavior per test**, Arrange–Act–Assert, meaningful assertions.
+- [ ] **Parametrize** boundaries and edge cases (empty, one, max, invalid).
+- [ ] Keep tests **deterministic**: inject clocks, randomness and external clients; no real network.
+- [ ] Share setup with **fixtures** in `conftest.py`; keep each test readable on its own.
+- [ ] Test **error paths** with `pytest.raises(..., match=...)`.
+- [ ] Use coverage to find **untested areas**, and mutation testing to check tests **actually catch bugs**.
+- [ ] Add a failing test **before** fixing a bug.
+- [ ] Run the full suite in **CI**; keep it fast (seconds for unit tests).
 
 ::part[Explain & Design]{n="2"}
 
@@ -285,16 +297,6 @@ Why inject a clock instead of calling `datetime.now()` inside the code under tes
 So tests can use a fixed time and get the same result every run (deterministic), including testing edge cases like midnight or expiry boundaries.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Unit / Integration / E2E test | Tes satuan / integrasi / ujung-ke-ujung |
-| Fixture | Penyedia data/objek persiapan untuk tes |
-| Parametrize | Menjalankan satu tes dengan banyak input |
-| Coverage | Cakupan baris kode yang dijalankan tes |
-| Mutation testing | Menguji kualitas tes dengan bug buatan |
-| Flaky test | Tes yang kadang lulus kadang gagal tanpa perubahan |
 
 ## 📚 Keep learning
 

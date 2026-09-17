@@ -21,33 +21,45 @@ tags: [security, configuration, secrets, environment-variables, github, twelve-f
 - GitHub security basics: 2FA, SSH keys, fine-grained tokens, branch protection, Dependabot
 - The **leaked secret playbook**: rotate first, then clean up
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Configuration** | Settings that differ per environment (URLs, keys) | Pengaturan per lingkungan |
+| **Environment variable** | A named value given to the app from outside | Nilai dari luar aplikasi |
+| **`.env` file** | A local file of those values — never committed | Berkas nilai lokal |
+| **`.env.example`** | The committed template listing the names, without values | Contoh tanpa nilai |
+| **Fail fast** | Refusing to start when a required setting is missing | Berhenti jika setelan kurang |
+| **Secret scanning** | Tools that block or find secrets in your repo | Pemindai rahasia |
+| **Push protection** | GitHub refusing a push that contains a secret | Penolakan push berisi rahasia |
+| **Rotation** | Replacing a secret with a new one | Mengganti rahasia |
+| **2FA** | A second login step for your GitHub account | Verifikasi dua langkah |
+| **Dependabot** | A bot that opens PRs to update vulnerable dependencies | Bot pembaru dependensi |
+
 ## 🧠 The big idea
 
-Your code is the **house plan** — you can show it to anyone. Secrets are the **house keys**. You don't glue the keys to the plan, and you definitely don't photocopy the plan (git clone) with the keys attached.
+Your code is the **house plan** — you can show it to anyone. Secrets are the **house keys**. You don't glue the keys to the plan, and you certainly don't photocopy the plan (`git clone`) with the keys attached.
 
-Environment variables are the **key hook by the door** of each house: the same plan works in every house (dev laptop, CI, production), and each house has its own keys.
+Environment variables are the **key hook by each door**: the same plan works in every house (your laptop, CI, production), and each house has its own keys.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
 - The same code runs in development, test, staging and production with **different** databases, keys and settings.
 - Secrets in Git are **forever**: every clone, fork, CI cache and backup keeps them, even after you delete the line.
-- Bots scan public GitHub continuously; leaked cloud keys are abused within **minutes** (crypto-mining bills, data theft).
-- AI keys (OpenAI, Anthropic, etc.) are billed per use — a leaked key can cost real money fast.
+- Bots scan public GitHub constantly; leaked cloud keys are abused within **minutes** (crypto-mining bills, data theft).
+- AI keys are billed per use, so a leaked key can cost real money fast.
 
-## 💥 What happens if we DON'T?
+The most common way it goes wrong is a friendly-looking default:
 
 ```python
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "super-secret-key-change-in-production")
 ```
 
-Someone forgets to set the variable in production. The app **starts happily** with a secret that's public on GitHub. Anyone can now sign a JWT with `"role": "admin"` — and no alarm goes off.
+Someone forgets to set the variable in production. The app **starts happily** with a secret that is public on GitHub. Anyone can now sign a token saying `"role": "admin"` — and no alarm goes off.
 
-Other classics:
-- `.env` committed in the first commit, "removed" in the second (still in history).
-- `DEBUG=True` in production → the Werkzeug debugger lets visitors run Python on your server.
-- A `print(config)` in startup logs dumps the database password into your log system.
+Other classics: a `.env` committed in the first commit and "removed" in the second (still in history), and `DEBUG=True` in production, which lets visitors run Python on your server through the debugger.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Config belongs in the environment
 
@@ -82,6 +94,8 @@ OPENAI_API_KEY=
 - Check: `git check-ignore -v .env` should print the matching `.gitignore` rule.
 
 ### 3. Typed, validated, fail-fast settings
+
+A missing secret should stop the app at startup, loudly. A wrong secret that lets the app run is far more dangerous than an app that refuses to start.
 
 Read the environment **once**, at startup, into a typed object — and refuse to start if something's wrong:
 
@@ -166,13 +180,17 @@ How scanners work (you'll build a mini one): **known formats** (`AKIA…`, `ghp_
 
 ### 8. The leaked-secret playbook
 
+Order matters: **rotate first**, then investigate, then clean history. Cleaning history first just leaves the old key working while you tidy up.
+
 1. **Revoke / rotate the secret immediately** — assume it's already been copied. (Changing Git history does NOT un-leak it.)
 2. Check for misuse: provider logs, billing, access logs.
 3. Deploy the new secret via env/secret manager.
 4. Remove it from the code; if the repo is shared, rewrite history with `git filter-repo` and ask collaborators to re-clone.
 5. Add a scanner/pre-commit hook so it doesn't happen again; write a short blameless note.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -182,30 +200,10 @@ How scanners work (you'll build a mini one): **known formats** (`AKIA…`, `ghp_
 | Silent defaults | "just works" locally | dangerous in production |
 | Fail-fast validation | misconfig caught at deploy | a bit more code; must keep dev defaults convenient |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Anything that differs between environments or is sensitive → environment/secret manager.
 - ✅ Validate settings at startup in every service.
 - 🚫 Don't put constants that never change per environment into env vars — that's just configuration sprawl.
 - 🚫 Don't pass secrets as command-line arguments (visible in `ps`) or in URLs/query strings (logged).
-
-## 🏆 Best practices
-
-- [ ] No secrets in code, commits, issues, screenshots, logs or AI chats.
-- [ ] Commit `.env.example` with **every** variable and placeholders; ignore `.env` and `.env.*`.
-- [ ] Load settings **once** into a typed object; **fail fast** with all errors listed; no insecure production defaults.
-- [ ] Hide secrets in `repr`/logs (`field(repr=False)`, `SecretStr`); log a **safe summary** only.
-- [ ] Different, strong (`secrets.token_urlsafe`) secrets per environment; rotate periodically and on staff changes.
-- [ ] Run **gitleaks** in a pre-commit hook and in CI; enable push protection where available.
-- [ ] Store CI secrets in **GitHub Actions secrets**, production secrets in a **secret manager**.
-- [ ] 2FA, SSH keys, fine-grained expiring tokens, branch protection, Dependabot.
-- [ ] If a secret leaks: **rotate first**, then investigate and clean history.
-
-## 🏭 How it's used in industry
-
-- Security reviews and SOC 2 / ISO 27001 audits check for secret scanning, rotation and access control.
-- Fintech teams in Indonesia (under OJK / Bank Indonesia expectations) keep payment gateway keys in secret managers with strict access logs.
-- Platform teams provide `settings` libraries so every service validates config the same way.
 
 ## ⚠️ Common mistakes
 
@@ -218,6 +216,18 @@ How scanners work (you'll build a mini one): **known formats** (`AKIA…`, `ghp_
 :::revoshop
 Open RevoShop's `config/base.py`: (1) `JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'super-secret-key-change-in-production')` — exactly the dangerous default from this lesson. What happens if production forgets the variable? (2) `MIDTRANS_SERVER_KEY` defaults to `''`: what error would a user see at checkout, and when would you find out? (3) `.gitignore` ignores `.env` with `!.env.example` — would a file named `.env.docker` be ignored? Test with `git check-ignore -v .env.docker`. (4) Run this lesson's `scan_directory` on your RevoShop folder and triage every finding. (5) Sketch a `load_settings` for RevoShop that fails fast in production.
 :::
+
+## 🏆 Best practices
+
+- [ ] No secrets in code, commits, issues, screenshots, logs or AI chats.
+- [ ] Commit `.env.example` with **every** variable and placeholders; ignore `.env` and `.env.*`.
+- [ ] Load settings **once** into a typed object; **fail fast** with all errors listed; no insecure production defaults.
+- [ ] Hide secrets in `repr`/logs (`field(repr=False)`, `SecretStr`); log a **safe summary** only.
+- [ ] Different, strong (`secrets.token_urlsafe`) secrets per environment; rotate periodically and on staff changes.
+- [ ] Run **gitleaks** in a pre-commit hook and in CI; enable push protection where available.
+- [ ] Store CI secrets in **GitHub Actions secrets**, production secrets in a **secret manager**.
+- [ ] 2FA, SSH keys, fine-grained expiring tokens, branch protection, Dependabot.
+- [ ] If a secret leaks: **rotate first**, then investigate and clean history.
 
 ::part[Explain & Design]{n="2"}
 
@@ -294,17 +304,6 @@ What goes in `.env.example`?
 Every variable the app needs, with placeholders or safe local defaults and comments — never real secrets.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Environment variable | Variabel lingkungan (konfigurasi di luar kode) |
-| Secret | Rahasia — kunci, token, password |
-| Fail fast | Gagal cepat saat startup jika konfigurasi salah |
-| Secret manager | Layanan penyimpanan rahasia terenkripsi |
-| Rotate a secret | Mengganti rahasia lama dengan yang baru |
-| Push protection | Pemblokiran push yang berisi rahasia |
-| Least privilege | Hak akses seminimal mungkin |
 
 ## 📚 Keep learning
 

@@ -20,29 +20,45 @@ tags: [performance, load-testing, locust, latency, slo]
 - Running headless with CSV output and turning numbers into **SLO** decisions
 - Finding the bottleneck instead of guessing
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Load test** | Sending many simulated users to see how the system copes | Uji beban |
+| **Stress test** | Pushing past the limit to find where it breaks | Uji sampai batas |
+| **Soak test** | Running for hours to find slow leaks | Uji jangka panjang |
+| **Latency** | How long one request takes | Waktu tanggap |
+| **p95 / p99** | The slowest 5% / 1% of requests — what unlucky users feel | Persentil ke-95 / ke-99 |
+| **RPS / throughput** | Requests handled per second | Permintaan per detik |
+| **Error rate** | The share of requests that failed | Persentase gagal |
+| **Bottleneck** | The one limiting part (usually the database) | Titik sempit |
+| **SLO** | The target you promise, e.g. "p95 under 300 ms" | Target layanan |
+| **Think time** | The pause a real user makes between actions | Jeda antar aksi pengguna |
+
 ## 🧠 The big idea
 
-A bridge engineer doesn't wait for rush hour to learn how much weight the bridge holds. They **load test** it with trucks first, measure how much it bends, and find the weakest beam.
+A bridge engineer doesn't wait for rush hour to learn how much weight the bridge can hold. They **load test** it with trucks first, measure how much it bends, and find the weakest beam.
 
-A load test sends many simulated users to your API and measures how response times and errors change as traffic grows.
+A load test does the same to your API: many simulated users at once, while you watch response times and errors change as the traffic grows.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Your API is fast with one user (you, on localhost). With 200 users at once:
+Your API is fast with one user — you, on localhost. With 200 users at once:
+
 - database connections run out,
 - one slow query blocks worker processes,
-- a cache stampede hits the database,
+- everything rushes the database when a cache expires,
 - memory grows until the container is killed.
 
-None of that shows up in functional tests. Load tests reveal it **before** a campaign, launch or payday sale.
+None of that shows up in functional tests. Load tests reveal it **before** a campaign, a launch or a payday sale.
 
-## 💥 What happens if we DON'T?
+Without them:
 
-- A marketing email goes out; the API falls over at 8 a.m.; the team "adds more servers" and it still falls over, because the bottleneck is 20 database connections.
+- A marketing email goes out; the API falls over at 8 a.m.; the team adds more servers and it still falls over, because the real limit was 20 database connections.
 - You set Gunicorn to 50 workers "for performance" and exhaust PostgreSQL's `max_connections`.
-- A dashboard shows **average** latency 80 ms while 1 in 20 users waits 3 seconds.
+- A dashboard shows an **average** latency of 80 ms while one user in twenty waits three seconds.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Kinds of performance tests
 
@@ -54,6 +70,8 @@ None of that shows up in functional tests. Load tests reveal it **before** a cam
 | **Soak** | normal load for hours | "Memory leaks? Connection leaks?" |
 
 ### 2. Metrics
+
+Averages lie the way "average water depth" lies to someone crossing a river: fine on average, drowning in the middle. Always read p95 and p99.
 
 - **Latency percentiles**: p50 = half the requests were faster than this; **p95** = 95% were faster; p99 = the slowest 1% start here.
 - **Throughput (RPS)**: requests handled per second.
@@ -127,6 +145,8 @@ The **knee** (here between 50 and 100 users) is where some resource saturates. R
 
 ### 7. Finding the bottleneck
 
+Measure before you buy: more servers don't help when every one of them queues at the same database. Find the narrow gate first.
+
 Check in this order while the test runs:
 
 1. **App errors & logs** — timeouts? `QueuePool limit ... reached`?
@@ -144,7 +164,9 @@ Change **one** thing, re-run the **same** test, compare.
 - Use test accounts and seed data; clean up created records.
 - Run the load generator on a **different machine** than the app when possible — otherwise they compete for CPU.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -154,13 +176,22 @@ Change **one** thing, re-run the **same** test, compare.
 | Realistic think time | real behavior | need more users to reach high RPS |
 | No think time | max throughput test | unrealistic concurrency pattern |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Before launches, big campaigns, or infrastructure changes (new instance size, pool settings).
 - ✅ After performance-sensitive changes (search, checkout, AI endpoints).
 - ✅ As a small **smoke load test** in CI with thresholds.
 - 🚫 Not a replacement for profiling a single slow request (use `EXPLAIN`, a profiler, tracing).
 - 🚫 Don't run it against the dev server and trust the numbers.
+
+## ⚠️ Common mistakes
+
+- Measuring the dev server or a debug build.
+- One user type hammering one endpoint with no think time, then calling it "realistic".
+- Load generator on the same laptop as app + DB, all fighting for CPU.
+- Ignoring errors ("p95 is great!" — because half the requests failed fast).
+
+:::revoshop
+RevoShop has a real Locust suite: `locust/locustfile.py` (~300 lines) with a `CustomerJourney` TaskSet. (1) Find the task weights: does the browse/view/cart/checkout mix look realistic? (2) Check it uses `name=` for URLs with ids and `catch_response` — yes, e.g. `name="GET /products/:id (view details)"`. (3) The README runs Locust against `http://127.0.0.1:5000` — the **Flask dev server**. Re-run against the Gunicorn setup (`docker-compose.prod.yml`) and compare p95. (4) Write an SLO for `GET /products` and for checkout, run a 1-minute headless test with `--csv`, and use this lesson's `analyze.py` on the result.
+:::
 
 ## 🏆 Best practices
 
@@ -173,23 +204,6 @@ Change **one** thing, re-run the **same** test, compare.
 - [ ] Change **one variable** at a time and keep results (CSV) to compare runs.
 - [ ] Keep scenarios in the repo (`locust/`), parameterized by env vars — never hardcode real credentials.
 - [ ] Add a short headless run with thresholds to CI or pre-release checks.
-
-## 🏭 How it's used in industry
-
-- E-commerce and fintech teams in Indonesia run load tests before events like Harbolnas (12.12) and payday sales.
-- SRE teams define SLOs and error budgets; load tests check capacity against them.
-- AI apps load test differently: LLM calls are slow and rate-limited, so tests focus on queues, streaming and timeouts (Module 7).
-
-## ⚠️ Common mistakes
-
-- Measuring the dev server or a debug build.
-- One user type hammering one endpoint with no think time, then calling it "realistic".
-- Load generator on the same laptop as app + DB, all fighting for CPU.
-- Ignoring errors ("p95 is great!" — because half the requests failed fast).
-
-:::revoshop
-RevoShop has a real Locust suite: `locust/locustfile.py` (~300 lines) with a `CustomerJourney` TaskSet. (1) Find the task weights: does the browse/view/cart/checkout mix look realistic? (2) Check it uses `name=` for URLs with ids and `catch_response` — yes, e.g. `name="GET /products/:id (view details)"`. (3) The README runs Locust against `http://127.0.0.1:5000` — the **Flask dev server**. Re-run against the Gunicorn setup (`docker-compose.prod.yml`) and compare p95. (4) Write an SLO for `GET /products` and for checkout, run a 1-minute headless test with `--csv`, and use this lesson's `analyze.py` on the result.
-:::
 
 ::part[Explain & Design]{n="2"}
 
@@ -264,17 +278,6 @@ RPS stops increasing while latency climbs as you add users. What happened?
 The system saturated: a resource (workers, DB connections, CPU, locks, an external API) is at capacity and requests queue up.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Load test | Uji beban |
-| Stress / spike / soak test | Uji tekanan / lonjakan / ketahanan jangka panjang |
-| Latency percentile (p95) | Persentil latensi — 95% request lebih cepat dari nilai ini |
-| Throughput (RPS) | Jumlah request yang diproses per detik |
-| SLO | Target tingkat layanan yang terukur |
-| Bottleneck | Titik penyempitan / komponen yang membatasi kinerja |
-| Think time | Jeda antar aksi pengguna simulasi |
 
 ## 📚 Keep learning
 
