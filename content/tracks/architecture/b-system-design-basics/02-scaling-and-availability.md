@@ -17,6 +17,19 @@ tags: [system-design, scaling, availability, reliability]
 - **Availability** in "nines" and how to calculate it
 - **Single points of failure** and **redundancy**
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Vertical scaling** | A bigger machine | Membesarkan satu mesin |
+| **Horizontal scaling** | More machines doing the same job | Menambah jumlah mesin |
+| **Stateless server** | A server that keeps nothing between requests | Server tanpa ingatan |
+| **Session state** | Data about a logged-in user, kept somewhere shared | Data sesi pengguna |
+| **Availability ("nines")** | How much of the time the system works | Ketersediaan layanan |
+| **Redundancy** | A spare that takes over when something fails | Cadangan siap pakai |
+| **Single point of failure** | The one part whose failure stops everything | Titik gagal tunggal |
+| **Failover** | Switching to the spare automatically | Peralihan ke cadangan |
+
 ## 🧠 The big idea
 
 Your warung gets popular:
@@ -24,17 +37,16 @@ Your warung gets popular:
 - **Vertical scaling**: buy a bigger stove and hire a faster cook. Easy — until there's no bigger stove, and if that one cook is sick, you're closed.
 - **Horizontal scaling**: open more identical counters with more cooks. More work to coordinate, but no hard limit — and if one cook is sick, the others keep serving.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Traffic grows, and hardware fails. Every server, disk, network link and data center eventually breaks. Systems are designed so that **growth** doesn't require a rewrite and **failures** don't take everything down.
+Traffic grows and hardware fails. Every server, disk, network link and data centre eventually breaks. Systems are designed so that **growth** doesn't require a rewrite, and **one failure** doesn't take everything down.
 
-## 💥 What happens if we DON'T plan for it?
+Without that planning:
 
-- One server stores user sessions in memory → you add a second server → users get randomly logged out as requests hit the "other" server.
-- The single database server's disk fills up at 2 AM → the entire product is down, including pages that don't need the database.
-- A deploy restarts the only server → every user sees errors for 30 seconds, every deploy.
+- One server keeps sessions in memory → you add a second server → users are randomly logged out when a request lands on the "other" one.
+- The single database server's disk fills up at 2 a.m. → the whole product is down, including pages that never needed the database.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Vertical scaling
 
@@ -61,6 +73,8 @@ flowchart LR
 
 ### 3. Stateless servers
 
+Stateless is what makes extra counters possible: any cook can serve any customer, because the order slip carries everything they need.
+
 A :term[stateless]{bahasa="stateless — server tidak menyimpan data sesi pengguna di memorinya sendiri"} server keeps nothing important in its own memory or disk between requests. Any server can handle any request.
 
 Move state out of app servers:
@@ -75,6 +89,8 @@ Move state out of app servers:
 (Remember from the HTTP lesson: HTTP itself is stateless — this design goes with the grain.)
 
 ### 4. Availability in nines
+
+Put the numbers in human terms: 99.9% is about 43 minutes down per month; 99.99% is about 4 minutes. Each extra nine costs real money, so pick one you actually need.
 
 Availability = fraction of time the service works.
 
@@ -105,7 +121,9 @@ Redundancy is how unreliable parts build reliable systems.
 
 A component whose failure takes everything down. Common SPOFs: one database, one load balancer, one region, one person who knows how to deploy. 😅 Fixes: replicas, failover, multiple availability zones — and documentation.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -114,18 +132,11 @@ A component whose failure takes everything down. Common SPOFs: one database, one
 | More nines | Fewer outages | Steeply rising cost and complexity |
 | Many dependencies | Reuse, speed of building | Availability multiplies downward |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Start simple (one server, managed database with backups) and design app servers stateless from day one — it's cheap.
 - ✅ Add redundancy where an outage costs real money or trust (payments, login).
 - 🚫 Don't build multi-region active-active systems for a portfolio project.
 - 🚫 Don't promise 99.99% when you depend on a third-party API that offers 99.9%.
 
-## 🏭 How it's used in industry
-
-- Cloud **auto-scaling groups** add/remove servers based on CPU or request count (Module 5).
-- Managed databases offer **read replicas** and automatic **failover**.
-- Status pages and SLAs publish availability commitments; missing them can mean refunds.
 
 ## ⚠️ Common mistakes
 
@@ -187,15 +198,6 @@ Three services each at 99.9% are all required for a request. What's the combined
 0.999³ ≈ 0.997 → about **99.7%**.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Vertical / Horizontal scaling | Menambah kapasitas satu mesin / Menambah jumlah mesin |
-| Availability | Ketersediaan layanan |
-| Redundancy | Cadangan — komponen ganda |
-| Single point of failure | Titik gagal tunggal |
-| Failover | Pengalihan otomatis ke cadangan |
 
 ## 📚 Keep learning
 

@@ -17,6 +17,18 @@ tags: [system-design, latency, throughput, estimation]
 - A request's **latency budget**: where the milliseconds go
 - **Back-of-the-envelope** estimates for traffic and storage
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Latency** | How long one request takes | Waktu satu permintaan |
+| **Throughput** | How many requests you handle per second | Jumlah permintaan per detik |
+| **p50 / p95 / p99** | The middle, the slow 5%, the slowest 1% | Persentil waktu tanggap |
+| **Latency budget** | Splitting your target time across the steps | Pembagian jatah waktu |
+| **Round trip** | One request out and its answer back | Sekali pergi-pulang |
+| **Concurrency** | How many requests are in progress at once | Banyaknya proses bersamaan |
+| **Back-of-the-envelope** | A rough estimate done in a minute, on purpose | Perkiraan kasar |
+
 ## 🧠 The big idea
 
 A toll road has two different "speeds":
@@ -26,17 +38,17 @@ A toll road has two different "speeds":
 
 Opening more gates raises throughput but doesn't make any single car faster. A faster gate operator lowers latency *and* raises throughput. You need to know which problem you actually have.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-"Is it fast?" is meaningless without numbers. Users feel **latency** (a page taking 3 s feels broken). Businesses feel **throughput** (can we survive a flash sale with 10× traffic?). System design interviews start with these numbers, and so do real capacity plans.
+"Is it fast?" means nothing without numbers. Users feel **latency** — a page that takes three seconds feels broken. Businesses feel **throughput** — can we survive a flash sale with ten times the traffic?
 
-## 💥 What happens if we DON'T measure properly?
+System design interviews start with these two numbers, and so do real capacity plans. Mixing them up leads to the wrong fix: adding servers when one slow query is the problem, or optimising code when you simply need more toll gates.
 
-"Our average response time is 120 ms 🎉" — but 5% of requests take 4 seconds. Those are often your **most active** users (big carts, many requests), and each page makes several API calls, so most users hit at least one slow one. The average hid the problem.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Percentiles
+
+Averages hide the pain: if 19 users wait 80 ms and one waits 3 seconds, the average looks fine and one person thinks your app is broken.
 
 Sort all response times from one minute:
 
@@ -91,6 +103,8 @@ Push more than that and requests **queue**: latency rises sharply even though ea
 
 ### 5. Back-of-the-envelope estimation
 
+The goal isn't precision, it's an order of magnitude: is this 10 GB or 10 TB, 50 requests per second or 5,000? That answer changes the design; the second decimal place doesn't.
+
 CareerPilot has **100,000 daily active users**, each making ~20 API requests a day:
 
 - requests/day = 100,000 × 20 = **2,000,000**
@@ -104,7 +118,9 @@ Storage: each user uploads a 200 KB CV once, plus 50 applications × 2 KB:
 Round aggressively. The goal is the **order of magnitude** — is it 20 req/s (one small server) or 20,000 req/s (a serious distributed system)?
 :::
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Improve… | Typical technique | Cost |
 |---|---|---|
@@ -113,18 +129,11 @@ Round aggressively. The goal is the **order of magnitude** — is it 20 req/s (o
 | Both | efficient code, indexes | engineering time |
 | Tail latency (p99) | timeouts, retries with care, avoiding slow dependencies | more careful design |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Estimate before choosing architecture ("do we even need more than one server?").
 - ✅ Monitor p95/p99, not only averages.
 - 🚫 Don't design for Google scale when you have 50 users (YAGNI).
 - 🚫 Don't optimize latency without measuring where the time actually goes.
 
-## 🏭 How it's used in industry
-
-- Dashboards (Grafana, Datadog, CloudWatch) show p50/p95/p99 per endpoint.
-- **Load testing** (you'll use Locust in Module 2) finds the throughput where latency starts rising.
-- System design interviews begin with exactly these estimates.
 
 ## ⚠️ Common mistakes
 
@@ -183,15 +192,6 @@ Adding more servers mainly improves what — latency or throughput?
 Throughput (more requests handled at once). It only helps latency if requests were waiting in a queue.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Latency | Latensi — waktu tunggu satu permintaan |
-| Throughput | Jumlah permintaan yang bisa diproses per detik |
-| Percentile | Persentil |
-| Peak traffic | Lalu lintas puncak |
-| SLO | Target tingkat layanan |
 
 ## 📚 Keep learning
 

@@ -18,36 +18,35 @@ tags: [architecture, solid, oop, protocols, dependency-inversion]
 - How SOLID connects to Stage A (coupling & cohesion) and to design patterns (Stage D)
 - When SOLID is overkill
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **SOLID** | Five guidelines for classes that stay easy to change | Lima pedoman desain kelas |
+| **Single Responsibility** | One class, one reason to change | Satu tanggung jawab |
+| **Open/Closed** | Add new behaviour by adding code, not editing old code | Terbuka untuk tambahan |
+| **Liskov Substitution** | A subclass must work anywhere its parent works | Anak bisa menggantikan induk |
+| **Interface Segregation** | Small focused interfaces beat one big one | Antarmuka kecil dan fokus |
+| **Dependency Inversion** | Depend on an agreed shape, not a concrete tool | Bergantung pada kontrak |
+| **Interface / Protocol** | The agreed set of methods something must have | Kesepakatan metode |
+| **Duck typing** | If it has the right methods, Python accepts it | Cukup punya metode yang sesuai |
+| **Dependency injection** | Passing the tool in instead of creating it inside | Menyuntikkan kebutuhan |
+
 ## 🧠 The big idea
 
 SOLID is a set of **rules of thumb for where to draw lines** in your code so that a new requirement means **adding** code in one place, instead of **editing** code in many places.
 
 Think of a power strip: devices don't care which wall socket powers the strip, and you can plug in a new device without rewiring the house. The strip and the plug shape are an **interface**; everything else is swappable.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Object-oriented code tends to rot in predictable ways: classes that do everything, `if type == ...` chains that grow with every feature, subclasses that break when used like their parent, and business logic glued to a database or email library. SOLID names these problems so teams can spot and discuss them in code review.
+Object-oriented code rots in predictable ways: classes that do everything, `if type == …` chains that grow with every feature, subclasses that break when used like their parent, and business rules glued to a database or email library.
 
-## 💥 What happens if we DON'T care?
+SOLID gives those problems names, so a team can spot and discuss them in a code review instead of arguing about taste. The power-strip picture covers most of it: devices don't care which wall socket powers the strip, and a new device plugs in without rewiring the house.
 
-```python
-def export(applications, format, path):
-    if format == "csv":
-        ...
-    elif format == "json":
-        ...
-    elif format == "md":
-        ...
-    with open(path, "w") as f:      # rendering + saving in one function
-        f.write(content)
-```
+Applied blindly it goes wrong too — five tiny classes and three interfaces for something a 20-line function handled fine.
 
-- Adding Excel means editing this function (and risking CSV).
-- Uploading to S3 instead of disk means editing it again.
-- Testing the JSON output requires writing files.
-- Two developers adding two formats get merge conflicts in the same function.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### S — Single Responsibility Principle
 
@@ -128,6 +127,8 @@ A report that only **reads** now depends on deletes and search indexing — and 
 
 ### D — Dependency Inversion Principle
 
+This is the one that makes testing possible: your service asks for "something that can send a message", so production hands it an email client and the test hands it a notebook.
+
 > High-level policy shouldn't depend on low-level details. Both depend on **abstractions**.
 
 ```python
@@ -161,6 +162,8 @@ flowchart LR
 
 ### Python's tools
 
+Python doesn't need heavy interface machinery. A `Protocol` describes the shape, duck typing accepts anything matching it, and passing objects in does the rest.
+
 | Tool | Use |
 |---|---|
 | Duck typing | any object with the right methods works |
@@ -169,7 +172,9 @@ flowchart LR
 | Constructor injection | pass dependencies in `__init__` |
 | Functions | a single-method interface is often just a callable: `clock: Callable[[], datetime]` |
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -179,28 +184,10 @@ flowchart LR
 | `Protocol` | no inheritance needed, flexible | errors show up in the type checker, not at runtime |
 | `ABC` | runtime enforcement | couples implementations to a base class |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Code that will live for years, is changed by several people, or has a clear axis of variation (formats, providers, channels).
 - ✅ Business logic that must be tested without databases and networks.
 - 🚫 A 50-line script or a prototype you'll throw away.
 - 🚫 Creating interfaces with exactly one implementation "just in case" — wait for the second implementation or a testing need.
-
-## 🏆 Best practices
-
-- [ ] Describe each class's responsibility in one sentence **without "and"**.
-- [ ] Replace growing `if type == ...` chains with polymorphism or a registry once there are 3+ variants or frequent changes.
-- [ ] Define protocols **where they're used** (the consumer owns the abstraction), keep them small.
-- [ ] Inject dependencies (clock, notifier, repository, HTTP client) through constructors or parameters.
-- [ ] Keep subclasses contract-compatible; prefer composition when "is-a" feels forced (next lesson).
-- [ ] Use `mypy`/`pyright` so protocol mismatches are caught before runtime.
-- [ ] In code reviews, name the principle **and the concrete pain** ("adding a provider requires editing checkout — OCP").
-
-## 🏭 How it's used in industry
-
-- Payment integrations: `PaymentGateway` protocol with Midtrans, Xendit, Stripe adapters — switching providers doesn't touch checkout logic.
-- Django/Flask extension points (storage backends, email backends, auth backends) are OCP + DIP in practice.
-- AI apps: an `LLMClient` protocol lets teams switch between Claude, OpenAI or a local Ollama model and fake it in tests (Module 7).
 
 ## ⚠️ Common mistakes
 
@@ -212,6 +199,16 @@ flowchart LR
 :::revoshop
 RevoShop's `app/integrations/midtrans.py` and `PaymentService` already separate the payment provider from routes. (1) Does `PaymentService` depend on the Midtrans module **directly**? What would change to add Xendit — which files and how many `if provider ==` branches? (2) Sketch a `PaymentGateway` Protocol with `create_transaction(...)` and `verify_notification(...)`, and where the concrete Midtrans adapter would be chosen. (3) Find one class in `app/services/` with more than one reason to change.
 :::
+
+## 🏆 Best practices
+
+- [ ] Describe each class's responsibility in one sentence **without "and"**.
+- [ ] Replace growing `if type == ...` chains with polymorphism or a registry once there are 3+ variants or frequent changes.
+- [ ] Define protocols **where they're used** (the consumer owns the abstraction), keep them small.
+- [ ] Inject dependencies (clock, notifier, repository, HTTP client) through constructors or parameters.
+- [ ] Keep subclasses contract-compatible; prefer composition when "is-a" feels forced (next lesson).
+- [ ] Use `mypy`/`pyright` so protocol mismatches are caught before runtime.
+- [ ] In code reviews, name the principle **and the concrete pain** ("adding a provider requires editing checkout — OCP").
 
 ::part[Explain & Design]{n="2"}
 
@@ -287,16 +284,6 @@ How does Python let you apply Dependency Inversion without inheritance?
 Define a `typing.Protocol` (or rely on duck typing) that the high-level code depends on, and pass any object with matching methods — no base class required.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Single responsibility | Tanggung jawab tunggal |
-| Open/closed | Terbuka untuk perluasan, tertutup untuk modifikasi |
-| Liskov substitution | Substitusi Liskov — subtipe bisa menggantikan tipe induk |
-| Interface segregation | Pemisahan antarmuka |
-| Dependency inversion | Pembalikan ketergantungan |
-| Protocol / interface | Protokol / antarmuka |
 
 ## 📚 Keep learning
 

@@ -17,6 +17,20 @@ tags: [system-design, load-balancer, caching, cdn]
 - **CDNs**: serving static content close to users
 - The new problems each one introduces (stale data, thundering herds)
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Load balancer** | The one entry point that spreads traffic over healthy servers | Pembagi lalu lintas |
+| **Health check** | The test that decides if a server may receive traffic | Cek kesehatan server |
+| **Cache** | A saved copy of an answer, to skip the slow work next time | Salinan jawaban |
+| **TTL** | How long a cached copy may be used | Masa berlaku cache |
+| **Cache-aside** | Look in the cache; if it's missing, fetch and store it | Pola isi cache saat kosong |
+| **Invalidation** | Removing a cached copy because the real data changed | Membuang cache lama |
+| **Stale data** | A copy that is out of date | Data kedaluwarsa |
+| **Thundering herd** | Everyone rebuilding the same expired cache at once | Serbuan saat cache habis |
+| **CDN** | Copies of your files kept near users worldwide | Jaringan pengantar konten |
+
 ## 🧠 The big idea
 
 | Building block | Real-life version |
@@ -25,20 +39,15 @@ tags: [system-design, load-balancer, caching, cdn]
 | **Cache** | Keeping today's most-ordered drinks already prepared behind the counter |
 | **CDN** | A chain opening small branches in every city so customers don't travel to headquarters |
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-- Many servers need **one entry point** that spreads work fairly and skips broken servers → load balancer.
-- Recomputing or re-fetching the same answer is slow and expensive → cache.
-- Physics: light in fiber takes time; users far from your server wait → CDN.
+- Many servers need **one entry point** that spreads work fairly and skips broken servers → a load balancer.
+- Recomputing or re-fetching the same answer is slow and expensive → a cache.
+- Physics: light in a fibre takes time, so users far from your server wait → a CDN.
 
-## 💥 What happens if we DON'T use them (or use them badly)?
+Each one also brings a new problem: a load balancer needs good health checks or it sends users to a broken server; a cache can serve yesterday's price; a CDN can keep serving a file you already replaced.
 
-- No load balancer: users need to know individual server addresses; a crashed server keeps receiving traffic.
-- No cache: the homepage runs the same heavy database query 1,000 times a second.
-- A cache with no expiry: a user changes their profile photo and sees the old one for a week.
-- No CDN: users in Medan and Makassar wait for images served from a single server in Singapore.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Load balancers
 
@@ -59,6 +68,8 @@ flowchart LR
 **Health checks**: the load balancer calls something like `GET /health` every few seconds and stops sending traffic to servers that fail. This is also how **zero-downtime deploys** work: take one server out, update it, put it back.
 
 ### 2. Caching
+
+The hard part of caching isn't storing — it's deciding when a copy stops being true. Every cache needs an answer to "how does this get thrown away?"
 
 A :term[cache]{bahasa="cache — penyimpanan sementara yang cepat untuk data yang sering diminta"} stores a copy of data somewhere faster than the original.
 
@@ -107,7 +118,9 @@ Best for: images, videos, CSS/JS bundles, fonts, downloadable files — and a wh
 
 Trick: put a **content hash** in file names (`app.3f9a2c.js`). Changed file → new name → no stale cache problem, so you can cache for a year. (The Vite build of this handbook does exactly that — look in `dist/assets/`.)
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Building block | ✅ | ❌ New problems |
 |---|---|---|
@@ -117,19 +130,12 @@ Trick: put a **content hash** in file names (`app.3f9a2c.js`). Changed file → 
 
 **Thundering herd**: a popular cache entry expires, and 1,000 requests miss at the same moment and all hit the database. Mitigations: slightly randomized TTLs, letting only one request rebuild the entry.
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Load balancer as soon as you have 2+ app servers (managed cloud LBs are easy).
 - ✅ Cache expensive, frequently read, rarely changing data (job listings, AI embeddings of the same text, exchange rates).
 - ✅ CDN for all static assets.
 - 🚫 Don't cache before measuring — you might be hiding a missing database index.
 - 🚫 Don't cache data that must be exactly current (bank balances at payment time, stock levels at checkout).
 
-## 🏭 How it's used in industry
-
-- AWS ALB, Nginx and Cloudflare sit in front of most web apps.
-- Redis is one of the most common pieces of infrastructure in backend job listings.
-- **AI apps cache heavily**: identical prompts, embeddings and retrieval results — LLM calls are slow and cost money per token (Module 7).
 
 ## ⚠️ Common mistakes
 
@@ -208,15 +214,6 @@ Why do build tools put content hashes in static file names?
 A changed file gets a new URL, so CDNs and browsers can cache files for a very long time without ever serving an outdated version.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Load balancer | Penyeimbang beban — pembagi lalu lintas ke banyak server |
-| Cache hit / miss | Data ditemukan / tidak ditemukan di cache |
-| TTL | Masa berlaku data di cache |
-| Invalidation | Menghapus data cache yang sudah tidak benar |
-| CDN | Jaringan server yang dekat dengan pengguna |
 
 ## 📚 Keep learning
 
