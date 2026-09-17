@@ -88,13 +88,22 @@ Counts are lessons (files), from `npm run -s i18n`.
 |---|---|---|---|---|
 | Module 4 (frontend) | 50 | 50 | 50 | ✅ done |
 | Module 5 (deployment) | 27 | 27 | 5 | ✅ English done · Indonesian pending |
-| Module 1 | 14 | 0 | 0 | ⬜ |
+| Module 1 | 14 | 12 | 0 | ✅ English done (2 placement checks already plain) |
 | Module 2 (backend) | 52 | 45 | 0 | ✅ English done (7 placement checks were already plain) |
-| Module 8 | 12 | 0 | 0 | ⬜ low priority |
+| Module 8 (career) | 12 | 12 | 0 | ✅ English done, aimed at remote/US roles |
 | Tracks: architecture | 19 | 19 | 0 | ✅ English done |
 | Tracks: DSA | 12 | 12 | 0 | ✅ English done |
 | Projects (careerpilot, studymind, supportdesk-ai) | 6 | 6 | 0 | ✅ English done |
 | Guides | 2 | 2 | 0 | ✅ how-to-study done; components-showcase is an authoring reference, left as is |
+
+### Modules 1 and 8 — English pass ✅ complete
+
+- [x] M1 W0 (7): how the web works, variables, operators, conditionals, lists & loops, functions, debugging
+- [x] M1 W1 (5): counting, searching, sorting, filtering/aggregation, problem-solving process
+- [x] M8 W1 (5): portfolio, GitHub profile, LinkedIn, learning in public, tech CV
+- [x] M8 W2 (7): job search, hiring process, STAR, live coding, system design, teamwork, salary negotiation
+
+Module 8 was also updated for the learner's target market: remote roles outside Indonesia, especially the US. Each career lesson now says what changes for that market (English one-page CV without photo or personal data, time-zone overlap in the LinkedIn headline, companies that already hire outside the US, contractor offers without BPJS/THR, written communication as the visible work in a remote team).
 
 ### Tracks, projects and guides — English pass ✅ complete
 
@@ -125,7 +134,7 @@ The 7 placement checks were left as they were: short, already plain, and mostly 
 
 Indonesian versions exist only for w1 00–04; the rest are a later pass (see section 0 and template C2).
 
-Next in the English pass: Module 1 (14), then Module 8 (12, low priority). After that: new material (C5b part 2). Then new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) — written in the new style in both languages from the start.
+**The English pass is complete for every existing lesson.** What remains: the Indonesian pass (a separate batch, see section 0 and template C2) and new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5). Then new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) — written in the new style in both languages from the start.
 
 ---
 
