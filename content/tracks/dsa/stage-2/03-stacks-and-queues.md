@@ -19,6 +19,20 @@ tags: [dsa, stack, queue, deque, monotonic-stack]
 - The **monotonic stack** pattern for "next greater" problems
 - Queues in backend systems: job queues, BFS preview, sliding-window rate limiting
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Stack (LIFO)** | Last in, first out — like a pile of plates | Tumpukan |
+| **Queue (FIFO)** | First in, first out — like a bank queue | Antrean |
+| **Push / pop** | Add to the top / take from the top | Menaruh / mengambil |
+| **Enqueue / dequeue** | Join the back / leave the front | Masuk antrean / keluar antrean |
+| **`deque`** | Python's double-ended queue, fast at both ends | Antrean dua ujung |
+| **Augmented stack** | A stack that also tracks something extra (like the minimum) | Tumpukan dengan info tambahan |
+| **Monotonic stack** | A stack kept always increasing or decreasing | Tumpukan berurutan |
+| **Next greater element** | The classic problem a monotonic stack solves | Nilai lebih besar berikutnya |
+| **Job queue** | Work waiting to be handled by a worker | Antrean pekerjaan |
+
 ## 🧠 The big idea
 
 - A **stack** is a pile of plates: you add and remove from the **top**. The last plate you put down is the first you pick up.
@@ -26,29 +40,20 @@ tags: [dsa, stack, queue, deque, monotonic-stack]
 
 The whole lesson is choosing the right pile or line — and the right Python type so both operations are O(1).
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Many processes naturally have an order:
+Many processes have a natural order:
 
 | Stack (LIFO) | Queue (FIFO) |
 |---|---|
 | Undo in an editor | Print jobs, email sending jobs |
 | Browser back button | Customer support tickets |
-| Function call stack (Stage 1!) | Requests waiting for a Gunicorn worker |
+| The function call stack (Stage 1) | Requests waiting for a Gunicorn worker |
 | Matching `(` with `)` | Breadth-first search (Stage 4) |
-| Parsing expressions, HTML tags | Message brokers (Module 5: SQS, RabbitMQ) |
 
-## 💥 What happens if we DON'T use them properly?
+Choosing the wrong one — or the wrong Python type — quietly costs performance: `list.pop(0)` shifts every remaining item, so a "queue" built on a list is O(n) per customer instead of O(1).
 
-```python
-queue = []
-queue.append(job)
-next_job = queue.pop(0)     # 🐢 O(n): shifts every remaining item
-```
-
-With 100,000 queued jobs, that's 100,000 shifts per job. And trying to match brackets with counters alone fails on `([)]` — counts balance, but the order is wrong. A stack catches it.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Stack in Python: a list
 
@@ -77,6 +82,8 @@ queue.popleft()           # dequeue from the left — 'job-1', O(1)
 `deque` is a doubly-ended queue: O(1) at both ends (but O(n) indexing in the middle). `queue.Queue` exists too — it's for **thread-safe** communication between threads, not for algorithms.
 
 ### 3. Matching brackets
+
+This is the stack's party trick: every opening bracket goes on the pile, every closing bracket must match the plate on top. If the pile isn't empty at the end, something was never closed.
 
 ```python
 PAIRS = {")": "(", "]": "[", "}": "{"}
@@ -118,6 +125,8 @@ In `3 4 + 2 *`, push numbers; an operator pops two, computes, pushes the result.
 
 ### 6. The monotonic stack
 
+Think of people queueing by height, where anyone shorter than the newcomer steps aside: whoever is left is exactly the answer to "who's the next taller person?".
+
 **Problem shape**: *"for each element, find the next element to the right that is greater (or smaller)."*
 
 Brute force looks ahead from every element: O(n²). A **monotonic stack** keeps indices whose answer is still unknown, in decreasing order of value. Each new value **resolves** every smaller value on top of the stack:
@@ -148,7 +157,9 @@ flowchart LR
 - **Job queues**: a web request enqueues "send welcome email"; a worker dequeues and processes it (Module 5).
 - **Sliding-window rate limiting**: keep each user's recent request timestamps in a deque; evict timestamps older than the window from the left, append new ones on the right. Each timestamp enters and leaves once → amortized O(1).
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -159,12 +170,17 @@ flowchart LR
 | Fixed window counter | tiny memory | allows bursts at window edges |
 | Token bucket | smooth, small memory | slightly more math (Architecture F) |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Stack: nested structures, undo, "most recent unmatched", DFS, next-greater problems.
 - ✅ Queue: processing in arrival order, BFS, buffering, scheduling.
 - 🚫 Need the **smallest/highest-priority** item rather than the oldest → a **heap** (priority queue).
 - 🚫 Need to search or index in the middle often → list/dict.
+
+## ⚠️ Common mistakes
+
+- `pop()` on an empty list → `IndexError` in an edge case you didn't test.
+- Forgetting to check leftovers at the end of bracket matching.
+- Storing values instead of indices in a monotonic stack, then being unable to compute distances.
+- Using `<=` vs `<` wrongly for "strictly greater" in the stack condition.
 
 ## 🏆 Best practices
 
@@ -174,20 +190,6 @@ flowchart LR
 - [ ] Explain amortized analysis: "each element is pushed and popped once, so the nested loop is O(n) overall".
 - [ ] For concurrency between threads use `queue.Queue`; across processes/servers use a real broker (Redis, SQS, RabbitMQ).
 - [ ] In production rate limiters, store state in a shared store (Redis) — an in-memory deque only works for one process.
-
-## 🏭 How it's used in industry
-
-- Every Gunicorn/Uvicorn server keeps a backlog queue of connections waiting for a worker.
-- Celery, RQ, AWS SQS and Kafka power background jobs and event pipelines.
-- API gateways (and Flask-Limiter with Redis) implement sliding-window or token-bucket rate limits.
-- Editors and design tools (Figma, VS Code) implement undo/redo as two stacks.
-
-## ⚠️ Common mistakes
-
-- `pop()` on an empty list → `IndexError` in an edge case you didn't test.
-- Forgetting to check leftovers at the end of bracket matching.
-- Storing values instead of indices in a monotonic stack, then being unable to compute distances.
-- Using `<=` vs `<` wrongly for "strictly greater" in the stack condition.
 
 ::part[Explain & Design]{n="2"}
 
@@ -259,17 +261,6 @@ The monotonic stack solution has a `while` inside a `for`. Why is it still O(n)?
 Each index is pushed once and popped at most once across the entire run, so the total work of all inner loops is at most n.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Stack (LIFO) | Tumpukan — terakhir masuk, pertama keluar |
-| Queue (FIFO) | Antrean — pertama masuk, pertama keluar |
-| Deque | Antrean dua ujung |
-| Push / Pop | Menaruh / mengambil dari tumpukan |
-| Enqueue / Dequeue | Memasukkan / mengeluarkan dari antrean |
-| Monotonic stack | Tumpukan monoton (nilainya selalu naik atau turun) |
-| Rate limiting | Pembatasan jumlah permintaan |
 
 ## 📚 Keep learning
 

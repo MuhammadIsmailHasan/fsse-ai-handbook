@@ -18,32 +18,35 @@ tags: [dsa, linked-list, pointers, fast-slow-pointers, lru-cache]
 - **Fast & slow pointers**: middle, cycle detection, n-th from the end
 - Why real systems still use linked lists (LRU caches, queues, free lists)
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Linked list** | Items connected by references, not stored side by side | Rantai node |
+| **Node** | One item: a value plus a link to the next | Simpul data |
+| **Head / tail** | The first / last node | Awal / akhir rantai |
+| **Singly / doubly linked** | Links forward only / links both ways | Satu arah / dua arah |
+| **Traversal** | Walking the chain from the head | Menelusuri rantai |
+| **Rewiring** | Changing which node points where | Mengubah tautan |
+| **Dummy (sentinel) node** | A fake first node so edge cases disappear | Node semu di depan |
+| **Fast & slow pointers** | Two walkers at different speeds — finds the middle or a loop | Dua penunjuk beda kecepatan |
+| **LRU cache** | Keep the most recently used items, drop the oldest | Cache berdasarkan pemakaian terakhir |
+
 ## 🧠 The big idea
 
 An array is a row of **numbered lockers**. A linked list is a **treasure hunt**: each clue (node) holds a value and tells you where the next clue is. You can't jump to clue #500 — you follow the chain. But inserting a new clue between two others only means changing **one note**; nobody has to move.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Arrays make inserting or removing in the middle O(n) because items shift. If you already **hold a reference** to a node, a linked list inserts or removes next to it in O(1). That makes linked lists the backbone of:
+Arrays make inserting or removing in the middle O(n), because everything shifts. If you already **hold a reference** to a node, a linked list inserts or removes next to it in O(1). That makes linked lists the backbone of
+
 - `collections.deque` (a linked list of blocks),
 - LRU caches (move an item to "most recent" in O(1)),
-- memory allocators and OS schedulers.
+- memory allocators and operating system schedulers.
 
-In interviews, linked lists test whether you can manipulate references carefully without losing data.
+In interviews they test something specific: can you move references around carefully without losing half the chain? One line in the wrong order and the rest of the list is unreachable — the treasure hunt has a missing clue and nobody can finish it.
 
-## 💥 What happens if we DON'T handle pointers carefully?
-
-```python
-def reverse(head):
-    current = head
-    while current:
-        current.next = previous     # 🐛 we just lost the rest of the list
-        ...
-```
-
-Overwrite `current.next` before saving it and every node after `current` becomes unreachable. A single wrong line loses data or creates an infinite loop.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The node
 
@@ -108,6 +111,8 @@ Draw boxes and arrows on paper for every pointer problem. Interviewers expect it
 
 ### 5. The dummy (sentinel) head
 
+A dummy node is a **spare clue at the start** so that "remove the first item" stops being a special case — the code that works in the middle now works everywhere.
+
 Removing or inserting at the **head** usually needs special-case code. A dummy node in front makes the head behave like any other node:
 
 ```python
@@ -119,6 +124,8 @@ return dummy.next
 Same idea in merging: build the result after `dummy`, append to `tail`, return `dummy.next`.
 
 ### 6. Fast & slow pointers
+
+Two runners on a track: if the fast one ever laps the slow one, the track must be a loop. If it reaches the end, the slow one is exactly halfway.
 
 Move one pointer 1 step and another 2 steps:
 
@@ -159,7 +166,9 @@ flowchart LR
 
 Neither structure alone gives O(1) for both "find" and "reorder" — combining them does. This is one of the most common interview design questions, and exactly how caches like Python's `functools.lru_cache` work internally.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -169,12 +178,17 @@ Neither structure alone gives O(1) for both "find" and "reorder" — combining t
 | Recursion on lists | elegant | Python's recursion limit breaks on long lists |
 | Visited set for cycles | simple | O(n) memory |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Frequent insertions/removals where you already hold the node (LRU, schedulers, undo histories with splicing).
 - ✅ Implementing queues/deques from scratch, or in lower-level languages.
 - 🚫 In everyday Python app code — `list`, `deque` and `dict` are faster and simpler.
 - 🚫 When you need random access by index.
+
+## ⚠️ Common mistakes
+
+- Losing the rest of the list by overwriting `next` too early.
+- Forgetting the empty list or single-node case.
+- `while current.next:` crashing when `current` is `None`.
+- In an LRU cache, updating the dict but forgetting to move or remove the node (or vice versa).
 
 ## 🏆 Best practices
 
@@ -185,20 +199,6 @@ Neither structure alone gives O(1) for both "find" and "reorder" — combining t
 - [ ] Prefer **iterative** solutions in Python for long lists (recursion depth).
 - [ ] Keep `prev`/`next` updates in small helper methods (`_unlink`, `_push_front`) so invariants stay correct.
 - [ ] In real Python code, reach for `deque`, `OrderedDict` or `functools.lru_cache` — implement by hand to learn and in interviews.
-
-## 🏭 How it's used in industry
-
-- Caches: Redis's LRU/LFU eviction, CDN caches, database buffer pools use recency lists.
-- `collections.deque`, OS process and I/O queues, memory allocator free lists.
-- Blockchains and Git commits form linked structures (each item references its parent).
-- Undo/redo histories and playlists in apps.
-
-## ⚠️ Common mistakes
-
-- Losing the rest of the list by overwriting `next` too early.
-- Forgetting the empty list or single-node case.
-- `while current.next:` crashing when `current` is `None`.
-- In an LRU cache, updating the dict but forgetting to move or remove the node (or vice versa).
 
 ::part[Explain & Design]{n="2"}
 
@@ -273,16 +273,6 @@ Why does an LRU cache need both a dict and a doubly linked list?
 The dict finds a node by key in O(1); the doubly linked list moves or removes that node (and finds the least recent one) in O(1). Neither can do both alone.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Node | Simpul |
-| Singly / doubly linked list | Senarai berantai tunggal / ganda |
-| Sentinel / dummy node | Simpul penjaga (bantuan) |
-| Fast & slow pointers | Penunjuk cepat dan lambat |
-| Cycle | Siklus / putaran |
-| LRU (Least Recently Used) | Yang paling lama tidak digunakan |
 
 ## 📚 Keep learning
 

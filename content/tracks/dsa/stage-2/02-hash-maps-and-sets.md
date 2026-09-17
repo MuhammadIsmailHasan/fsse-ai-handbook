@@ -18,19 +18,33 @@ tags: [dsa, hash-map, set, dict, counting, heap]
 - The core patterns: **seen-set**, **counting**, **grouping by key**, **index lookup**
 - `Counter`, `defaultdict`, and a first look at **heaps** for top-k
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Hash map (dict)** | Store values under keys, and find them instantly | Peta kunci ke nilai |
+| **Set** | The same idea, but only keys: "is this in it?" | Kumpulan nilai unik |
+| **Hash function** | Turns a key into a slot number | Pengubah kunci jadi posisi |
+| **Collision** | Two keys landing in the same slot | Dua kunci satu slot |
+| **Hashable** | A value stable enough to be a key (str, int, tuple) | Bisa dijadikan kunci |
+| **Average O(1)** | Usually instant, whatever the size | Biasanya langsung |
+| **Seen-set** | Remembering what you've already met while looping | Penanda sudah pernah ada |
+| **Counting** | Tallying how many times each value appears | Menghitung kemunculan |
+| **Grouping** | Putting items into buckets by a shared key | Mengelompokkan data |
+
 ## 🧠 The big idea
 
 A hash map is a **coat check**. You hand over your coat (value) and get a ticket number computed from your name (key → hash → slot). To get your coat back, the attendant doesn't search every hook — they compute the same number and go straight to the hook.
 
 Arrays jump to a position by **index**. Hash maps jump to a position by **key**.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Many problems boil down to *"have I seen this before?"*, *"how many of each?"*, or *"where is the item with this key?"*. With a list, each question is a scan: O(n). Inside a loop, that's O(n²). A hash map answers in O(1) on average, turning O(n²) solutions into O(n).
+So many problems come down to *"have I seen this before?"*, *"how many of each?"* or *"where is the item with this key?"*. With a list each of those is a scan — O(n) — and inside a loop that becomes O(n²). A hash map answers in O(1) on average, turning O(n²) solutions into O(n).
 
-That's why *"can I use a hash map?"* is the first question to ask in most interview problems.
+That's why *"can I use a hash map here?"* is the first question to ask in most interview problems.
 
-## 💥 What happens if we DON'T use it?
+Without one:
 
 ```python
 def has_duplicate(emails):          # 100,000 sign-ups
@@ -40,9 +54,9 @@ def has_duplicate(emails):          # 100,000 sign-ups
     return False
 ```
 
-100,000² = 10 billion comparisons. With a set: 100,000 lookups.
+Ten billion comparisons, for a question a set answers in one pass.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Hash → slot
 
@@ -59,11 +73,15 @@ flowchart LR
 
 ### 2. Collisions and resizing
 
+When two coats get the same hook number, the attendant keeps both there and checks the names. Rare collisions cost almost nothing; that's why the average stays O(1) even though the worst case is O(n).
+
 Two keys can land in the same slot (a **collision**). Python uses **open addressing**: probe other slots in a fixed sequence. When the table gets too full (high **load factor**), Python allocates a larger table and re-inserts everything — rare, so insertion stays **amortized O(1)**.
 
 Worst case (many collisions) is O(n), but with good hash functions that's practically never an issue for built-in types.
 
 ### 3. What can be a key?
+
+A key must not change after it's filed, or the ticket number stops matching the hook. That's why lists can't be keys and tuples can.
 
 Keys must be **hashable**: their hash must never change. Immutable built-ins work: `str`, `int`, `tuple` (of hashables), `frozenset`. Lists and dicts don't:
 
@@ -141,7 +159,9 @@ wanted - mine     # {'docker'}          what to learn next
 
 After counting, you often need the k largest. Sorting all d distinct items is O(d log d). A **min-heap of size k** (`heapq`) keeps only the best k seen so far: O(d log k). When k is tiny and d is huge, that's a big win.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -151,12 +171,17 @@ After counting, you often need the k largest. Sorting all d distinct items is O(
 | string key (sorted letters) | easy to read | O(k log k) per word |
 | count-tuple key | O(k) per word | slightly more code |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ "Seen before?", "how many?", "group by", "find the partner/complement", caching results (memoization).
 - 🚫 You need items **in sorted order** or **range queries** ("all salaries between 10M and 15M") → sorting / binary search / a B-tree index.
 - 🚫 Memory is extremely tight and a two-pointer solution on sorted data exists.
 - 🚫 Keys are mutable objects.
+
+## ⚠️ Common mistakes
+
+- `if x in some_list` inside a loop.
+- Using a list as a key, or a mutable object whose fields affect its hash.
+- `d[key] += 1` on a missing key (`KeyError`) — use `get` or `defaultdict(int)`.
+- Assuming sets keep insertion order.
 
 ## 🏆 Best practices
 
@@ -167,19 +192,6 @@ After counting, you often need the k largest. Sorting all d distinct items is O(
 - [ ] Don't rely on set ordering; sort the output if the order matters.
 - [ ] When returning "top k", clarify tie-breaking rules first.
 - [ ] Mention that average O(1) can degrade to O(n) with adversarial collisions (Python randomizes string hashes to defend against this).
-
-## 🏭 How it's used in industry
-
-- Caches (Redis is a giant networked hash map), session stores, deduplication of events and webhooks (Week 5!).
-- Database **hash joins** and hash indexes; `GROUP BY` implementations.
-- Counting tokens, words, and n-grams in NLP and AI pipelines; feature hashing in ML.
-
-## ⚠️ Common mistakes
-
-- `if x in some_list` inside a loop.
-- Using a list as a key, or a mutable object whose fields affect its hash.
-- `d[key] += 1` on a missing key (`KeyError`) — use `get` or `defaultdict(int)`.
-- Assuming sets keep insertion order.
 
 ::part[Explain & Design]{n="2"}
 
@@ -255,16 +267,6 @@ What's the time and space of "find the first duplicate" with a set?
 O(n) time and O(n) space — trading memory for speed compared with O(n²) time and O(1) space.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Hash function | Fungsi hash — mengubah kunci menjadi angka |
-| Collision | Tabrakan — dua kunci di slot yang sama |
-| Load factor | Tingkat keterisian tabel |
-| Hashable | Bisa di-hash (nilainya tetap) |
-| Frequency count | Penghitungan frekuensi |
-| Heap | Tumpukan prioritas (heap) |
 
 ## 📚 Keep learning
 
