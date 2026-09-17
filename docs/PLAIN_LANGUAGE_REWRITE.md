@@ -91,10 +91,19 @@ Counts are lessons (files), from `npm run -s i18n`.
 | Module 1 | 14 | 0 | 0 | ⬜ |
 | Module 2 (backend) | 52 | 45 | 0 | ✅ English done (7 placement checks were already plain) |
 | Module 8 | 12 | 0 | 0 | ⬜ low priority |
-| Tracks: architecture | 19 | 0 | 0 | ⬜ |
-| Tracks: DSA | 12 | 0 | 0 | ⬜ |
-| Projects (careerpilot, studymind, supportdesk-ai) | 6 | 0 | 0 | ⬜ |
-| Guides | 2 | 0 | 0 | ⬜ |
+| Tracks: architecture | 19 | 19 | 0 | ✅ English done |
+| Tracks: DSA | 12 | 12 | 0 | ✅ English done |
+| Projects (careerpilot, studymind, supportdesk-ai) | 6 | 6 | 0 | ✅ English done |
+| Guides | 2 | 2 | 0 | ✅ how-to-study done; components-showcase is an authoring reference, left as is |
+
+### Tracks, projects and guides — English pass ✅ complete
+
+- [x] DSA (12): Big-O, memory, recursion, arrays, hash maps, stacks/queues, linked lists, two pointers, sliding window, prefix sums, binary search, sorting
+- [x] Architecture (19): principles (3), system design basics (3), OOP design (2), design patterns (4), backend architecture (3), frontend patterns (4)
+- [x] Projects (6): CareerPilot overview + phases 1, 2 and 4; StudyMind; SupportDesk AI
+- [x] Guides: how-to-study (components-showcase is an authoring reference, left unchanged)
+
+Project briefs and guides got a lighter treatment — they have no `🧠 The big idea` section, so the work was plain-language intros and analogies at each major heading.
 
 ### Module 2 checklist — English pass ✅ complete
 
@@ -116,7 +125,7 @@ The 7 placement checks were left as they were: short, already plain, and mostly 
 
 Indonesian versions exist only for w1 00–04; the rest are a later pass (see section 0 and template C2).
 
-Next in the English pass: Module 1 (14), tracks (architecture 19, DSA 12), projects and guides (8); Module 8 last. Then new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) — written in the new style in both languages from the start.
+Next in the English pass: Module 1 (14), then Module 8 (12, low priority). After that: new material (C5b part 2). Then new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) — written in the new style in both languages from the start.
 
 ---
 
