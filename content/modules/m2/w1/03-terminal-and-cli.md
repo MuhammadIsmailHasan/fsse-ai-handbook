@@ -20,27 +20,42 @@ tags: [terminal, shell, bash, cli, tooling]
 - **Environment variables**, `PATH`, exit codes, and running processes
 - Writing a small, safe **shell script**
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Terminal** | The window where you type commands | Jendela perintah |
+| **Shell** | The program inside it that understands what you type (bash, zsh) | Penerjemah perintah |
+| **CLI** | A program you control by typing instead of clicking | Program berbasis teks |
+| **Working directory** | The folder your commands act on right now | Folder tempat kamu berada |
+| **Pipe (`\|`)** | Sending one command's output into the next command | Menyalurkan hasil ke perintah lain |
+| **Redirection (`>`, `>>`)** | Sending output into a file instead of the screen | Mengalihkan hasil ke file |
+| **Environment variable** | A named value programs can read (`DATABASE_URL`) | Nilai bernama untuk program |
+| **`PATH`** | The list of folders the shell searches for a command | Daftar folder pencarian perintah |
+| **Exit code** | A number a command returns: 0 means success | Kode hasil perintah |
+| **Shell script** | A file of commands you can run again later | Kumpulan perintah tersimpan |
+
 ## 🧠 The big idea
 
-A graphical interface is a **restaurant menu with pictures**: easy, but you can only order what's on it. The terminal is **talking directly to the chef**: at first you need to learn the words, but then you can ask for exactly what you want — and write the order down to repeat it tomorrow (a script).
+A graphical interface is a **restaurant menu with pictures**: easy, but you can only order what's printed on it. The terminal is **talking directly to the chef**: at first you must learn the words, but then you can ask for exactly what you want — and write the order down to repeat it tomorrow (a script).
 
 :term[CLI]{bahasa="Command Line Interface — cara mengendalikan program dengan mengetik perintah"} tools are how developers run servers, tests, Git, Docker, databases and cloud deployments. Servers in production don't even have a screen.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-- **Automation**: anything typed can be saved in a script and repeated perfectly.
-- **Composition**: small tools (`grep`, `sort`, `wc`) combine into answers no single app provides.
+- **Automation**: anything you type can be saved in a script and repeated exactly.
+- **Composition**: small tools (`grep`, `sort`, `wc`) snap together like Lego into answers no single app gives you.
 - **Remote work**: you manage cloud servers and containers through a shell.
-- **Speed**: once learned, many tasks are faster than clicking.
+- **Speed**: once you know the words, many tasks are faster than clicking.
 
-## 💥 What happens if we DON'T learn it?
+Without it:
 
-- Every new tool's README (`npm install`, `docker compose up`, `uv run pytest`) feels scary.
-- Debugging a production server over SSH is impossible without basic commands.
-- You click through 400 log files manually instead of running one `grep`.
-- You copy-paste a command from the internet like `rm -rf $DIR/` without understanding it… and `$DIR` is empty. 💀
+- Every tool's README (`npm install`, `docker compose up`, `uv run pytest`) feels scary.
+- Debugging a production server over SSH is impossible.
+- You click through 400 log files by hand instead of running one `grep`.
+- You copy a command from the internet like `rm -rf $DIR/` without understanding it… and `$DIR` is empty. 💀
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Terminal, shell, prompt
 
@@ -85,6 +100,8 @@ rg "def create_app"                            # ripgrep: faster, respects .giti
 ```
 
 ### 4. Pipes and redirection
+
+A pipe is a **conveyor belt between machines**: each command does one small job and passes the result on. That's why tiny tools beat one big program.
 
 Every command reads **input** and writes **output**. The pipe `|` sends one command's output into the next command's input:
 
@@ -137,6 +154,8 @@ Useful when "port already in use" appears — which is also why this handbook us
 
 ### 8. A small, safe shell script
 
+A script is yesterday's terminal session, written down. The safety lines at the top are the seatbelt: stop on the first error, and treat an unset variable as a mistake rather than an empty string.
+
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail          # stop on errors, unset variables, and failures inside pipes
@@ -158,7 +177,9 @@ Run with `bash error_count.sh app.log`, or `chmod +x error_count.sh` then `./err
 Shell scripts are great for gluing commands together (< ~50 lines). Once you need data structures, complex logic or tests, write **Python** instead.
 :::
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -167,29 +188,10 @@ Shell scripts are great for gluing commands together (< ~50 lines). Once you nee
 | Bash script | available everywhere, great glue | error-prone for complex logic, quoting pitfalls |
 | Python script | readable, testable, cross-platform | slightly more setup |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Running dev tools, searching code/logs, repeatable setup steps, servers and containers.
 - ✅ Save a command you ran three times into a script or a `Makefile`/`package.json` script.
 - 🚫 Don't run commands you don't understand — especially with `sudo`, `rm -rf`, or piping a URL into `sh`.
 - 🚫 Don't write 300-line bash programs; switch to Python.
-
-## 🏆 Best practices
-
-- [ ] Start scripts with `#!/usr/bin/env bash` and `set -euo pipefail`.
-- [ ] **Always quote variables**: `"$FILE"`, not `$FILE` (spaces in names break things).
-- [ ] Validate arguments and print usage; send errors to stderr (`>&2`) and exit non-zero.
-- [ ] Prefer **dry runs** before destructive operations (e.g. `echo` the command first, or `rm -i`).
-- [ ] Keep secrets in environment variables or a git-ignored `.env`, never typed into scripts or shell history you share.
-- [ ] Use `rg` (ripgrep) and `fd` for speed; learn `Ctrl R` history search.
-- [ ] Put project commands in one place (`Makefile`, `package.json` scripts, `justfile`) so teammates run the same thing.
-- [ ] Check scripts with **ShellCheck** — it catches quoting and logic bugs.
-
-## 🏭 How it's used in industry
-
-- CI/CD pipelines (GitHub Actions) are mostly shell commands running in order, failing on non-zero exit codes.
-- On-call engineers use `tail -f`, `grep`, `kubectl logs` to investigate incidents.
-- Dockerfile `RUN` lines and container entrypoints are shell commands — like RevoShop's `docker/entrypoint.sh`.
 
 ## ⚠️ Common mistakes
 
@@ -202,6 +204,17 @@ Shell scripts are great for gluing commands together (< ~50 lines). Once you nee
 :::revoshop
 Open `docker/entrypoint.sh` in RevoShop. Explain each line: Does it use `set -e` or similar? How does it wait for the database (hint: `netcat-openbsd` is installed in the `Dockerfile`)? What happens if migrations fail — does the container stop? Then run `grep -rn "jwt_required" app/routes | wc -l` in your repo: how many protected endpoints do you have?
 :::
+
+## 🏆 Best practices
+
+- [ ] Start scripts with `#!/usr/bin/env bash` and `set -euo pipefail`.
+- [ ] **Always quote variables**: `"$FILE"`, not `$FILE` (spaces in names break things).
+- [ ] Validate arguments and print usage; send errors to stderr (`>&2`) and exit non-zero.
+- [ ] Prefer **dry runs** before destructive operations (e.g. `echo` the command first, or `rm -i`).
+- [ ] Keep secrets in environment variables or a git-ignored `.env`, never typed into scripts or shell history you share.
+- [ ] Use `rg` (ripgrep) and `fd` for speed; learn `Ctrl R` history search.
+- [ ] Put project commands in one place (`Makefile`, `package.json` scripts, `justfile`) so teammates run the same thing.
+- [ ] Check scripts with **ShellCheck** — it catches quoting and logic bugs.
 
 ::part[Explain & Design]{n="2"}
 
@@ -285,16 +298,6 @@ You get "command not found: uv". What are the two most likely causes?
 It isn't installed, or it's installed in a folder that isn't on your `PATH` (restart the terminal or add the folder to `PATH`).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Terminal / Shell | Jendela perintah / Program penerjemah perintah |
-| Pipe | Menyambungkan output satu perintah ke input perintah lain |
-| Redirection | Mengarahkan output ke file |
-| Exit code | Kode keluar — 0 berarti sukses |
-| Environment variable | Variabel lingkungan untuk konfigurasi |
-| PATH | Daftar folder tempat shell mencari program |
 
 ## 📚 Keep learning
 

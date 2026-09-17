@@ -20,27 +20,43 @@ tags: [git, github, pull-requests, code-review, collaboration]
 - Resolving **merge conflicts** step by step
 - Protecting `main` with branch rules and CI
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Remote** | The shared copy of the repo, usually on GitHub | Salinan bersama di server |
+| **`fetch` vs `pull`** | Fetch downloads new commits; pull downloads and merges them | Unduh saja vs unduh + gabung |
+| **Pull request (PR)** | A request to merge your branch, where others can review it | Usulan penggabungan |
+| **Code review** | A teammate reading your change and commenting | Pemeriksaan oleh rekan |
+| **Merge** | Joining two branches, keeping both histories | Menggabungkan jalur kerja |
+| **Rebase** | Replaying your commits on top of the latest main, for a straight history | Menata ulang commit |
+| **Merge conflict** | Two branches changed the same lines, so Git asks you to choose | Bentrokan perubahan |
+| **Branch protection** | Rules on `main`: require a PR, require green checks | Aturan pelindung main |
+| **Force push** | Overwriting the remote history — dangerous on shared branches | Menimpa riwayat remote |
+
 ## 🧠 The big idea
 
-Think of a shared Google Doc — but where everyone writes in their **own copy**, and changes are only added to the official version after someone **reviews** them. That's a pull request workflow: freedom to work in parallel, with a checkpoint before anything reaches `main`.
+Think of a shared document — but where everyone writes in their **own copy**, and changes only reach the official version after someone **reviews** them. That's the pull request workflow: freedom to work in parallel, with one checkpoint before anything lands in `main`.
 
-## ❓ Why does this exist?
+`main` is the shop's display window: it should always be presentable, so nothing goes in without a check.
 
-When 5–500 engineers change the same codebase:
+## ❓ Why it matters
 
-- Work must happen **in parallel** without people blocking each other.
-- Every change needs a **second pair of eyes** (bugs, security, design, knowledge sharing).
-- `main` must stay **deployable** at all times.
-- There must be a **record** of why each change was made.
+When 5 — or 500 — engineers change the same codebase:
 
-## 💥 What happens if we DON'T collaborate this way?
+- work must happen **in parallel** without people blocking each other,
+- every change needs a **second pair of eyes** (bugs, security, design, sharing knowledge),
+- `main` must stay **deployable** at all times,
+- and there must be a **record** of why each change was made.
 
-- Everyone pushes directly to `main`: one broken push stops the whole team.
-- A branch lives for 3 weeks: merging it produces 40 conflicts and a broken app.
-- Conflicts "resolved" by keeping only your version: a teammate's bug fix silently disappears.
-- `git push --force` on a shared branch erases others' commits.
+Without this way of working:
 
-## 📖 How it works, step by step
+- Everyone pushes straight to `main`: one broken push stops the whole team.
+- A branch lives for three weeks: merging it produces 40 conflicts and a broken app.
+- Conflicts "resolved" by keeping only your own version: a teammate's bug fix quietly disappears.
+- `git push --force` on a shared branch erases other people's commits.
+
+## 📖 Step by step
 
 ### 1. Remotes
 
@@ -89,6 +105,8 @@ gh pr create --fill          # or open the PR on github.com
 Branch naming conventions: `feat/…`, `fix/…`, `docs/…`, often with a ticket id: `feat/CP-42-application-status`.
 
 ### 3. A good pull request
+
+A PR is a **short letter to your reviewer**: what changed, why, how you tested it, and anything you're unsure about. Small letters get read; 40-file letters get skimmed.
 
 ```md
 ## What
@@ -140,6 +158,8 @@ If you rebase a branch you already pushed, update it with `git push --force-with
 
 ### 6. Resolving a merge conflict
 
+A conflict is not an error — it's Git saying "two people rearranged the same shelf; you decide how it should look". Keep the correct combination, remove the markers, then run the tests before committing.
+
 A :term[merge conflict]{bahasa="konflik merge — Git tidak bisa otomatis menggabungkan karena baris yang sama diubah berbeda"} looks like this:
 
 ```python
@@ -172,7 +192,9 @@ Repository settings → **Branch protection / rulesets**:
 - Block force pushes to `main`
 - *(Optional)* `CODEOWNERS` to auto-request reviewers for certain folders
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -182,31 +204,10 @@ Repository settings → **Branch protection / rulesets**:
 | Rebase / squash | linear, readable history | rewriting commits needs care |
 | Strict protection rules | stable `main` | slightly slower for tiny fixes |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ PR workflow for **all** team projects — and for solo portfolio projects (it shows the habit).
 - ✅ Rebase your **own** unpublished or personal branch to keep history tidy.
 - 🚫 Never rebase or force-push `main` or a branch others are working on.
 - 🚫 Don't approve PRs you didn't actually read ("LGTM" without looking).
-
-## 🏆 Best practices
-
-- [ ] Pull `main` before starting work; update your branch from `main` at least daily.
-- [ ] Keep PRs **small and focused**, with a description: what, why, how to test, screenshots.
-- [ ] Self-review your diff on GitHub before requesting review.
-- [ ] Protect `main`: PR required, CI must pass, no force pushes.
-- [ ] Use `--force-with-lease`, never `--force`, and only on your own branches.
-- [ ] Resolve conflicts by understanding **both** changes, then run tests before committing.
-- [ ] Review for correctness and security first; leave style to linters. Be kind and specific.
-- [ ] Authenticate with SSH keys or `gh`; enable 2FA on GitHub.
-- [ ] Delete merged branches to keep the repo tidy.
-
-## 🏭 How it's used in industry
-
-- Almost every company uses PRs (GitHub/GitLab "merge requests") with required CI and reviews.
-- Review turnaround time is a tracked team metric; small PRs get reviewed faster.
-- AI review bots (Module 6/7) now add automated comments, but human approval stays required.
-- Open-source contribution uses the same flow with **forks** — a great way to build a public track record.
 
 ## ⚠️ Common mistakes
 
@@ -219,6 +220,18 @@ Repository settings → **Branch protection / rulesets**:
 :::revoshop
 If your RevoShop repo belongs to a GitHub organization, check the repository **Settings → Branches/Rules**: is `main` protected? Look at the **Pull requests** tab: did you work through PRs or push to `main`? Write down how you'd set up RevoShop for a 3-person team: branch naming, PR template, required checks (e.g. `pytest`, `pylint`, `bandit`), and review rules.
 :::
+
+## 🏆 Best practices
+
+- [ ] Pull `main` before starting work; update your branch from `main` at least daily.
+- [ ] Keep PRs **small and focused**, with a description: what, why, how to test, screenshots.
+- [ ] Self-review your diff on GitHub before requesting review.
+- [ ] Protect `main`: PR required, CI must pass, no force pushes.
+- [ ] Use `--force-with-lease`, never `--force`, and only on your own branches.
+- [ ] Resolve conflicts by understanding **both** changes, then run tests before committing.
+- [ ] Review for correctness and security first; leave style to linters. Be kind and specific.
+- [ ] Authenticate with SSH keys or `gh`; enable 2FA on GitHub.
+- [ ] Delete merged branches to keep the repo tidy.
 
 ::part[Explain & Design]{n="2"}
 
@@ -299,16 +312,6 @@ What do you do right after resolving conflicts in all files?
 Remove every marker, run the tests, `git add` the files, then commit (or `git rebase --continue`).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Remote | Repositori di server (mis. GitHub) |
-| Pull request | Permintaan penggabungan perubahan + review |
-| Code review | Peninjauan kode oleh rekan |
-| Merge conflict | Konflik penggabungan |
-| Rebase | Menyusun ulang commit di atas cabang terbaru |
-| Branch protection | Aturan pengaman cabang utama |
 
 ## 📚 Keep learning
 

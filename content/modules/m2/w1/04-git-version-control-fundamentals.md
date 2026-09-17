@@ -20,28 +20,42 @@ tags: [git, version-control, commits, tooling]
 - Writing commit messages people can use
 - Undoing things **safely**: `restore`, `revert`, `commit --amend`, and when `reset` is dangerous
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Version control** | A tool that remembers every version of your project and who changed what | Pencatat riwayat perubahan |
+| **Repository (repo)** | The project folder plus its whole history | Proyek beserta riwayatnya |
+| **Commit** | One saved snapshot with a message | Satu titik simpan |
+| **Working directory** | Your files as they are right now | Berkas yang sedang kamu kerjakan |
+| **Staging area** | The tray where you choose what goes into the next commit | Tempat memilih perubahan |
+| **Branch** | A parallel line of work | Jalur kerja paralel |
+| **`.gitignore`** | The list of files Git must never save (secrets, build output) | Daftar file yang diabaikan |
+| **`git revert`** | Adding a new commit that undoes an old one — safe | Membatalkan dengan commit baru |
+| **`git reset --hard`** | Throwing away changes; can lose work — dangerous | Menghapus perubahan (berisiko) |
+
 ## 🧠 The big idea
 
-Git is a **save-game system** for your project. Each :term[commit]{bahasa="commit — satu snapshot tersimpan dari proyek, lengkap dengan pesan dan penulisnya"} is a save point you can return to, compare, or share. Branches are **parallel timelines** where you can try things without touching the main story.
+Git is a **save-game system** for your project. Each :term[commit]{bahasa="commit — satu snapshot tersimpan dari proyek, lengkap dengan pesan dan penulisnya"} is a save point you can return to, compare or share, and branches are **parallel timelines** where you can try something without touching the main story.
 
-## ❓ Why does this exist?
+The three areas work like cooking: your **working directory** is the kitchen counter, the **staging area** is the plate you arrange, and the **commit** is the photo you take of the finished plate.
+
+## ❓ Why it matters
 
 Without version control:
 
 - `final.py`, `final_v2.py`, `final_REAL_fix.py`…
 - "It worked yesterday" — but what changed?
-- Two people editing the same file overwrite each other.
-- No way to see **who** changed a line and **why**.
+- Two people edit the same file and overwrite each other.
+- No way to see **who** changed a line, and **why**.
 
-Git answers *what changed, when, by whom, why* — and lets you go back.
+Git answers *what changed, when, by whom, why* — and lets you go back. Used badly, though, it still hurts:
 
-## 💥 What happens if we DON'T use it well?
+- One giant commit called `update` with 60 files: impossible to review or undo in part.
+- A `.env` with the database password committed to a public repo → bots find it within minutes.
+- `git reset --hard` run in a panic → a day of uncommitted work is gone.
 
-- One giant commit called `update` with 60 files: impossible to review or undo partly.
-- `.env` with a database password committed and pushed to a public repo → bots find it within minutes.
-- `git reset --hard` run in panic → a day of uncommitted work is gone.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The three areas
 
@@ -108,6 +122,8 @@ __pycache__/
 
 ### 5. Commit messages
 
+Write the message for the person who will read it in six months at 2 a.m. — probably you. Say *why*, not just *what*.
+
 A good message explains **why**, so future-you understands the change without reading the diff.
 
 **Conventional Commits** format, used by many teams:
@@ -157,6 +173,8 @@ Tags mark releases (like CareerPilot's phases).
 
 ### 8. Undoing things — safely
 
+Rule of thumb: `revert` writes a new page in the history book (safe, shareable), while `reset --hard` tears pages out (fast, and sometimes unrecoverable).
+
 | Situation | Command | Safe? |
 |---|---|---|
 | Discard unstaged changes to a file | `git restore file.py` | ⚠️ loses those edits |
@@ -172,7 +190,9 @@ Tags mark releases (like CareerPilot's phases).
 Never rewrite history (`reset --hard`, `commit --amend`, rebase) on commits **other people already have** (e.g. pushed to a shared branch). Use `git revert` instead.
 :::
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -183,30 +203,10 @@ Never rewrite history (`reset --hard`, `commit --amend`, rebase) on commits **ot
 | Merge | preserves true history | extra merge commits |
 | Rebase (next lesson) | linear history | rewrites history — careful with shared branches |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Use Git for **every** project, even solo, from the first file.
 - ✅ Commit when a small unit of work is complete and tests pass.
 - 🚫 Don't commit secrets, generated files, huge binaries or datasets (use Git LFS or storage for big files).
 - 🚫 Don't use `reset --hard` unless you're sure — `stash` first if in doubt.
-
-## 🏆 Best practices
-
-- [ ] Create `.gitignore` **before** the first commit (use GitHub's templates as a start).
-- [ ] Commit **one logical change** at a time; review with `git diff --staged` before committing.
-- [ ] Use **Conventional Commits** in imperative mood: "add", "fix", not "added", "fixes".
-- [ ] Never commit secrets; provide a `.env.example` instead. If a secret leaks, **rotate** it immediately.
-- [ ] Work on **branches**, keep `main` always working.
-- [ ] Pull/sync often to avoid big conflicts; push your branch daily as a backup.
-- [ ] Prefer `git switch`/`git restore` (clear, modern) over the overloaded `git checkout`.
-- [ ] Enable secret scanning (GitHub push protection) and consider a pre-commit hook (e.g. `gitleaks`).
-- [ ] Tag releases (`v0.1.0`) and keep a CHANGELOG for projects others use.
-
-## 🏭 How it's used in industry
-
-- Every company uses Git (GitHub, GitLab, Bitbucket). It's assumed knowledge in every job listing.
-- Commit history is used for **code review**, **release notes** (generated from Conventional Commits), **debugging** (`git blame`, `git bisect`) and **audits**.
-- Recruiters look at your GitHub contribution graph and commit messages as a signal of habits.
 
 ## ⚠️ Common mistakes
 
@@ -219,6 +219,18 @@ Never rewrite history (`reset --hard`, `commit --amend`, rebase) on commits **ot
 :::revoshop
 In your RevoShop repo run `git log --oneline | head -30`. How many messages follow a clear `type: summary` format (like `docs: update Postman collection link…`)? Open `.gitignore`: it already ignores `.venv/`, `.env` (while keeping `.env.example`), coverage output and IDE folders — can you explain the `!.env.example` line? Finally, run `git log --oneline -- app/services/order_service.py`: can you tell the **story** of how the order logic evolved from the messages alone?
 :::
+
+## 🏆 Best practices
+
+- [ ] Create `.gitignore` **before** the first commit (use GitHub's templates as a start).
+- [ ] Commit **one logical change** at a time; review with `git diff --staged` before committing.
+- [ ] Use **Conventional Commits** in imperative mood: "add", "fix", not "added", "fixes".
+- [ ] Never commit secrets; provide a `.env.example` instead. If a secret leaks, **rotate** it immediately.
+- [ ] Work on **branches**, keep `main` always working.
+- [ ] Pull/sync often to avoid big conflicts; push your branch daily as a backup.
+- [ ] Prefer `git switch`/`git restore` (clear, modern) over the overloaded `git checkout`.
+- [ ] Enable secret scanning (GitHub push protection) and consider a pre-commit hook (e.g. `gitleaks`).
+- [ ] Tag releases (`v0.1.0`) and keep a CHANGELOG for projects others use.
 
 ::part[Explain & Design]{n="2"}
 
@@ -287,16 +299,6 @@ How can you find a commit you "lost" after a bad reset?
 `git reflog` lists recent positions of `HEAD`; find the commit hash and restore it (e.g. `git switch -c rescue <hash>`).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Version control | Kontrol versi — pencatatan riwayat perubahan |
-| Commit | Snapshot tersimpan |
-| Staging area | Area persiapan sebelum commit |
-| Branch | Cabang kerja |
-| Merge | Menggabungkan cabang |
-| Revert | Membatalkan commit dengan commit baru |
 
 ## 📚 Keep learning
 
