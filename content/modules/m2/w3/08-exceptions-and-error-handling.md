@@ -19,18 +19,35 @@ tags: [python, exceptions, error-handling, context-managers, bonus]
 - **Context managers** (`with`) for guaranteed cleanup, including writing your own
 - Where to handle errors: at the **boundary** (API, CLI, job runner), with logging
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Exception** | A signal that something went wrong and normal flow can't continue | Sinyal terjadi kesalahan |
+| **Raise** | To send that signal | Melempar kesalahan |
+| **Catch (`except`)** | To receive it and decide what to do | Menangkap kesalahan |
+| **Bare `except`** | Catching everything, including your own bugs — dangerous | Menangkap semua (berisiko) |
+| **`finally`** | Code that runs whether it failed or not (cleanup) | Selalu dijalankan |
+| **Exception chaining (`from`)** | Keeping the original cause attached | Menyimpan penyebab asli |
+| **Exception hierarchy** | Your own error classes, grouped by meaning | Kelompok kelas kesalahan |
+| **Context manager (`with`)** | A block that always cleans up after itself | Blok dengan pembersihan otomatis |
+| **Boundary** | The outer layer (API, CLI, job) that turns errors into responses | Lapisan luar penanganan |
+
 ## 🧠 The big idea
 
-An :term[exception]{bahasa="exception — sinyal bahwa sesuatu yang tidak normal terjadi dan alur biasa tidak bisa dilanjutkan"} is a **fire alarm**. When something goes wrong deep inside a building, the alarm travels up floor by floor until someone **qualified** responds. You don't want every room to silence the alarm (swallowing errors), and you don't want the alarm to be vague ("something happened somewhere").
+An :term[exception]{bahasa="exception — sinyal bahwa sesuatu yang tidak normal terjadi dan alur biasa tidak bisa dilanjutkan"} is a **fire alarm**. When something goes wrong deep inside a building, the alarm travels up floor by floor until someone **qualified** responds.
 
-## ❓ Why does this exist?
+Two things you don't want: every room silencing the alarm (swallowing errors), or an alarm so vague it just says "something happened somewhere".
 
-Failures are normal: the database is down, the user sent invalid data, a file is missing, an external API times out. Code needs a way to:
+## ❓ Why it matters
+
+Failures are normal: the database is down, the user sent invalid data, a file is missing, an external API times out. Code needs a way to
+
 - **stop** the normal path immediately,
 - **describe** what went wrong,
-- let the right layer **decide** what to do (retry, show a 404, log and alert).
+- and let the right layer **decide** what to do (retry, show a 404, log and alert).
 
-## 💥 What happens if we DON'T handle errors well?
+Handled badly, errors hide from you:
 
 ```python
 def get_application(app_id):
@@ -40,11 +57,11 @@ def get_application(app_id):
         return None          # database down? typo in the SQL? bad id? all look like "not found" 😱
 ```
 
-- A database outage looks like "application not found" → users see 404s, no alert fires.
-- A bug (`NameError`) is silently hidden.
-- Or the opposite: nothing is handled, and users see a raw stack trace with internal details.
+- A database outage looks like "application not found" → users see 404s and no alert fires.
+- A real bug (`NameError`) is silently swallowed.
+- Or the opposite extreme: nothing is handled, and users get a raw stack trace full of internal details.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The full `try` statement
 
@@ -98,6 +115,8 @@ except psycopg.OperationalError as error:
 Use `from None` only when the original error adds nothing (e.g. `KeyError` → `NotFound`).
 
 ### 4. A custom exception hierarchy
+
+Your own error classes are like **labelled alarm types**: "not found", "not allowed", "invalid input". The boundary can then map each label to the right HTTP status without guessing.
 
 ```python
 class AppError(Exception):
@@ -180,6 +199,8 @@ with timer("import", records):
 
 ### 6. Where to handle errors
 
+Handle errors where you can actually decide something. Deep inside, you usually only add context and re-raise; at the boundary, you turn the error into a response and a log line.
+
 ```mermaid
 flowchart TB
     R["Route / CLI / job runner<br/>✅ catch AppError → response or exit code<br/>✅ log unexpected errors"] --> S["Service<br/>raise domain errors; translate low-level ones"]
@@ -188,7 +209,9 @@ flowchart TB
 
 Handle an exception where you can **do something meaningful**: retry, fall back, translate, or report. Otherwise, let it propagate.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -198,30 +221,11 @@ Handle an exception where you can **do something meaningful**: retry, fall back,
 | One global handler at the boundary | consistent responses, one place to log | must be carefully designed |
 | Catch-and-continue | resilience for batch jobs | risk of hiding systematic failures — count and report them |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Raise specific exceptions for failures the caller can't ignore.
 - ✅ Catch exceptions at boundaries and where recovery is possible.
 - ✅ Use `with` for anything that must be released.
 - 🚫 Don't use exceptions for normal, expected branching in hot loops (e.g. checking every dict key with try/except when `.get` is clearer).
 - 🚫 Don't return raw tracebacks or internal messages to API users.
-
-## 🏆 Best practices
-
-- [ ] Catch the **most specific** exception possible; never bare `except:`.
-- [ ] Keep `try` blocks **small**.
-- [ ] Define an **`AppError` hierarchy** with codes; services raise domain errors, the API maps them to HTTP in **one** place.
-- [ ] Use `raise … from error` to preserve causes when translating.
-- [ ] Log unexpected errors with **`logger.exception(...)`** (includes the traceback) — once, at the boundary.
-- [ ] Return **safe, consistent error bodies** to clients (`{"error": {"code", "message"}}`); never leak stack traces, SQL or secrets.
-- [ ] Use context managers for files, transactions, locks, temporary state.
-- [ ] Test error paths as carefully as happy paths (`pytest.raises`).
-
-## 🏭 How it's used in industry
-
-- API frameworks register global error handlers that turn exceptions into JSON error responses with a stable format and a request id.
-- Error-tracking tools (Sentry) collect unhandled exceptions with context; teams set alerts on new error types.
-- AI features need careful handling of timeouts, rate limits and malformed model output — with retries and fallbacks (Module 7).
 
 ## ⚠️ Common mistakes
 
@@ -234,6 +238,17 @@ Handle an exception where you can **do something meaningful**: retry, fall back,
 :::revoshop
 Open `app/errors.py` in RevoShop. How are errors defined and turned into responses? Is there a base class, error codes, and one place that maps exceptions to HTTP status codes? Then look at the *Response Format* section in the README. Find one service that raises an error and trace it: service → route → error handler → JSON response. Would a database outage produce a clean 500/503 without leaking details?
 :::
+
+## 🏆 Best practices
+
+- [ ] Catch the **most specific** exception possible; never bare `except:`.
+- [ ] Keep `try` blocks **small**.
+- [ ] Define an **`AppError` hierarchy** with codes; services raise domain errors, the API maps them to HTTP in **one** place.
+- [ ] Use `raise … from error` to preserve causes when translating.
+- [ ] Log unexpected errors with **`logger.exception(...)`** (includes the traceback) — once, at the boundary.
+- [ ] Return **safe, consistent error bodies** to clients (`{"error": {"code", "message"}}`); never leak stack traces, SQL or secrets.
+- [ ] Use context managers for files, transactions, locks, temporary state.
+- [ ] Test error paths as carefully as happy paths (`pytest.raises`).
 
 ::part[Explain & Design]{n="2"}
 
@@ -317,16 +332,6 @@ Where should most exceptions be caught in a web app?
 At the boundary — a central error handler that converts known errors into consistent responses and logs unexpected ones — plus specific places where real recovery (retry, fallback) is possible.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Exception | Pengecualian — sinyal kesalahan saat program berjalan |
-| Raise / Catch | Melempar / Menangkap exception |
-| Traceback | Jejak pemanggilan saat error |
-| Exception chaining | Menyambungkan error baru dengan penyebab aslinya |
-| Context manager | Pengelola konteks (`with`) untuk pembersihan otomatis |
-| Boundary | Batas sistem (API, CLI) tempat error diterjemahkan |
 
 ## 📚 Keep learning
 

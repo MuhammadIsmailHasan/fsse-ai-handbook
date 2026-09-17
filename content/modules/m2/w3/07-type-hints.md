@@ -19,15 +19,31 @@ lastReviewed: 2026-09
 - Running a **static type checker** (mypy or pyright) locally and in CI
 - Why FastAPI and Pydantic (Module 3) turn type hints into runtime validation
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Type hint** | A note saying what kind of value goes in and comes out | Petunjuk jenis data |
+| **Static type checker** | A tool (mypy, pyright) that reads those notes and finds mismatches without running the code | Pemeriksa tipe tanpa menjalankan |
+| **Dynamic typing** | Python only checks types while running | Pemeriksaan saat jalan |
+| **`X \| None`** | "Either an X or nothing" — must be handled | Bisa X atau kosong |
+| **`Literal`** | Only these exact values are allowed (`"applied"`, `"offer"`) | Hanya nilai tertentu |
+| **`TypedDict`** | A dict whose keys and value types are known | Dict dengan bentuk pasti |
+| **`Protocol`** | "Anything with these methods fits" | Cukup punya metode ini |
+| **Generic (`list[T]`)** | A container described together with what it holds | Wadah beserta isinya |
+| **Type alias** | A short name for a long type | Nama pendek untuk tipe |
+
 ## 🧠 The big idea
 
-:term[Type hints]{bahasa="petunjuk tipe — anotasi yang menjelaskan jenis data yang diterima dan dikembalikan fungsi"} are **labels on the pipes** in a building: "hot water", "gas", "drain". The water doesn't care — Python still runs without checking them — but plumbers (your editor and type checker) can instantly see when someone connects gas to the sink.
+:term[Type hints]{bahasa="petunjuk tipe — anotasi yang menjelaskan jenis data yang diterima dan dikembalikan fungsi"} are **labels on the pipes** in a building: "hot water", "gas", "drain".
 
-## ❓ Why does this exist?
+The water doesn't care — Python still runs without checking them — but the plumbers (your editor and the type checker) can see instantly when someone connects the gas pipe to the sink.
 
-Python is dynamically typed: mistakes like passing `None` where a string is expected appear only when that line runs — maybe in production, at 2 AM. Type hints let tools find a whole class of bugs **before** running, power editor autocomplete, and document intent right in the signature.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T use them?
+Python checks types only while running, so a mistake like passing `None` where a string is expected shows up when that line finally runs — maybe in production, at 2 a.m. Type hints let tools catch a whole class of bugs **before** running, power your editor's autocomplete, and document what a function expects right where you read it.
+
+Without them:
 
 ```python
 def find_user(email):
@@ -38,7 +54,7 @@ def greeting(email):
     return "Hi " + user.name   # 💥 AttributeError: 'NoneType' has no attribute 'name' — only for unknown emails
 ```
 
-With hints, the checker reports it immediately:
+With them, the checker tells you immediately:
 
 ```python
 def find_user(email: str) -> User | None: ...
@@ -48,7 +64,7 @@ def greeting(email: str) -> str:
     return "Hi " + user.name   # error: Item "None" of "User | None" has no attribute "name"
 ```
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The basics
 
@@ -69,6 +85,8 @@ def log(message: str) -> None:     # returns nothing
 Built-in generics (`list[str]`, `dict[str, int]`) work directly in modern Python — no `from typing import List` needed.
 
 ### 2. Optional values and unions
+
+`User | None` is the type system saying "this box may be empty — open it carefully". That single hint prevents most `NoneType` crashes.
 
 ```python
 def parse_salary(text: str) -> int | None:
@@ -142,6 +160,8 @@ VS Code's Pylance (pyright) shows the same kind of errors as you type.
 
 ### 7. Hints become validation (preview)
 
+In Module 3, FastAPI and Pydantic read these same labels and use them to check incoming requests at runtime — the pipe labels become an actual inspector at the door.
+
 Type hints do **nothing at runtime** in plain Python:
 
 ```python
@@ -157,7 +177,9 @@ class ApplicationIn(BaseModel):
 # {"company_id": "abc"} → automatic 422 error with a clear message
 ```
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -168,29 +190,11 @@ class ApplicationIn(BaseModel):
 | `TypedDict` | types for JSON-shaped dicts | no runtime validation |
 | Pydantic models | runtime validation | dependency, some overhead |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Type **all** function signatures in application code; run a checker in CI.
 - ✅ `X | None` for anything that can be missing — and handle it.
 - ✅ `Protocol` for injected dependencies; `Literal` for fixed string sets.
 - 🚫 Don't sprinkle `Any` or `# type: ignore` to silence real problems.
 - 🚫 Don't mistake type hints for input validation at API boundaries — validate at runtime too.
-
-## 🏆 Best practices
-
-- [ ] Annotate **every function signature** (parameters and return type), including `-> None`.
-- [ ] Use modern syntax: `list[str]`, `X | None`, `type` aliases (3.12+).
-- [ ] Run **mypy or pyright in CI**; use `strict` for new code.
-- [ ] Narrow optional values with explicit checks (`if x is None: …`) instead of assuming.
-- [ ] Prefer precise types (`Literal`, `TypedDict`, dataclasses, Protocols) over `dict`/`Any`.
-- [ ] Keep `# type: ignore[code]` rare, specific, and commented with the reason.
-- [ ] Validate external input at runtime (Pydantic/marshmallow); rely on types inside.
-
-## 🏭 How it's used in industry
-
-- Most modern Python codebases (especially new FastAPI services) are fully typed with a checker in CI.
-- Large companies report type checking catches real production bugs and makes big refactors safe.
-- AI coding assistants produce better code in typed codebases — the types give them (and you) precise context.
 
 ## ⚠️ Common mistakes
 
@@ -203,6 +207,16 @@ class ApplicationIn(BaseModel):
 :::revoshop
 Pick three functions in RevoShop's `app/services/`. Do they have type hints for all parameters and return values? Add hints to one service in a branch and run `uv run mypy app/services/<file>.py` (install mypy temporarily). What does it report? Look especially for places where a repository can return `None` (e.g. "product not found") and the service uses the result without checking.
 :::
+
+## 🏆 Best practices
+
+- [ ] Annotate **every function signature** (parameters and return type), including `-> None`.
+- [ ] Use modern syntax: `list[str]`, `X | None`, `type` aliases (3.12+).
+- [ ] Run **mypy or pyright in CI**; use `strict` for new code.
+- [ ] Narrow optional values with explicit checks (`if x is None: …`) instead of assuming.
+- [ ] Prefer precise types (`Literal`, `TypedDict`, dataclasses, Protocols) over `dict`/`Any`.
+- [ ] Keep `# type: ignore[code]` rare, specific, and commented with the reason.
+- [ ] Validate external input at runtime (Pydantic/marshmallow); rely on types inside.
 
 ::part[Explain & Design]{n="2"}
 
@@ -284,16 +298,6 @@ What does `Protocol` let you do?
 Describe the methods an object must have, so any class with matching methods is accepted by the type checker — without inheriting from a base class.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Type hint | Petunjuk tipe |
-| Static type checker | Pemeriksa tipe tanpa menjalankan kode |
-| Union / Optional | Salah satu dari beberapa tipe / Bisa None |
-| Narrowing | Penyempitan tipe setelah pengecekan |
-| Generic | Tipe yang bekerja untuk berbagai tipe isi |
-| Protocol | Kontrak method yang harus dimiliki objek |
 
 ## 📚 Keep learning
 

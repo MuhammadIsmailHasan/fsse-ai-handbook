@@ -18,22 +18,38 @@ tags: [python, modules, packages, imports, project-structure, bonus]
 - Why **circular imports** happen and how to design them away
 - A professional layout for a Flask/FastAPI project (the `src/` layout, tests, config)
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Module** | One `.py` file you can import | Satu berkas Python |
+| **Package** | A folder of modules you can import | Folder berisi modul |
+| **`import`** | Bringing code from another module into this one | Mengambil kode dari modul lain |
+| **Absolute / relative import** | From the project root / relative to this file | Dari akar proyek / dari berkas ini |
+| **`__init__.py`** | The file that makes a folder a package and sets its public front door | Penanda paket |
+| **`python -m`** | Running a module or package properly, from anywhere | Menjalankan sebagai modul |
+| **Circular import** | Two modules each needing the other → import fails | Saling impor |
+| **Shadowing** | Naming your file `email.py` and hiding the real library | Menutupi modul bawaan |
+| **`src/` layout** | Putting the package in a `src` folder so tests import the installed code | Tata letak dengan folder src |
+
 ## 🧠 The big idea
 
-A one-file script is a **studio apartment**: fine for one person. A real project is a **building with floors and rooms**: each room (module) has a purpose, floors (packages) group related rooms, and there's a clear direction of movement — you don't want every room to have a door into every other room.
+A one-file script is a **studio apartment**: fine for one person. A real project is a **building with floors and rooms**: each room (module) has a purpose, floors (packages) group related rooms, and movement has a clear direction — you don't want a door from every room into every other room.
 
-## ❓ Why does this exist?
+That last part is the whole reason circular imports happen.
 
-Projects grow from 200 lines to 20,000. Without structure: everything is in one file, names collide, tests import half the app just to test one function, and changes in one place break unrelated features. Modules and packages give **namespaces**, **reuse**, and **boundaries**.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T organize?
+Projects grow from 200 lines to 20,000. Without structure everything sits in one file, names collide, tests import half the app to test one function, and a change in one place breaks an unrelated feature. Modules and packages give you **namespaces**, **reuse** and **boundaries**.
 
-- `app.py` with 3,000 lines: routes, SQL, email sending and PDF generation mixed together.
+What it looks like without them:
+
+- `app.py` with 3,000 lines: routes, SQL, email sending and PDF generation all mixed together.
 - `models.py` imports `services.py`, which imports `models.py` → `ImportError: cannot import name … (most likely due to a circular import)`.
-- A file named `email.py` or `json.py` in your project **shadows** the standard library module — mysterious errors everywhere.
-- "It works when I run it from this folder" — but not from anywhere else.
+- A file called `email.py` or `json.py` in your project **hides** the standard library module, causing mysterious errors everywhere.
+- "It works when I run it from this folder" — but nowhere else.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Modules and packages
 
@@ -98,6 +114,8 @@ if __name__ == "__main__":        # only when run directly, NOT when imported
 
 ### 6. Circular imports
 
+A circular import is two rooms whose only doors open into each other. The fix is almost never a clever import trick — it's deciding which room is "lower" and moving the shared thing there.
+
 ```mermaid
 flowchart LR
     M[models.py] -->|imports| S[services.py]
@@ -123,6 +141,8 @@ flowchart TB
 ```
 
 ### 7. A professional project layout
+
+Notice the direction of the arrows: routes may call services, services may call repositories, and nothing calls back upwards. That one rule keeps a growing project navigable.
 
 ```text
 careerpilot-api/
@@ -150,7 +170,9 @@ careerpilot-api/
 
 The **`src/` layout** prevents tests from accidentally importing your code from the working directory instead of the installed package — so "works on my machine" import bugs show up early. uv projects created with `uv init --package` use it.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -160,30 +182,11 @@ The **`src/` layout** prevents tests from accidentally importing your code from 
 | `src/` layout | catches packaging/import mistakes | one more folder level |
 | Re-exporting in `__init__.py` | stable public API | can hide where things live; import cost |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Split a file when it has several responsibilities or grows beyond a few hundred lines.
 - ✅ Keep dependencies flowing one direction (routes → services → repositories → models).
 - ✅ Run entry points with `python -m package.module`.
 - 🚫 Don't name modules after standard library modules (`email.py`, `logging.py`, `json.py`, `test.py`).
 - 🚫 Don't create deep package trees for a 300-line project.
-
-## 🏆 Best practices
-
-- [ ] One responsibility per module; group modules into packages by layer or feature.
-- [ ] **Absolute imports**, sorted and grouped (Ruff `I`); no wildcard imports.
-- [ ] Keep a **one-way dependency direction**; lower layers never import higher ones.
-- [ ] Use `__init__.py` to expose a small public API (`__all__`), and `__version__` if relevant.
-- [ ] Guard script code with `if __name__ == "__main__":`; run with `python -m`.
-- [ ] Use the **`src/` layout** and `pyproject.toml` for applications you'll package or deploy.
-- [ ] Avoid import-time side effects (no database connections or network calls at module import).
-- [ ] Mirror the source structure in `tests/`.
-
-## 🏭 How it's used in industry
-
-- Flask apps use an **application factory** and **blueprints** per feature (Week 4) — packages + import discipline in practice.
-- Large codebases enforce import boundaries with tools (e.g. `import-linter`) so layers can't depend the wrong way.
-- Monorepos (like your future CareerPilot repo) contain several packages with their own `pyproject.toml`.
 
 ## ⚠️ Common mistakes
 
@@ -196,6 +199,17 @@ The **`src/` layout** prevents tests from accidentally importing your code from 
 :::revoshop
 RevoShop is organized by **layer**: `app/routes`, `app/schemas`, `app/services`, `app/repositories`, `app/models`, plus `app/errors.py`, `app/extensions.py`, `config/`. Draw the import direction between these packages (use `grep -rn "^from app" app/services | head` to check). Does any **model** import a service, or any **repository** import a route? Where does `create_app()` live (`app/__init__.py`), and why does `run.py` import from it instead of defining the app itself?
 :::
+
+## 🏆 Best practices
+
+- [ ] One responsibility per module; group modules into packages by layer or feature.
+- [ ] **Absolute imports**, sorted and grouped (Ruff `I`); no wildcard imports.
+- [ ] Keep a **one-way dependency direction**; lower layers never import higher ones.
+- [ ] Use `__init__.py` to expose a small public API (`__all__`), and `__version__` if relevant.
+- [ ] Guard script code with `if __name__ == "__main__":`; run with `python -m`.
+- [ ] Use the **`src/` layout** and `pyproject.toml` for applications you'll package or deploy.
+- [ ] Avoid import-time side effects (no database connections or network calls at module import).
+- [ ] Mirror the source structure in `tests/`.
 
 ::part[Explain & Design]{n="2"}
 
@@ -265,15 +279,6 @@ Name two ways to fix a circular import between `models` and `services`.
 Make the dependency one-way (models must not import services), or move the shared code into a third module both import. Dependency injection or `TYPE_CHECKING` imports can also help.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Module / Package | Modul (satu file) / Paket (folder berisi modul) |
-| Import path | Jalur pencarian modul |
-| Circular import | Impor melingkar |
-| Public API | Bagian yang sengaja disediakan untuk dipakai pihak lain |
-| Entry point | Titik awal program dijalankan |
 
 ## 📚 Keep learning
 
