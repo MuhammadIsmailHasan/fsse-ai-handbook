@@ -10,7 +10,9 @@ tags: [revoshop, aws, ec2, rds, ssm, https, project]
 
 ## 🎯 Goal
 
-RevoShop runs on AWS with a real HTTPS URL that Midtrans can call, a managed PostgreSQL database with backups, **no SSH port, no access keys on any machine**, and deploys from GitHub Actions — at a cost you've calculated in advance.
+RevoShop runs on AWS with a real HTTPS URL that Midtrans can call, a managed PostgreSQL database with backups, **no SSH port and no access keys on any machine**, and deploys straight from GitHub Actions — at a cost you worked out before clicking anything.
+
+Think of this lab as moving your shop from your living room into a rented unit: same shop, but now with a real address, a proper lock, and a landlord who keeps backups.
 
 ```mermaid
 flowchart LR
@@ -30,6 +32,19 @@ flowchart LR
     GHA[GitHub Actions] -->|OIDC role → ssm:SendCommand| EC2
     EC2 -->|pull by digest| GHCR[(GHCR)]
 ```
+
+## 🔤 Key words
+
+| Word | In simple words |
+|---|---|
+| **Elastic IP** | A fixed public address, so your URL keeps working when the server is replaced |
+| **Public / private subnet** | A part of your network that can reach the internet / one that cannot |
+| **Instance role** | An IAM role attached to the server, so it needs no stored AWS keys |
+| **SSM Parameter Store** | AWS's place for settings and secrets, read by that role |
+| **Session Manager** | A terminal on the server through AWS, with no SSH port open |
+| **`ssm:SendCommand`** | How GitHub Actions runs the deploy script on the server without SSH |
+| **Least-privilege DB user** | A database login for the app that can change data but not the schema |
+| **Teardown** | Deleting everything you created, so it stops costing money |
 
 :::danger[Costs are real]
 Budgets and alerts **before** anything else (lesson 01). With the sample prices from exercise 02 this design is roughly **USD 35/month** (t3.small ≈ 15, RDS ≈ 14, public IPv4 ≈ 3.65, storage and a secret) in a US region (more in Singapore/Jakarta); on the **Free plan** that uses credits and can't bill you, but remember the plan ends after six months or when credits run out and the account then **closes**. Follow the teardown section when you're done, or keep only what Week 4 reuses (the VPC and RDS).
@@ -57,6 +72,8 @@ export REGION=ap-southeast-1 ACCOUNT_ID=$(aws sts get-caller-identity --query Ac
 ```
 
 ### C1 · Network without a NAT bill (45 min)
+
+The plan: the server sits on the street side (public subnet) behind a tight security group, and the database sits in a back room with no door to the street (private subnets). That keeps the database safe **and** avoids renting a NAT gateway.
 
 Console → VPC → **Create VPC → VPC and more**:
 
@@ -114,6 +131,8 @@ Add pool settings to `ProductionConfig` (lesson 04's RevoShop box): `pool_size=3
 
 ### C3 · Secrets in SSM Parameter Store (30 min)
 
+Instead of copying secrets onto the server, you put them in a locked drawer (Parameter Store) and give the server a badge that opens only that drawer.
+
 The EC2 instance will read `/revoshop/production/*` and write them into `/opt/revoshop/.env.production` (mode `600`) at deploy time.
 
 ```bash
@@ -168,6 +187,8 @@ IAM → Roles → **Create role** → trusted entity **EC2** → name `revoshop-
 Run it through `review()` from exercise 01 — the `kms:Decrypt` on `*` is acceptable only because the condition limits it to SSM.
 
 ### C5 · Launch the EC2 instance (45 min)
+
+Everything the server needs to set itself up goes into user data, so this instance is replaceable — a rental car, not a pet.
 
 Generate user data with exercise 04 and add the AWS CLI (needed by `fetch-env.sh`):
 
@@ -391,6 +412,8 @@ No domain yet? Use `SITE_ADDRESS=api-<elastic-ip-with-dashes>.sslip.io` (for exa
 
 ### C7 · Least-privilege database user (30 min)
 
+The app should be a cashier, not the shop owner: it can add and read rows, but it cannot drop tables. Migrations use the owner login, and only during a deploy.
+
 Open a tunnel from your laptop through the instance:
 
 ```bash
@@ -495,6 +518,8 @@ Validating the image and site with strict patterns before they reach a shell com
 - `docs/aws-runbook.md`: how to deploy, roll back (`./deploy/deploy.sh <previous digest from .deploy-history>`), rotate `JWT_SECRET_KEY`, open a DB tunnel, restore RDS, and read logs.
 
 ### C11 · Cost check and teardown plan (30 min)
+
+A cloud resource you forget is a tap left running. Do this step even if you plan to continue in Week 4 — you should know exactly what stays and why.
 
 - After 24 hours: Cost Explorer → group by **service** and by **region**; compare with your exercise 02 estimate. Check public IPv4 charges (VPC → Public IP insights).
 - **Keeping it for Week 4?** Keep the VPC, security groups, RDS and SSM parameters. The EC2 instance and Elastic IP will be replaced by ECS + ALB.
