@@ -32,6 +32,8 @@ Dashboard · CareerPilot
 
 ## 🏗️ Architecture
 
+The API stays the kitchen; this phase builds the dining room. Nothing about Phase 2 changes — you're adding the part customers actually see.
+
 ```mermaid
 flowchart LR
     B[Browser] -->|session cookie only| N
@@ -56,6 +58,8 @@ The kit contains a Playwright config that starts an in-memory **mock of your Pha
 :::
 
 ## 📋 UI contract
+
+Writing the screens down first is like drawing a floor plan before buying furniture: it keeps the build focused and makes the acceptance tests obvious.
 
 The acceptance tests find things **the way users and screen readers do** — by labels, roles and text. Use exactly these names (styling is completely up to you).
 

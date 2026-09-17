@@ -40,6 +40,8 @@ This API is the **backend every later phase builds on**: the AI service (Phase 3
 
 ## 🏗️ Architecture
 
+The shape is the restaurant again: routes take the order, services know the rules, repositories fetch the ingredients. Keep each one doing only its own job and this phase stays easy to extend.
+
 ```mermaid
 flowchart LR
     C["Client<br/>(HTTP / Phase 4 web app)"] --> G["Gunicorn :5091"]
@@ -72,6 +74,8 @@ The kit contains a `create_app` stub, dependencies (`pyproject.toml`), a local P
 :::
 
 ## 📋 API contract
+
+This contract is a promise to whoever calls the API — including your own Phase 4 frontend. Change it later and something else breaks, so decide the shapes here, on purpose.
 
 ### Conventions
 
@@ -174,6 +178,8 @@ Each checkpoint lists when you've learned enough to start it.
 After each checkpoint: commit, push, and write *what I built / what was hard / what I learned* in **My notes**.
 
 ## 🧪 Acceptance criteria
+
+Treat this as the inspection checklist: every line true means the phase is finished, and you can say so in an interview without hedging.
 
 - [ ] All 113 acceptance tests pass locally **and in CI**
 - [ ] The schema comes only from migrations; `downgrade base` works

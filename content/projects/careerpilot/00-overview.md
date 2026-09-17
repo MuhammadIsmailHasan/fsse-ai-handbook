@@ -12,9 +12,13 @@ tags: [project, portfolio, careerpilot]
 
 > **CareerPilot helps job seekers track applications, understand what the market wants, and prepare for interviews — with AI.**
 
-You'll build it in **7 phases**, one per module. By the end, it's a deployed, tested, AI-powered full-stack product — and a story you can tell in every interview: *"I built this while job hunting, and I used it myself."*
+You'll build it in **7 phases**, one per module. By the end it's a deployed, tested, AI-powered full-stack product — and a story you can tell in every interview: *"I built this while job hunting, and I used it myself."*
+
+That last sentence is worth more than a perfect tutorial project. Interviewers remember the person who solved their own problem.
 
 ## 🗺️ The 7 phases
+
+Each phase is one floor of the same building, not a new building: the CLI becomes an API, the API gains a web app, the web app gains AI, and the whole thing moves to the cloud. Nothing is thrown away.
 
 ```mermaid
 flowchart LR
@@ -38,6 +42,8 @@ flowchart LR
 
 ## 📁 Repository strategy
 
+Decide this once, early. Moving code between repositories later is like changing a house's address after the invitations are printed.
+
 Use **one public GitHub repository** (a *monorepo*) so recruiters can see the whole evolution:
 
 ```text
@@ -57,6 +63,8 @@ careerpilot/
 - Keep secrets out of git from day one (`.env` in `.gitignore`).
 
 ## 🧠 How to use AI on this project
+
+Simple rule: AI may help you type, never help you avoid understanding. If you can't explain a line in an interview, it shouldn't be in your portfolio.
 
 | Phase | AI policy | Why |
 |---|---|---|

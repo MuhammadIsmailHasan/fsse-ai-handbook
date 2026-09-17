@@ -16,6 +16,8 @@ Ask *"What's the difference between latency and throughput?"* and get an answer 
 
 ## 🎯 Why it's great practice
 
+The best practice project is one where you can judge the answers yourself — here you already know the material, so you can tell instantly when the AI is wrong.
+
 - The data is right here: `content/**/*.md` with clean frontmatter and headings — perfect for **chunking by section**.
 - You already know the content, so you can judge answer quality yourself (a natural **eval set**).
 - It reuses everything from SupportDesk AI in a different domain — repetition in a new context is how skills stick.

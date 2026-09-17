@@ -35,6 +35,8 @@ Jobs per city:
 
 ## 👤 User stories
 
+A user story is one sentence saying who wants what, and why. It keeps you building for a person instead of building features for their own sake.
+
 1. As a job seeker, I want to see the **top N skills** across listings, so I know what to learn next.
 2. As a job seeker, I want **salary statistics**, so I know what to ask for.
 3. As a job seeker, I want to **filter** by city, remote, and minimum salary, so the report matches my situation.
@@ -103,6 +105,8 @@ After each checkpoint: commit, and write 3 lines in your notes — *what I built
 
 ## 🧪 Acceptance criteria
 
+These are the rules that decide "done": if every line here is true, the phase is finished — no guessing, no endless polishing.
+
 - [ ] All tests in `test_acceptance.py` pass
 - [ ] Functions are small and named clearly (Architecture Stage A!)
 - [ ] Business logic (`analyze.py`) has **no** `print` and no file reading except `load_jobs`
@@ -118,6 +122,8 @@ After each checkpoint: commit, and write 3 lines in your notes — *what I built
 5. Add GitHub Actions to run tests on every push (preview of Module 5).
 
 ## ❓ Questions an interviewer might ask about Phase 1
+
+Answer these out loud before moving on. A project you can't talk about isn't yet a portfolio piece.
 
 - Why did you separate `analyze.py` from `cli.py`?
 - How do you handle a CSV with 10 million rows? (Hint: streaming, not loading everything.)

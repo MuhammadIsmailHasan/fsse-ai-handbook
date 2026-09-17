@@ -8,7 +8,9 @@ durationMinutes: 10
 tags: [start-here, study-method]
 ---
 
-This handbook is built for one goal: **you become a job-ready AI full-stack engineer who truly understands what you build** — not someone who can only copy code or prompt an AI.
+This handbook has one goal: **you become a job-ready AI full-stack engineer who truly understands what you build** — not someone who can only copy code or prompt an AI.
+
+Every lesson is written in plain language, explains its terms in simple words, and uses everyday analogies before showing the real code. Read the analogy first; it makes the code obvious.
 
 ## 🧭 The big picture
 
@@ -40,6 +42,8 @@ Every lesson has the same three parts:
 Key terms are underlined — hover them for a Bahasa Indonesia explanation, like :term[algorithm]{bahasa="algoritma — langkah-langkah jelas untuk menyelesaikan masalah"}.
 
 ## 🏷️ Labels you'll see
+
+Labels tell you what is core for **your** role and what you can skip for now. Skipping on purpose is part of the plan, not cheating.
 
 **Importance for your role** (set your target role in Settings):
 
@@ -81,6 +85,8 @@ Missing a day is normal. Missing a week is where habits die. If you're tired, do
 :::
 
 ## 🎯 Milestones: you don't need everything to get hired
+
+You start applying at Milestone 1, not at the end. Applying early teaches you what the market really asks for — and interviews are the fastest feedback you can get.
 
 | Milestone | You can apply for | Roughly |
 |---|---|---|

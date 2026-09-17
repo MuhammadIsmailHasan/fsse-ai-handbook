@@ -16,6 +16,8 @@ This is your **standalone AI project**: the one that proves you can build the ki
 
 ## 🏢 The fictional company
 
+Using a made-up company keeps real customer data out of your portfolio while letting you show exactly the same skills.
+
 **Warung Kita Online** — a small Indonesian e-commerce marketplace. You'll write (or generate and edit) ~30 help-center articles: shipping, returns, payments, account security, seller policies. Fictional data means no privacy problems and full control over test cases.
 
 ## ✨ Features
@@ -32,6 +34,8 @@ This is your **standalone AI project**: the one that proves you can build the ki
 | **Deployed** with CI/CD | End-to-end ownership |
 
 ## 🏗️ Architecture (target)
+
+Notice how much of this is ordinary backend work — retrieval, tools, evaluation and handover. The model is one part of the system, not the system.
 
 ```mermaid
 flowchart LR
