@@ -21,29 +21,50 @@ tags: [deployment, gunicorn, wsgi, health-checks, reverse-proxy, paas]
 - Migrations as a **release step**, rolling deploys, **rollback**
 - Hosting options: PaaS, VPS, containers — and a deploy checklist
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **WSGI** | The agreement that lets any Python web app run on any Python web server | Standar penghubung server–aplikasi |
+| **Gunicorn** | The production server that runs your Flask app | Server production Python |
+| **Worker** | One process handling requests; several run in parallel | Proses pekerja |
+| **Graceful shutdown** | Finishing current requests before stopping | Berhenti setelah selesai melayani |
+| **Reverse proxy** | The server in front that handles HTTPS and forwards requests | Perantara di depan aplikasi |
+| **TLS / HTTPS** | Encrypting traffic between user and server | Enkripsi lalu lintas |
+| **Liveness check** | "Is the process alive?" — restart it if not | Cek proses hidup |
+| **Readiness check** | "Can it serve traffic now?" — send or hold traffic | Cek siap melayani |
+| **Release step** | Work done once per deploy, like migrations | Langkah sekali per rilis |
+| **Rollback** | Going back to the previous version | Kembali ke versi lama |
+
 ## 🧠 The big idea
 
-Your laptop is the **home kitchen**: one cook, no rush, you taste everything. Production is a **restaurant kitchen**: several cooks (workers) working in parallel, a head chef (Gunicorn master) who replaces a cook who faints, a waiter at the door (reverse proxy) who handles customers and security, and an inspector (health checks) who closes a station that isn't ready.
+Your laptop is the **home kitchen**: one cook, no rush, you taste everything. Production is a **restaurant kitchen**:
 
-Same recipes (your code) — very different operation.
+- several cooks working in parallel (**workers**),
+- a head chef who replaces a cook who faints (the **Gunicorn master**),
+- a waiter at the door handling customers and security (**reverse proxy**),
+- and an inspector who closes a station that isn't ready (**health checks**).
 
-## ❓ Why does this exist?
+Same recipes — a very different operation.
 
-`flask run` starts Werkzeug's **development server**: made for reloading and debugging, not for many users, slow clients, crashes or security hardening. Production needs:
-- multiple processes to use all CPUs and survive one crashing,
-- timeouts so one stuck request doesn't block forever,
-- graceful restarts so deploys don't drop requests,
-- TLS (HTTPS), compression, request size limits,
-- a way for the platform to know whether the app is healthy.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T?
+`flask run` starts Werkzeug's **development server**: built for reloading and debugging, not for many users, slow connections, crashes or security. Production needs
+
+- several processes, to use all CPUs and survive one crashing,
+- timeouts, so one stuck request doesn't block forever,
+- graceful restarts, so deploys don't drop requests,
+- TLS, compression and request size limits,
+- and a way for the platform to know whether the app is healthy.
+
+Without those:
 
 - `app.run(debug=True)` in production → the interactive debugger is a remote-code-execution hole.
-- A single process handles one slow request at a time; everyone else waits.
-- 10 containers each run `flask db upgrade` at startup at the same time → migrations race or lock.
+- A single process handles one slow request at a time, and everyone else waits.
+- Ten containers all run `flask db upgrade` at startup at once → migrations race or lock the table.
 - The load balancer sends traffic to a container whose database connection isn't ready → a burst of 500s on every deploy.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. WSGI: the contract between server and app
 
@@ -100,6 +121,8 @@ Gunicorn reads `WEB_CONCURRENCY` by convention, and many platforms set it for yo
 
 ### 4. Worker types and sizing
 
+Do the connection maths before choosing a number: workers × pool size × containers must stay below the database's limit. More cooks don't help if the pantry door only fits twenty people.
+
 | Worker class | Good for | Note |
 |---|---|---|
 | `sync` (default) | CPU-light APIs, simple & predictable | 1 request per process |
@@ -137,6 +160,8 @@ Without a proxy, trusting these headers lets anyone spoof their IP (breaking rat
 Why separate? If liveness checked the database, a 30-second database blip would restart **every** container at once — turning a small outage into a big one. Health endpoints: fast, unauthenticated, no sensitive details, `Cache-Control: no-store`.
 
 ### 7. Migrations: a release step, not a startup step
+
+Rearrange the kitchen once, before the shift starts — not by every cook as they arrive.
 
 ```mermaid
 flowchart LR
@@ -180,7 +205,9 @@ For a portfolio project: a PaaS or a small VPS with Docker is enough. Always che
 - [ ] CORS limited to your frontend origin(s); request size limits
 - [ ] Rollback steps written down
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -190,13 +217,22 @@ For a portfolio project: a PaaS or a small VPS with Docker is enough. Always che
 | Migrations at container start | simple | races with multiple replicas; slow starts |
 | PaaS | fastest path to live | platform limits & pricing |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Gunicorn (or another production server) for **every** deployed environment, including staging.
 - ✅ Readiness checks whenever a load balancer or orchestrator routes traffic.
 - 🚫 Don't use `flask run` / `app.run()` outside your laptop.
 - 🚫 Don't make liveness depend on external services.
 - 🚫 Don't do long work (sending 1,000 emails, LLM batch jobs) inside a request — use a queue/worker (Module 5).
+
+## ⚠️ Common mistakes
+
+- Binding to `127.0.0.1` inside a container (unreachable from outside) instead of `0.0.0.0`.
+- Hardcoding the port while the platform provides `PORT`.
+- Config that exists in `docker-compose` but the command ignores it.
+- A health check that returns 200 even when the database is down — or one that restarts everything when it is.
+
+:::revoshop
+Look at RevoShop's deployment files: (1) The `Procfile` runs `gunicorn run:application` without setting `FLASK_ENV`, and `create_app` defaults to `'development'` — which config (DEBUG? SQL echo?) would a PaaS deploy use? (2) `docker-compose.prod.yml` sets `GUNICORN_WORKERS`, but the Dockerfile `CMD` hardcodes `--workers 3`. Does the variable do anything? (3) `docker/entrypoint.sh` runs `flask db upgrade` every time a container starts — what happens with 3 replicas? (4) `/api/v1/health` checks the database and returns 503 when it's down: is it a liveness or readiness check, and what would a separate liveness endpoint look like? (5) Write a `gunicorn.conf.py` for RevoShop using this lesson's exercise.
+:::
 
 ## 🏆 Best practices
 
@@ -209,23 +245,6 @@ For a portfolio project: a PaaS or a small VPS with Docker is enough. Always che
 - [ ] Deploy **immutable, versioned artifacts** (image tag = git SHA); keep a documented **rollback**.
 - [ ] Enable **backups** and practice a restore; add error tracking and uptime monitoring.
 - [ ] Automate deploys from CI after tests pass (lesson 07); no manual `scp` to servers.
-
-## 🏭 How it's used in industry
-
-- Most Python APIs run in containers behind a load balancer (AWS ALB, Cloud Run, Kubernetes ingress) with Gunicorn/Uvicorn inside.
-- Kubernetes uses **liveness**, **readiness** and **startup** probes exactly as described here.
-- Deploys happen many times a day through CI/CD with automatic rollback when error rates spike.
-
-## ⚠️ Common mistakes
-
-- Binding to `127.0.0.1` inside a container (unreachable from outside) instead of `0.0.0.0`.
-- Hardcoding the port while the platform provides `PORT`.
-- Config that exists in `docker-compose` but the command ignores it.
-- A health check that returns 200 even when the database is down — or one that restarts everything when it is.
-
-:::revoshop
-Look at RevoShop's deployment files: (1) The `Procfile` runs `gunicorn run:application` without setting `FLASK_ENV`, and `create_app` defaults to `'development'` — which config (DEBUG? SQL echo?) would a PaaS deploy use? (2) `docker-compose.prod.yml` sets `GUNICORN_WORKERS`, but the Dockerfile `CMD` hardcodes `--workers 3`. Does the variable do anything? (3) `docker/entrypoint.sh` runs `flask db upgrade` every time a container starts — what happens with 3 replicas? (4) `/api/v1/health` checks the database and returns 503 when it's down: is it a liveness or readiness check, and what would a separate liveness endpoint look like? (5) Write a `gunicorn.conf.py` for RevoShop using this lesson's exercise.
-:::
 
 ::part[Explain & Design]{n="2"}
 
@@ -299,17 +318,6 @@ When should you use `ProxyFix`?
 Only when the app is behind trusted reverse proxies, with the exact number of hops — otherwise clients can spoof `X-Forwarded-*` headers.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| WSGI server | Server penghubung antara HTTP dan aplikasi Python |
-| Worker process | Proses pekerja yang menangani request |
-| Reverse proxy | Perantara di depan aplikasi (TLS, routing) |
-| Liveness / readiness check | Cek hidup / cek siap melayani |
-| Rolling deploy | Deploy bertahap mengganti instance satu per satu |
-| Rollback | Kembali ke versi sebelumnya |
-| Graceful shutdown | Mematikan server dengan menyelesaikan request yang berjalan |
 
 ## 📚 Keep learning
 

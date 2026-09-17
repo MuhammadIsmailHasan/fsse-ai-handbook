@@ -21,20 +21,34 @@ tags: [docker, containers, uv, security, compose, deployment]
 
 This lesson builds on Module 2 Week 1's Docker basics — revisit it if `FROM`, `COPY` and `docker compose up` feel fuzzy.
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Layer cache** | Docker reusing unchanged steps of a previous build | Penggunaan ulang langkah build |
+| **Build context** | The files sent to Docker when building | Berkas yang dikirim ke Docker |
+| **Multi-stage build** | Building in one stage, copying only the result into the final image | Build bertahap |
+| **Base image** | The starting image (`python:3.12-slim`) | Image dasar |
+| **Non-root user** | Running the app without administrator rights inside the container | Pengguna tanpa hak penuh |
+| **`.dockerignore`** | The list of files that must not enter the build | Daftar file yang dikecualikan |
+| **Exec form `CMD`** | `CMD ["gunicorn", …]` — no shell in between, so signals arrive | Bentuk perintah langsung |
+| **PID 1** | The first process in the container; it receives stop signals | Proses utama container |
+| **`HEALTHCHECK`** | A command Docker runs to see if the container is healthy | Perintah cek kesehatan |
+
 ## 🧠 The big idea
 
-A container image is a **packed lunch box** for your app. A beginner packs the whole kitchen: knives, flour, recipe notes, the house key taped to the lid. A professional packs only the finished meal — sealed, labeled, and nothing dangerous inside.
+A container image is a **packed lunch box** for your app. A beginner packs the whole kitchen: knives, flour, recipe notes, and the house key taped to the lid. A professional packs only the finished meal — sealed, labelled, nothing dangerous inside.
 
-The **builder stage** is the kitchen. The **runtime stage** is the lunch box.
+The **builder stage** is the kitchen; the **runtime stage** is the lunch box.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-- **Same artifact everywhere**: the image you tested in CI is exactly what runs in production.
+- **The same artifact everywhere**: the image you tested in CI is exactly what runs in production.
 - **Fast deploys** need small images and cached builds.
-- **Security**: fewer packages = fewer vulnerabilities; non-root limits damage if the app is exploited.
-- Platforms (ECS, Cloud Run, Kubernetes, Render, Fly.io) all run images.
+- **Security**: fewer packages means fewer vulnerabilities, and a non-root user limits the damage if the app is exploited.
+- Every modern platform (ECS, Cloud Run, Kubernetes, Render, Fly.io) runs images.
 
-## 💥 What happens if we DON'T?
+Here's what the careless version looks like:
 
 ```dockerfile
 FROM python:latest
@@ -44,16 +58,13 @@ ENV JWT_SECRET_KEY=super-secret-key-change-in-production
 CMD flask --app wsgi run --host 0.0.0.0
 ```
 
-- `python:latest` changes under you → a random Tuesday build breaks (or silently jumps Python versions).
-- `COPY . .` first → **every code change reinstalls all dependencies**; `.git`, `.venv` and your `.env` go into the image.
-- Unpinned `pip install` → different versions than you tested.
-- The secret is in an image layer **forever** — anyone who pulls the image can read it (`docker history`).
-- Runs as **root** with the **dev server**; shell-form `CMD` means `SIGTERM` doesn't reach the app → 10-second hard kills on every deploy.
-- ~1 GB image.
+An image whose base changes without warning, a rebuild of every dependency on every code change, a secret baked into a layer anyone can read, and the development server in production.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Layers and the build cache
+
+Pack the suitcase in the right order: dependencies at the bottom (they rarely change), your code on top. Then editing one file repacks only the top.
 
 Each instruction creates a **layer**. Docker reuses a cached layer if the instruction **and its inputs** didn't change. Once one layer changes, **every layer after it** rebuilds.
 
@@ -139,6 +150,8 @@ Everything not ignored is sent to the builder and can end up in `COPY . .`. Igno
 
 ### 5. Exec form, PID 1 and signals
 
+If a shell sits between Docker and gunicorn, the polite "please stop" never reaches your app — and `docker stop` ends with a forced kill ten seconds later.
+
 ```dockerfile
 CMD gunicorn wsgi:app                 # shell form → /bin/sh -c "gunicorn …" is PID 1
 CMD ["gunicorn", "wsgi:app"]          # exec form → gunicorn is PID 1 ✅
@@ -200,7 +213,9 @@ docker scout quickview careerpilot-api:local   # or: trivy image careerpilot-api
 docker compose exec api id                # uid=10001(app) — not root
 ```
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -210,12 +225,22 @@ docker compose exec api id                # uid=10001(app) — not root
 | Pin digests | fully reproducible | must automate updates or you'll miss security patches |
 | Migrations inside the image entrypoint | simple | races with replicas (lesson 05) — prefer a one-off `docker compose run --rm api flask db upgrade` |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Every service you deploy to containers; also for consistent local "production-like" testing.
 - ✅ Multi-stage whenever you have build steps (dependency install, frontend build, compiling).
 - 🚫 Don't use the production image for local development with hot reload — use a dev Compose file or run locally with uv.
 - 🚫 Don't run databases in containers on a PaaS without persistent volumes and backups — use a managed database.
+
+## ⚠️ Common mistakes
+
+- `COPY . .` before installing dependencies.
+- Forgetting `.dockerignore` → `.env` and `.git` inside the image.
+- Different Python versions in builder and runtime stages → broken venv.
+- Binding Gunicorn to `127.0.0.1` inside the container.
+- `EXPOSE` thinking it publishes a port (it's documentation; `ports:` / `-p` publishes).
+
+:::revoshop
+Compare RevoShop's `Dockerfile` with this lesson: (1) It's single-stage `FROM python:3.12-slim` — good pinned slim base. (2) It copies `requirements.txt` and installs before `COPY . .` — good cache order. Its direct dependencies are pinned with `==` ✅ — but are their **transitive** dependencies pinned too? What does a lockfile (`uv.lock`) add? (3) It creates `appuser` and switches `USER appuser` ✅. (4) `CMD` is exec form ✅, but `ENTRYPOINT ["entrypoint.sh"]` runs a shell script — check that it ends with `exec "$@"` (it does) so Gunicorn still becomes PID 1. (5) There's no `HEALTHCHECK`, and `netcat` is installed only for waiting on the DB — could `depends_on: condition: service_healthy` replace it? (6) `docker-compose.prod.yml` doesn't publish the DB port and uses `${VAR:?}` ✅. Build it and run `docker history` and `docker scout quickview` on the image.
+:::
 
 ## 🏆 Best practices
 
@@ -229,24 +254,6 @@ docker compose exec api id                # uid=10001(app) — not root
 - [ ] Add a **HEALTHCHECK** (liveness); use readiness in the orchestrator.
 - [ ] No secrets in `ENV`/`ARG`/layers — inject at runtime; use BuildKit secret mounts for build-time secrets.
 - [ ] Tag images with the **git SHA**; **scan** them (Docker Scout / Trivy) in CI.
-
-## 🏭 How it's used in industry
-
-- CI builds one image per commit (`api:3f9c2ab`), scans it, pushes it to a registry (ECR, GHCR), and deploys that exact tag.
-- Security teams block images running as root or with critical CVEs.
-- uv's official Docker guide is now a common reference for Python images; companies maintain internal hardened base images.
-
-## ⚠️ Common mistakes
-
-- `COPY . .` before installing dependencies.
-- Forgetting `.dockerignore` → `.env` and `.git` inside the image.
-- Different Python versions in builder and runtime stages → broken venv.
-- Binding Gunicorn to `127.0.0.1` inside the container.
-- `EXPOSE` thinking it publishes a port (it's documentation; `ports:` / `-p` publishes).
-
-:::revoshop
-Compare RevoShop's `Dockerfile` with this lesson: (1) It's single-stage `FROM python:3.12-slim` — good pinned slim base. (2) It copies `requirements.txt` and installs before `COPY . .` — good cache order. Its direct dependencies are pinned with `==` ✅ — but are their **transitive** dependencies pinned too? What does a lockfile (`uv.lock`) add? (3) It creates `appuser` and switches `USER appuser` ✅. (4) `CMD` is exec form ✅, but `ENTRYPOINT ["entrypoint.sh"]` runs a shell script — check that it ends with `exec "$@"` (it does) so Gunicorn still becomes PID 1. (5) There's no `HEALTHCHECK`, and `netcat` is installed only for waiting on the DB — could `depends_on: condition: service_healthy` replace it? (6) `docker-compose.prod.yml` doesn't publish the DB port and uses `${VAR:?}` ✅. Build it and run `docker history` and `docker scout quickview` on the image.
-:::
 
 ::part[Explain & Design]{n="2"}
 
@@ -321,16 +328,6 @@ Why exec-form `CMD ["gunicorn", ...]`?
 The app becomes PID 1 and receives `SIGTERM` directly, enabling graceful shutdown; shell form wraps it in `/bin/sh`, which may not forward signals.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Image / container | Image (paket siap jalan) / kontainer (image yang sedang berjalan) |
-| Layer cache | Cache lapisan build |
-| Multi-stage build | Build bertahap (tahap build dan tahap runtime terpisah) |
-| Build context | Kumpulan file yang dikirim ke proses build |
-| Non-root user | Pengguna tanpa hak administrator |
-| Registry | Tempat penyimpanan image (GHCR, ECR, Docker Hub) |
 
 ## 📚 Keep learning
 

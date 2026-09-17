@@ -19,28 +19,43 @@ tags: [ci, github-actions, automation, testing, supply-chain-security, devops]
 - **Security**: least-privilege tokens, SHA-pinned actions, secrets, `pull_request_target` dangers
 - Branch protection: CI as a **merge gate**
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **CI** | Automatic checks on every push and pull request | Pemeriksaan otomatis |
+| **CD** | Automatically delivering or deploying what passed | Pengiriman otomatis |
+| **Workflow** | A YAML file describing those automatic steps | Berkas alur otomatis |
+| **Job** | One part of the workflow, on its own clean machine | Satu bagian pekerjaan |
+| **Runner** | The machine GitHub gives that job | Mesin penjalan |
+| **Action** | A reusable step written by someone else | Langkah siap pakai |
+| **Service container** | A helper container (PostgreSQL) started for the tests | Kontainer pendukung tes |
+| **Cache** | Reusing downloaded dependencies between runs | Penyimpanan sementara |
+| **SHA pinning** | Locking an action to one exact commit, for safety | Mengunci versi action |
+| **Merge gate** | The rule that a PR can't merge until checks pass | Syarat sebelum merge |
+
 ## 🧠 The big idea
 
 CI is an **airport security checkpoint** for code. Every bag (commit) goes through the same scanner — lint, types, tests, build — no matter who packed it or how confident they are. If the scanner beeps, the bag doesn't board (merge).
 
-The checkpoint is automatic, consistent and doesn't get tired at 11 p.m. on a Friday.
+The checkpoint is automatic, identical for everyone, and never gets tired at 11 p.m. on a Friday.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
 - "Works on my machine" — CI runs on a **clean** machine with **locked** dependencies.
-- People forget to run tests before pushing, especially under deadline pressure.
-- Reviewers should review **design and logic**, not formatting or whether tests pass.
-- CD (deploys) is only safe when CI is trustworthy.
-- AI-generated pull requests need automated verification even more.
+- People forget to run tests before pushing, especially close to a deadline.
+- Reviewers should be reading design and logic, not formatting or checking whether tests pass.
+- Deploying automatically is only safe when CI can be trusted.
+- AI-generated pull requests need automated checking even more.
 
-## 💥 What happens if we DON'T?
+Without it:
 
-- `main` breaks on Monday; three people waste the morning finding which merge did it.
-- Tests pass locally on SQLite, fail in production on PostgreSQL (lesson 02).
-- A dependency got a new version overnight; nobody notices until deploy.
-- A workflow uses `some-org/cool-action@main`; its author (or an attacker who took over the account) pushes malicious code that steals your repository secrets.
+- `main` breaks on Monday, and three people spend the morning finding which merge did it.
+- Tests pass locally on SQLite and fail in production on PostgreSQL (lesson 02).
+- A dependency released a new version overnight, and nobody notices until the deploy.
+- A workflow uses `some-org/cool-action@main`; its author — or an attacker who took the account — pushes code that steals your repository secrets.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Anatomy
 
@@ -161,6 +176,8 @@ The SHAs above were current when this lesson was written. Always take the latest
 
 ### 4. What a good CI checks (in order of speed)
 
+Cheapest checks first: a typo should fail in 30 seconds, not after a six-minute build. Fast feedback is what keeps people running the pipeline instead of avoiding it.
+
 1. **Format & lint** (seconds) — ruff
 2. **Types** (seconds) — mypy / pyright, `tsc --noEmit` for frontends
 3. **Unit tests** (seconds)
@@ -180,6 +197,8 @@ Fast, cheap checks first — developers get feedback quickly.
 
 ### 6. Supply-chain security for workflows
 
+A tag can be moved to different code; a commit SHA cannot. Pinning is the difference between "the action I reviewed" and "whatever is there today".
+
 - **Pin actions to full commit SHAs** (tags like `v7` can be moved to different code; SHAs can't). Keep a `# v7.0.1` comment for humans; Dependabot updates both.
 - Prefer official/verified actions; read the source of small third-party ones.
 - ⚠️ `pull_request_target` runs with **write token and secrets** in the context of the base repo — combined with checking out PR code, it lets a stranger's PR steal secrets. Avoid it unless you truly understand it.
@@ -198,7 +217,9 @@ Now broken code **can't** reach `main` — even yours.
 
 Public repositories get free standard runners; private repositories on the free plan get a monthly quota of runner minutes. Concurrency cancellation, caching, timeouts and path filters (`paths-ignore: ["**.md"]`) keep you well within it. Check GitHub's current billing page for exact numbers.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -209,12 +230,22 @@ Public repositories get free standard runners; private repositories on the free 
 | Many small jobs | parallel, clear status | repeated setup (mitigate with caching) |
 | Required checks on `main` | protects main | a flaky test blocks everyone → fix flakiness fast |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Every repository you'll show employers — a green CI badge and a real pipeline are strong portfolio signals.
 - ✅ Run on pull requests **and** on `main` after merge.
 - 🚫 Don't run full load tests or long E2E suites on every push — schedule them nightly or before releases.
 - 🚫 Don't use CI as your only feedback loop; run the fast checks locally (pre-commit) too.
+
+## ⚠️ Common mistakes
+
+- `uses: something@main` or `@v1` tags from unknown authors.
+- No `timeout-minutes` → a hung test burns hours of minutes.
+- `pip install` without a lockfile → CI tests different versions than production.
+- Tests needing real API keys → CI breaks for every fork and leaks costs.
+- Ignoring red builds "because it's flaky" until nobody trusts CI.
+
+:::revoshop
+RevoShop has **no `.github/workflows` folder**, yet its README lists pytest, Pylint, Bandit and pip-audit. (1) Write a `ci.yml` for RevoShop with jobs: `lint` (pylint + bandit), `audit` (pip-audit on `requirements.txt`), `test` (pytest on PostgreSQL 16 service — and switch the test DB from SQLite, lesson 02), and `build` (Docker image, `push: false`). (2) RevoShop uses `requirements.txt` with pip, not uv: replace setup-uv with `actions/setup-python` (SHA-pinned) and `cache: pip`. (3) Add a status badge to the README. (4) Push to a branch, open a PR on your fork, and screenshot a green run for your portfolio.
+:::
 
 ## 🏆 Best practices
 
@@ -228,25 +259,6 @@ Public repositories get free standard runners; private repositories on the free 
 - [ ] Publish readable results: job summaries, annotations, uploaded artifacts (coverage, reports) when useful.
 - [ ] No long-lived secrets where OIDC works; never expose secrets to fork PRs; avoid `pull_request_target`.
 - [ ] Make CI a **required check** on `main`; fix flaky tests immediately.
-
-## 🏭 How it's used in industry
-
-- Most teams on GitHub use Actions; GitLab CI, CircleCI, Jenkins and Buildkite follow the same concepts (pipelines, jobs, caches, secrets).
-- After high-profile attacks on popular actions, security teams now commonly require SHA pinning and least-privilege tokens.
-- Monorepos use path filters and build caches so only affected services run.
-- CI pipelines increasingly run AI checks too: eval suites for prompts/RAG (Module 7), with thresholds that fail the build.
-
-## ⚠️ Common mistakes
-
-- `uses: something@main` or `@v1` tags from unknown authors.
-- No `timeout-minutes` → a hung test burns hours of minutes.
-- `pip install` without a lockfile → CI tests different versions than production.
-- Tests needing real API keys → CI breaks for every fork and leaks costs.
-- Ignoring red builds "because it's flaky" until nobody trusts CI.
-
-:::revoshop
-RevoShop has **no `.github/workflows` folder**, yet its README lists pytest, Pylint, Bandit and pip-audit. (1) Write a `ci.yml` for RevoShop with jobs: `lint` (pylint + bandit), `audit` (pip-audit on `requirements.txt`), `test` (pytest on PostgreSQL 16 service — and switch the test DB from SQLite, lesson 02), and `build` (Docker image, `push: false`). (2) RevoShop uses `requirements.txt` with pip, not uv: replace setup-uv with `actions/setup-python` (SHA-pinned) and `cache: pip`. (3) Add a status badge to the README. (4) Push to a branch, open a PR on your fork, and screenshot a green run for your portfolio.
-:::
 
 ::part[Explain & Design]{n="2"}
 
@@ -322,17 +334,6 @@ Why quote `"3.10"` in a matrix?
 Unquoted, YAML parses it as the number 3.1, which selects the wrong Python version.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Continuous Integration (CI) | Integrasi berkelanjutan — setiap perubahan dicek otomatis |
-| Continuous Delivery/Deployment (CD) | Pengiriman/deploy berkelanjutan |
-| Runner | Mesin yang menjalankan job |
-| Service container | Kontainer pendukung (mis. database) selama job |
-| Matrix build | Menjalankan job untuk banyak kombinasi (versi) |
-| Required status check | Cek wajib lulus sebelum merge |
-| Supply chain attack | Serangan lewat dependensi/pihak ketiga |
 
 ## 📚 Keep learning
 

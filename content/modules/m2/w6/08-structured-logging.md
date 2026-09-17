@@ -19,22 +19,37 @@ tags: [logging, observability, json, request-id, security, operations]
 - What **never** to log: secrets, tokens, personal data — and redaction
 - How logs relate to **metrics** and **traces** (observability)
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Structured log** | A log line as JSON with fixed fields, not free text | Log berformat tetap |
+| **Log level** | How serious the message is (DEBUG → ERROR) | Tingkat keseriusan log |
+| **Request id** | A number tying every log line of one request together | Penanda satu permintaan |
+| **Correlation id** | The same idea across several services | Penanda lintas layanan |
+| **`contextvars`** | The Python feature that carries that id through your code | Pembawa nilai antar fungsi |
+| **stdout** | The output stream the platform collects logs from | Keluaran standar |
+| **Redaction** | Removing secrets and personal data before logging | Menyensor data sensitif |
+| **Access log** | One line per request: method, path, status, duration | Log tiap permintaan |
+| **Observability** | Logs + metrics + traces: knowing what your system is doing | Kemampuan mengamati sistem |
+
 ## 🧠 The big idea
 
-Plain-text logs are a **diary**: nice to read one page, impossible to query across a million pages. Structured logs are a **spreadsheet**: every entry has the same columns (time, level, request id, path, status…), so you can filter "all 500s for `/checkout` in the last hour for request `a1b2…`" in seconds.
+Plain-text logs are a **diary**: pleasant to read one page, impossible to search across a million pages. Structured logs are a **spreadsheet**: every entry has the same columns (time, level, request id, path, status), so you can ask for "all 500s on `/checkout` in the last hour" and get an answer in seconds.
 
-A **request id** is the **order number** at a food court: every station (API, service, database call, background job) writes it on its ticket, so you can follow one order from start to finish.
+A **request id** is the **order number at a food court**: every station — API, service, database call, background job — writes it on its ticket, so you can follow one order from start to finish.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-In production you can't attach a debugger or add `print()` and re-run. Logs are how you answer:
-- *"User says checkout failed at 14:02 — what happened?"*
-- *"How many payment webhooks failed signature checks today?"*
-- *"Which requests were slow, and what did they do?"*
+In production you can't attach a debugger or add a `print()` and run it again. Logs are how you answer:
 
-Log platforms (CloudWatch Logs, Grafana Loki, Datadog, Elastic, Google Cloud Logging) index JSON fields, so queries become precise.
+- *"A user says checkout failed at 14:02 — what happened?"*
+- *"How many payment webhooks failed their signature check today?"*
+- *"Which requests were slow, and what were they doing?"*
 
-## 💥 What happens if we DON'T?
+Log platforms (CloudWatch Logs, Grafana Loki, Datadog, Elastic, Google Cloud Logging) index JSON fields, which is what makes those questions answerable.
+
+Unstructured logs answer none of them — and sometimes leak:
 
 ```text
 2026-09-13 14:02:11 [ERROR] app: integrity error: (psycopg.errors.UniqueViolation) duplicate key … [parameters: {'email': 'siti@example.com', 'password_hash': '$2b$12$…'}]
@@ -42,12 +57,9 @@ Log platforms (CloudWatch Logs, Grafana Loki, Datadog, Elastic, Google Cloud Log
 2026-09-13 14:02:11 [ERROR] app: midtrans HTTP 401: …
 ```
 
-- Which request produced which line? With 50 concurrent requests the lines interleave.
-- Searching means fragile `grep` regexes.
-- A user's **email and password hash** are now in your logs — copied to log storage, visible to everyone with log access, retained for months (a privacy incident under Indonesia's **UU PDP** personal data protection law).
-- Logs written to files inside a container **disappear** when the container is replaced.
+Which order? For which user? Caused by which request? And a password hash is now sitting in your log storage.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. One JSON object per line
 
@@ -75,6 +87,8 @@ flowchart LR
 - Pass data with `extra={...}`; use `logger.exception(...)` inside `except` to include the traceback.
 
 ### 3. Levels that mean something
+
+If everything is an ERROR, nothing is. Reserve ERROR for "a human must look at this", and put the routine story at INFO.
 
 | Level | Use for | Example |
 |---|---|---|
@@ -115,6 +129,8 @@ Log `request.path`, not `request.full_path` or `request.url`: query strings ofte
 
 ### 6. Never log secrets or unnecessary personal data
 
+Logs travel further than you think — screenshots, support tickets, third-party platforms. Treat every log line as something that may be read by someone outside your team.
+
 | Never | Be careful (mask/minimize) | Usually fine |
 |---|---|---|
 | passwords, password hashes | emails, phone numbers | ids (user_id, order_id) |
@@ -142,7 +158,9 @@ Containers and platforms capture stdout/stderr and ship it to the log system. Wr
 
 **OpenTelemetry** is the industry standard for all three; its trace id plays the role of your request id across services. For AI apps, tools like Langfuse trace every LLM call (Module 7). Start with good logs — they're the foundation.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -153,12 +171,22 @@ Containers and platforms capture stdout/stderr and ship it to the log system. Wr
 | stdlib `logging` + custom formatter | no dependency, you understand it | more code than libraries |
 | `structlog` / `python-json-logger` | batteries included | another dependency to learn |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Structured logs for every deployed service, including workers and cron jobs.
 - ✅ Request ids for every HTTP request and every background job.
 - 🚫 Don't use logs as your metrics system (counting via log queries gets expensive) — emit metrics too as you grow.
 - 🚫 Don't log inside tight loops per item for large batches; log a summary.
+
+## ⚠️ Common mistakes
+
+- `print()` debugging left in production code.
+- Configuring `app.logger` only, so SQLAlchemy/Gunicorn/module loggers use different formats (or none).
+- Logging `str(error)` for DB errors → parameters with personal data in logs.
+- Multi-line stack traces split into many log entries.
+- A global variable for the request id → wrong ids under concurrency.
+
+:::revoshop
+Open RevoShop's `app/logging_config.py` and `app/errors.py`: (1) It configures only `flask_app.logger` with `propagate = False` — what format do logs from `logging.getLogger(__name__)` in a service, SQLAlchemy or Gunicorn get? (2) `LOG_TO_FILE` defaults to `true` with a `TimedRotatingFileHandler` — what happens to those files when the container is replaced, and with `read_only: true`? (3) `current_app.logger.error('integrity error: %s', error)` — trigger a duplicate email on register and look at the log line: which user data appears? (4) Is there any way to connect a user's complaint to the log lines of their request? Replace the setup with this lesson's `configure_logging` + `init_request_logging`, and include the request id in the JSON error response.
+:::
 
 ## 🏆 Best practices
 
@@ -172,25 +200,6 @@ Containers and platforms capture stdout/stderr and ship it to the log system. Wr
 - [ ] **Never** log secrets or credentials; minimize personal data; redact by key as a safety net.
 - [ ] Set log **retention** and access controls; make levels configurable with `LOG_LEVEL`.
 - [ ] Graduate to **OpenTelemetry** traces and metrics as the system grows.
-
-## 🏭 How it's used in industry
-
-- On AWS, JSON logs in CloudWatch Logs are queried with **Logs Insights** (`fields @timestamp, path, status | filter status >= 500`).
-- Support teams ask users for the request/reference id shown on error screens.
-- Indonesian fintech and e-commerce companies must avoid logging personal data under UU PDP and keep audit trails — structured logs make both manageable.
-- Incident reviews reconstruct timelines from request ids and trace ids.
-
-## ⚠️ Common mistakes
-
-- `print()` debugging left in production code.
-- Configuring `app.logger` only, so SQLAlchemy/Gunicorn/module loggers use different formats (or none).
-- Logging `str(error)` for DB errors → parameters with personal data in logs.
-- Multi-line stack traces split into many log entries.
-- A global variable for the request id → wrong ids under concurrency.
-
-:::revoshop
-Open RevoShop's `app/logging_config.py` and `app/errors.py`: (1) It configures only `flask_app.logger` with `propagate = False` — what format do logs from `logging.getLogger(__name__)` in a service, SQLAlchemy or Gunicorn get? (2) `LOG_TO_FILE` defaults to `true` with a `TimedRotatingFileHandler` — what happens to those files when the container is replaced, and with `read_only: true`? (3) `current_app.logger.error('integrity error: %s', error)` — trigger a duplicate email on register and look at the log line: which user data appears? (4) Is there any way to connect a user's complaint to the log lines of their request? Replace the setup with this lesson's `configure_logging` + `init_request_logging`, and include the request id in the JSON error response.
-:::
 
 ::part[Explain & Design]{n="2"}
 
@@ -273,17 +282,6 @@ Name three things that should never appear in logs.
 Passwords/hashes, tokens/API keys/cookies/Authorization headers, and full payment card data (also minimize personal data like emails and phone numbers).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Structured logging | Log terstruktur (format data seperti JSON) |
-| Log level | Tingkat keparahan log |
-| Request / correlation id | ID permintaan untuk menelusuri satu alur request |
-| Redaction | Penyamaran/penghapusan data sensitif |
-| Observability | Kemampuan memahami kondisi sistem dari luar (log, metrik, trace) |
-| Retention | Lama penyimpanan data log |
-| Personal data (UU PDP) | Data pribadi (Undang-Undang Pelindungan Data Pribadi) |
 
 ## 📚 Keep learning
 
