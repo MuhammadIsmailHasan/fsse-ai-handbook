@@ -21,23 +21,45 @@ tags: [aws, rds, postgresql, databases, backups, security]
 - **Connection limits**, SQLAlchemy pools, `pool_pre_ping` and RDS Proxy
 - Running **migrations** safely, **monitoring** and **cost** control (including the 7-day auto-start)
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **RDS** | AWS running PostgreSQL for you: patching, backups, failover | Database terkelola |
+| **Instance class** | The size of the database server (`db.t4g.micro`) | Ukuran server database |
+| **Multi-AZ** | A standby copy in another location that takes over if the first fails | Salinan siaga |
+| **Read replica** | An extra copy used only for reading, to spread load | Salinan khusus baca |
+| **Automated backup** | Daily backups kept for a number of days | Backup otomatis |
+| **Point-in-time recovery (PITR)** | Restoring the database to an exact minute in the past | Pemulihan ke waktu tertentu |
+| **Snapshot** | A manual backup you keep until you delete it | Cadangan manual |
+| **Parameter group** | The database's settings (force TLS, log slow queries) | Kumpulan pengaturan |
+| **Connection pool** | A set of reusable database connections your app keeps open | Kumpulan koneksi siap pakai |
+| **TLS verification** | The app checking the database's certificate before trusting it | Verifikasi sertifikat |
+
 ## 🧠 The big idea
 
-Running PostgreSQL on your own server is like owning a car; RDS is a **full-service lease**: the dealer changes the oil (patching), keeps a spare car ready in another garage (Multi-AZ), photographs the car every night (backups) and can give you back the car exactly as it was last Tuesday at 14:05 (point-in-time recovery). You still drive it — schema design, indexes, queries and connection handling are yours.
+Running PostgreSQL on your own server is like owning a car. RDS is a **full-service lease**:
 
-## ❓ Why does this matter?
+- the dealer changes the oil (patching and minor upgrades),
+- keeps a spare car ready in another garage (Multi-AZ),
+- photographs the car every night (automated backups),
+- and can hand it back exactly as it was last Tuesday at 14:05 (point-in-time recovery).
 
-RevoShop's orders and payments are the most valuable data you have. A container volume on one VM (Week 1) has no automated backups, no failover and no tested restore. RDS gives you those with a few settings — and a wrong setting (public access, no backups, no TLS) can undo it all.
+You still do the driving: schema design, indexes, queries and how your app opens connections are all yours.
 
-## 💥 What happens if we DON'T (or configure it badly)?
+## ❓ Why it matters
+
+RevoShop's orders and payments are the most valuable data you have. A container volume on one VM (Week 1) has no automated backups, no failover and no tested restore — like keeping the shop's only ledger on a desk next to an open window. RDS gives you all three with a few settings, and a wrong setting (public access, no backups, no TLS) can undo them.
+
+Done badly:
 
 - Backups disabled "to save money"; a bad migration deletes a column in production with no way back.
-- Public access enabled with a weak password; the database appears in internet scans within hours.
-- 4 gunicorn workers × SQLAlchemy's default pool (5 + 10 overflow) × 3 containers → the micro instance hits its connection limit during a sale.
-- The instance fails over and every API worker holds dead connections until restarted.
-- Someone "stops" RDS to save money; AWS starts it again seven days later and billing continues.
+- Public access enabled with a weak password; the database shows up in internet scans within hours.
+- 4 gunicorn workers × SQLAlchemy's default pool (5 + 10 extra) × 3 containers → the micro instance hits its connection limit during a sale.
+- The database fails over to its standby, but every API worker keeps holding dead connections until restarted.
+- Someone "stops" RDS to save money; AWS starts it again seven days later and the billing continues.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. What RDS manages
 
@@ -62,6 +84,8 @@ Aurora PostgreSQL is AWS's cloud-native variant (different storage, faster failo
 
 ### 3. Availability and scaling
 
+Multi-AZ is a **spare driver sitting in the passenger seat** — same car, ready to take the wheel. A read replica is a **second car for passengers who only want to read the map**: it spreads reading work, but it is not a backup.
+
 ```mermaid
 flowchart LR
     App[API] -->|writes + reads| P[(Primary AZ a)]
@@ -77,6 +101,8 @@ flowchart LR
 | **Read replica** | offload reads, cross-region copies | send reads to a different endpoint; replication lag |
 
 ### 4. Backups and recovery
+
+A backup you have never restored is a **fire extinguisher nobody has tested**. Do one restore drill while nothing is wrong, and write down how long it took.
 
 - **Automated backups**: daily snapshots + transaction logs; retention 1–35 days (set **7+**); enables **point-in-time recovery** to any second within the window.
 - **Manual snapshots**: kept until you delete them (take one before risky migrations and before deleting an instance).
@@ -111,6 +137,8 @@ GRANT USAGE, CREATE ON SCHEMA public TO revoshop_app;   -- CREATE only if the ap
 
 ### 7. Connections
 
+Database connections are like **checkout counters**: each one costs the database memory, and a small instance has only a few. Your pool settings decide how many counters each app copy tries to open — multiply them by the number of workers and containers before you deploy.
+
 PostgreSQL gives each connection a process; small instances support only a limited number (`max_connections` is derived from instance memory — check `SHOW max_connections;`).
 
 ```python
@@ -140,7 +168,9 @@ Total = processes × (pool_size + max_overflow) — plus migrations, workers, ad
 - Cost: instance hours + storage + backup storage beyond the free allocation + I/O on some storage types + data transfer.
 - **Stopping** saves instance hours but storage still bills, and **RDS restarts a stopped instance automatically after 7 days**.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -150,30 +180,10 @@ Total = processes × (pool_size + max_overflow) — plus migrations, workers, ad
 | RDS Proxy | connection pooling, faster failover | extra cost and a hop |
 | Aurora | faster failover, storage scaling | higher minimum cost, more AWS-specific |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Any production relational database on AWS unless you have a strong reason to self-manage.
 - ✅ Separate instances (or at least separate databases and users) for staging and production.
 - 🚫 Don't use RDS as a queue or cache; don't open it to the internet.
 - 🚫 Don't rely on backups you've never restored.
-
-## 🏆 Best practices
-
-- [ ] Private subnets, public access off, SG from app SG only.
-- [ ] TLS with certificate verification; encryption at rest; deletion protection.
-- [ ] Automated backups ≥ 7 days; manual snapshot before risky changes; quarterly restore drill.
-- [ ] Custom parameter group: force TLS, slow query logging, idle transaction timeout.
-- [ ] Managed master password; least-privilege application user.
-- [ ] Right-sized connection pools with `pool_pre_ping`; RDS Proxy when connection counts explode.
-- [ ] Migrations as one-off jobs, backward compatible.
-- [ ] Alarms on storage, connections, CPU credits; Multi-AZ for production with real users.
-- [ ] Remember the 7-day auto-start; delete (with a snapshot decision) instead of "stopping forever".
-
-## 🏭 How it's used in industry
-
-- Managed databases (RDS, Aurora, Cloud SQL, Azure Database for PostgreSQL) are the default for most product teams; self-managed databases are reserved for special needs.
-- Mature teams run restore drills and measure recovery time and recovery point (RTO/RPO) as reliability targets.
-- Connection pooling (RDS Proxy, PgBouncer) is standard when serverless or many microservices share a database.
 
 ## ⚠️ Common mistakes
 
@@ -189,6 +199,18 @@ Total = processes × (pool_size + max_overflow) — plus migrations, workers, ad
 4. **Move your data.** You have local data in the `pgdata` volume and seeders in `seeders/seeders.py`. Plan either: seed a fresh RDS database, or `pg_dump -Fc` locally and `pg_restore` through a Session Manager port-forwarding tunnel. Which is right for staging vs production, and what must never be copied?
 5. **Restore drill.** After Lab 3, restore RDS to a point 10 minutes after you created a test order, connect via port forwarding, and confirm the order exists. Write the time it took into `docs/aws-runbook.md`.
 :::
+
+## 🏆 Best practices
+
+- [ ] Private subnets, public access off, SG from app SG only.
+- [ ] TLS with certificate verification; encryption at rest; deletion protection.
+- [ ] Automated backups ≥ 7 days; manual snapshot before risky changes; quarterly restore drill.
+- [ ] Custom parameter group: force TLS, slow query logging, idle transaction timeout.
+- [ ] Managed master password; least-privilege application user.
+- [ ] Right-sized connection pools with `pool_pre_ping`; RDS Proxy when connection counts explode.
+- [ ] Migrations as one-off jobs, backward compatible.
+- [ ] Alarms on storage, connections, CPU credits; Multi-AZ for production with real users.
+- [ ] Remember the 7-day auto-start; delete (with a snapshot decision) instead of "stopping forever".
 
 ::part[Explain & Design]{n="2"}
 
@@ -250,16 +272,6 @@ After an RDS failover your API returns errors for several minutes until restarte
 Connection health handling: stale pooled connections aren't detected. Use `pool_pre_ping=True` (and reasonable timeouts/recycling) so the pool discards dead connections and reconnects to the same endpoint.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Managed database | Basis data terkelola |
-| Point-in-time recovery | Pemulihan ke titik waktu tertentu |
-| Failover | Pengalihan otomatis ke cadangan |
-| Read replica | Replika baca |
-| Parameter group | Grup parameter (konfigurasi mesin DB) |
-| Connection pool | Kumpulan koneksi |
 
 ## 📚 Keep learning
 
