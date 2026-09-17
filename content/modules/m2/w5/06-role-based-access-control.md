@@ -19,20 +19,32 @@ tags: [security, authorization, rbac, ownership, flask, bonus]
 - Choosing **401 vs 403 vs 404**
 - Why the **database**, not the token, should decide the current role
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Role** | A named group of users (buyer, seller, admin) | Kelompok pengguna |
+| **Permission** | One specific allowed action (`product:delete`) | Satu izin tindakan |
+| **RBAC** | Roles map to permissions; code checks permissions | Akses berbasis peran |
+| **Function-level check** | "May you call this endpoint at all?" | Boleh memanggil endpoint? |
+| **Object-level check** | "May you touch *this* record?" | Boleh menyentuh data ini? |
+| **Ownership** | The rule that a record belongs to a user | Kepemilikan data |
+| **BOLA** | Broken Object Level Authorization — the top API security risk | Celah akses antar data |
+| **401 vs 403** | Not logged in vs logged in but not allowed | Belum login vs tidak berhak |
+| **Scoped query** | A query that only returns what this user may see | Kueri terbatas hak pengguna |
+
 ## 🧠 The big idea
 
-Authentication gave everyone a **key card**. Authorization decides **which doors** it opens:
+Authentication handed everyone a **key card**. Authorization decides **which doors** it opens:
 
 - **Role-based**: staff cards open the staff room; guest cards don't.
 - **Object-level**: your card opens **room 312**, not every guest room — even though all guests have the same role.
 
-Most real breaches in APIs aren't about cracking passwords — they're about a logged-in user changing an id in the URL (`/applications/41` → `/applications/42`) and seeing someone else's data. OWASP lists this — **Broken Object Level Authorization** — as the **#1** API security risk.
+Most real API breaches aren't cracked passwords. They're a logged-in user changing an id in the URL (`/applications/41` → `/applications/42`) and seeing someone else's data. OWASP lists this — **Broken Object Level Authorization** — as the **number one** API security risk.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Every system has different kinds of users (job seekers, mentors, admins; buyers, sellers, admins) and private data. Without explicit, centralized rules, each endpoint makes its own decision — and one forgotten check leaks data or lets someone change what isn't theirs.
-
-## 💥 What happens if we DON'T authorize properly?
+Every system has different kinds of users (job seekers, mentors, admins; buyers, sellers, admins) and private data. Without explicit rules in one place, each endpoint decides for itself — and one forgotten check leaks data or lets someone change what isn't theirs.
 
 ```python
 @bp.get("/applications/<int:app_id>")
@@ -41,20 +53,9 @@ def get_application(app_id):
     return {"data": serialize(db.session.get(Application, app_id))}   # any logged-in user, any id
 ```
 
-```python
-@bp.delete("/products/<int:product_id>")
-@jwt_required()
-def delete_product(product_id):
-    if get_jwt()["role"] == "seller":                                  # any seller can delete ANY seller's product
-        ...
-```
+The token proves *who* they are. Nothing here checks whether this application is *theirs*.
 
-```javascript
-// frontend only
-{user.role === "admin" && <DeleteButton />}      // hiding a button isn't security — the API is still open
-```
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Two levels of checks
 
@@ -71,6 +72,8 @@ flowchart TD
 ```
 
 ### 2. RBAC: roles map to permissions
+
+Check permissions, not role names. `if role == "admin"` scattered in 40 places becomes impossible to change; `require_permission("product:delete")` keeps the rule in one table.
 
 ```python
 ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
@@ -142,6 +145,8 @@ def change_status(self, user: User, application_id: int, status: str) -> Applica
 
 ### 5. Filter lists by what the user may see
 
+The safest object-level check is one you can't forget: build the restriction into the query, so data the user may not see never leaves the database.
+
 Object-level authorization applies to **lists** too — filter in the **query**, never after loading everything:
 
 ```python
@@ -174,7 +179,9 @@ Putting `role` in the JWT is handy for UI hints, but authorization decisions sho
 - **ReBAC** (relationship-based): "can view if they're a member of the team that owns the project" (Google Zanzibar-style systems).
 - Multi-tenant SaaS: every query scoped by `tenant_id`.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -186,30 +193,10 @@ Putting `role` in the JWT is handy for UI hints, but authorization decisions sho
 | Role from DB each request | instant changes | one lookup per request (cheap, often cached) |
 | 404 for forbidden objects | hides existence | slightly less helpful for legitimate debugging |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ RBAC with permissions for most business apps; add ownership rules for all private data.
 - ✅ Scope list queries by what the user may see.
 - 🚫 Don't rely on hidden frontend buttons, obscure ids, or UUIDs as "security".
 - 🚫 Don't trust role or user ids sent in request bodies or query strings.
-
-## 🏆 Best practices
-
-- [ ] **Deny by default**: every endpoint requires authentication unless explicitly public.
-- [ ] Map **roles → permissions** in one place; check **permissions** in code.
-- [ ] Enforce **object-level authorization** for every read, update and delete — and **filter lists in queries**.
-- [ ] Return **404** for records the user can't see; **403** when they can see but not act; **401** when unauthenticated.
-- [ ] Load the **current role from the database** per request; don't trust stale token claims for decisions.
-- [ ] Keep authorization logic in **services/policies**, not only in routes or the frontend.
-- [ ] Write **tests for every role × action** combination (a permission matrix test).
-- [ ] Log denied attempts at `warning` level (possible probing), without sensitive data.
-- [ ] Review authorization in every PR that adds an endpoint.
-
-## 🏭 How it's used in industry
-
-- OWASP API Security Top 10 (2023): #1 Broken Object Level Authorization, #3 Broken Object Property Level Authorization, #5 Broken Function Level Authorization — all this lesson.
-- Many companies centralize rules in policy engines (Open Policy Agent, Cerbos, Oso) or managed services (e.g. Amazon Verified Permissions).
-- Pen testers and bug bounty hunters try id swapping first — authorization bugs are among the most common paid findings.
 
 ## ⚠️ Common mistakes
 
@@ -222,6 +209,18 @@ Putting `role` in the JWT is handy for UI hints, but authorization decisions sho
 :::revoshop
 RevoShop has three roles — **buyer**, **seller**, **admin** — and `@roles_required('seller', 'admin')` on product creation. Now test object-level rules, not just roles: (1) Can seller A update or delete seller B's product (`PUT/DELETE /api/v1/products/<id>`)? Find the check in `ProductService` — or its absence. (2) Can buyer A read buyer B's order by changing the id? (3) Does the seller order-fulfillment endpoint only show orders containing **that seller's** products? (4) Is `roles_required` reading the role from the token or from the database? Write a permission matrix table (role × action) for your README and one test per risky cell.
 :::
+
+## 🏆 Best practices
+
+- [ ] **Deny by default**: every endpoint requires authentication unless explicitly public.
+- [ ] Map **roles → permissions** in one place; check **permissions** in code.
+- [ ] Enforce **object-level authorization** for every read, update and delete — and **filter lists in queries**.
+- [ ] Return **404** for records the user can't see; **403** when they can see but not act; **401** when unauthenticated.
+- [ ] Load the **current role from the database** per request; don't trust stale token claims for decisions.
+- [ ] Keep authorization logic in **services/policies**, not only in routes or the frontend.
+- [ ] Write **tests for every role × action** combination (a permission matrix test).
+- [ ] Log denied attempts at `warning` level (possible probing), without sensitive data.
+- [ ] Review authorization in every PR that adds an endpoint.
 
 ::part[Explain & Design]{n="2"}
 
@@ -297,16 +296,6 @@ Why load the user's role from the database instead of trusting the role claim in
 Tokens can be stale: if a role is removed or changed, a claim-based check keeps the old permissions until the token expires.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Authorization | Otorisasi — hak melakukan aksi |
-| RBAC | Kontrol akses berbasis peran |
-| Permission | Izin untuk satu aksi tertentu |
-| Object-level authorization | Otorisasi per data/objek |
-| Deny by default | Tolak kecuali diizinkan secara eksplisit |
-| Permission matrix | Tabel peran × aksi |
 
 ## 📚 Keep learning
 

@@ -20,33 +20,45 @@ lastReviewed: 2026-09
 - Responding fast and moving slow work to the background
 - Wrapping providers behind your own **client/adapter** interface
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Outbound call** | Your server calling someone else's API | Panggilan keluar |
+| **Webhook** | Their server calling a URL of yours when something happens | Panggilan masuk otomatis |
+| **Timeout** | Giving up after N seconds instead of waiting forever | Batas waktu tunggu |
+| **Retry with backoff** | Trying again, waiting longer each time | Coba lagi dengan jeda |
+| **Idempotency key** | An id so a retry doesn't charge or create twice | Kunci anti-duplikat |
+| **Signature (HMAC)** | A code proving the message really came from the provider | Tanda tangan pesan |
+| **Replay attack** | Someone re-sending an old valid message | Pengiriman ulang pesan lama |
+| **Out-of-order events** | Events arriving in the wrong sequence | Urutan kejadian tertukar |
+| **Adapter / client** | Your own wrapper around a provider's API | Pembungkus layanan luar |
+
 ## 🧠 The big idea
 
-Two directions of conversation with other companies' systems:
+There are two directions of conversation with other companies' systems:
 
-- **Outbound (you call them):** like phoning a supplier. The line might be busy or silent. You need to hang up after a while (**timeout**), call back later (**retry**), and make sure calling twice doesn't order twice (**idempotency key**).
-- **Inbound webhooks (they call you):** like a courier ringing your doorbell with a package notification. Before opening the door you check their **ID** (signature), you ignore someone replaying last week's delivery (**timestamp**), and if the same courier rings twice you don't sign for the package twice (**idempotency**).
+- **Outbound — you call them**: like phoning a supplier. The line may be busy or silent, so you hang up after a while (**timeout**), call back later (**retry**), and make sure calling twice doesn't order twice (**idempotency key**).
+- **Inbound webhooks — they call you**: like a courier ringing your doorbell. Before opening you check their **ID** (signature), you ignore someone replaying last week's delivery (**timestamp**), and if the same courier rings twice you don't sign for the package twice (**idempotency**).
 
 A :term[webhook]{bahasa="webhook — permintaan HTTP otomatis dari layanan lain ke server kita saat suatu kejadian terjadi (mis. pembayaran berhasil)"} is simply an HTTP `POST` the provider sends to **your** URL when something happens.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Real products depend on other services: payment gateways (Midtrans, Xendit, Stripe), email/WhatsApp, maps, AI models, identity providers. Their events happen **asynchronously** — a customer pays in their banking app minutes later — so polling "is it paid yet?" every second would be wasteful. Providers push events to you instead.
+Real products depend on other services: payment gateways (Midtrans, Xendit, Stripe), email and WhatsApp, maps, AI models, identity providers. Their events happen **later** — a customer pays in their banking app minutes afterwards — so asking "is it paid yet?" every second would be wasteful. Providers push the news to you instead.
 
-Every one of these integrations can be slow, down, duplicated, spoofed or out of order. Handling that is a core backend skill.
-
-## 💥 What happens if we DON'T handle them carefully?
+Every one of these integrations can be slow, down, duplicated, faked or out of order:
 
 | Mistake | Consequence |
 |---|---|
 | No signature check | anyone can `POST {"status": "paid"}` and get free orders |
-| No idempotency | the provider retries a webhook → the customer is credited twice, or receives five "paid" emails |
-| Heavy processing before responding | the provider times out, retries, and you process it again |
-| Trusting event order | a late "pending" event overwrites "paid" → the order looks unpaid |
-| No timeout on outbound calls | a hanging provider blocks all your worker threads → your whole API goes down |
-| Retrying non-idempotent calls without a key | a network blip charges the customer twice |
+| No idempotency | the provider retries a webhook → the customer is credited twice, or gets five "paid" emails |
+| Heavy work before responding | the provider times out, retries, and you process it again |
+| Trusting the order of events | a late "pending" event overwrites "paid" → the order looks unpaid |
+| No timeout on outbound calls | one hanging provider blocks all your workers → your whole API goes down |
+| Retrying without an idempotency key | a network blip charges the customer twice |
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Outbound: a client with timeouts and retries
 
@@ -110,6 +122,8 @@ sequenceDiagram
 
 ### 3. Signature verification (HMAC)
 
+Compare signatures with a constant-time function. Comparing them like normal strings leaks, through timing, how many characters were right — which is enough for a patient attacker.
+
 Providers sign the **exact raw body** with a secret you share. A typical scheme:
 
 ```text
@@ -167,6 +181,8 @@ Alternatives: compare the provider's event timestamp, or **re-fetch the current 
 
 ### 6. Respond fast, work later
 
+Answer the doorbell first, unpack the box afterwards: store the event, reply `200`, and do the slow work in a job. Providers judge you by how fast you answer.
+
 Aim to respond within a few seconds. Verify, deduplicate, update small state, **commit**, return `200`. Send emails, generate invoices, call AI models in a **background job** (Module 5 adds queues).
 
 Return codes: `2xx` = processed or intentionally ignored (unknown event types too — otherwise the provider retries forever); `4xx` for invalid signatures or malformed payloads; `5xx` only when *you* failed and want a retry.
@@ -177,7 +193,9 @@ Return codes: `2xx` = processed or intentionally ignored (unknown event types to
 - Expose localhost with a tunnel (e.g. ngrok, Cloudflare Tunnel) or the provider's CLI forwarding.
 - Save real sample payloads (without secrets) as **test fixtures**; unit-test signature verification and the state machine with them.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -188,30 +206,10 @@ Return codes: `2xx` = processed or intentionally ignored (unknown event types to
 | Enqueue and respond | fast, resilient | queue infrastructure |
 | Many retries | recovers from blips | amplifies outages without backoff/circuit breakers |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Webhooks for asynchronous events: payments, shipping updates, email bounces, e-signatures, CI results.
 - ✅ Adapters (`PaymentClient`, `EmailClient`, `LLMClient`) around every external provider.
 - 🚫 Don't act on webhook data without verifying the signature (or re-fetching from the provider).
 - 🚫 Don't call external APIs inside database transactions (Week 2 lesson 07).
-
-## 🏆 Best practices
-
-- [ ] **Outbound:** explicit connect/read **timeouts**, **retries only for transient errors** with **exponential backoff + jitter**, a max attempt count, and **idempotency keys** on writes.
-- [ ] Wrap each provider in an **adapter** with your own interface; inject it; fake it in tests.
-- [ ] **Inbound:** verify **signatures** on the **raw body** with `hmac.compare_digest`; enforce a **timestamp tolerance** against replays.
-- [ ] Store processed **event ids** with a **unique constraint**; acknowledge duplicates with `2xx`.
-- [ ] Apply state changes **forward-only** (or re-fetch state) to survive out-of-order delivery.
-- [ ] Record the event and its effect in **one transaction**; respond **fast**; push slow work to background jobs.
-- [ ] Return `2xx` for ignored/unknown event types; `4xx` for bad signatures/payloads; `5xx` only for genuine failures.
-- [ ] Keep API keys and webhook secrets in environment variables; use separate sandbox and production credentials.
-- [ ] Log event ids and outcomes (never full card or personal data); monitor webhook failure rates.
-
-## 🏭 How it's used in industry
-
-- Payment integrations (Midtrans, Xendit, Stripe) are **built** on signed webhooks and idempotency — interviewers at fintech and e-commerce companies ask about both.
-- Platforms like GitHub, Slack and Shopify use signed webhooks; many companies also *send* webhooks to their own customers.
-- AI features call LLM providers with exactly the outbound rules above: timeouts, retries on 429/5xx, fallbacks (Module 7).
 
 ## ⚠️ Common mistakes
 
@@ -225,6 +223,18 @@ Return codes: `2xx` = processed or intentionally ignored (unknown event types to
 :::revoshop
 Your RevoShop has a real Midtrans integration: `app/integrations/midtrans.py`, `app/services/payment_service.py`, `app/routes/payments.py`, plus `docs/payment-testing-guide.md`. Trace one notification: (1) Where is Midtrans' `signature_key` verified, and is the comparison constant-time? (2) What happens if the **same** notification arrives twice — is there a unique event/transaction record? (3) If `settlement` arrives and then a delayed `pending`, can the order go backwards? (4) Do outbound calls to Midtrans have **timeouts**? (5) Does the webhook do slow work before responding? Write down each answer with the file and line number — this is exactly what a fintech interviewer will ask about your project.
 :::
+
+## 🏆 Best practices
+
+- [ ] **Outbound:** explicit connect/read **timeouts**, **retries only for transient errors** with **exponential backoff + jitter**, a max attempt count, and **idempotency keys** on writes.
+- [ ] Wrap each provider in an **adapter** with your own interface; inject it; fake it in tests.
+- [ ] **Inbound:** verify **signatures** on the **raw body** with `hmac.compare_digest`; enforce a **timestamp tolerance** against replays.
+- [ ] Store processed **event ids** with a **unique constraint**; acknowledge duplicates with `2xx`.
+- [ ] Apply state changes **forward-only** (or re-fetch state) to survive out-of-order delivery.
+- [ ] Record the event and its effect in **one transaction**; respond **fast**; push slow work to background jobs.
+- [ ] Return `2xx` for ignored/unknown event types; `4xx` for bad signatures/payloads; `5xx` only for genuine failures.
+- [ ] Keep API keys and webhook secrets in environment variables; use separate sandbox and production credentials.
+- [ ] Log event ids and outcomes (never full card or personal data); monitor webhook failure rates.
 
 ::part[Explain & Design]{n="2"}
 
@@ -296,16 +306,6 @@ How do you handle a duplicate webhook delivery?
 Detect it by the provider's event id (unique constraint), skip reprocessing, and still return `2xx` so the provider stops retrying.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Webhook | Notifikasi HTTP otomatis dari layanan lain |
-| Signature (HMAC) | Tanda tangan digital untuk memastikan keaslian pesan |
-| Replay attack | Serangan mengirim ulang permintaan lama yang valid |
-| At-least-once delivery | Pengiriman minimal sekali (bisa duplikat) |
-| Exponential backoff | Jeda percobaan ulang yang makin panjang |
-| Adapter | Pembungkus layanan eksternal dengan antarmuka sendiri |
 
 ## 📚 Keep learning
 

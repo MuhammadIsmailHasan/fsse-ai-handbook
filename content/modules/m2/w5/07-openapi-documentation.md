@@ -19,24 +19,40 @@ lastReviewed: 2026-09
 - Describing **security** (Bearer JWT), **errors** and **examples**
 - Keeping docs honest: testing the spec in CI
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **OpenAPI** | A standard file describing every endpoint of an API | Standar deskripsi API |
+| **Spec** | That file itself (JSON or YAML) | Berkas deskripsi |
+| **Swagger UI** | A web page that reads the spec so people can try the API | Halaman coba API |
+| **Code-first** | The spec is generated from your code and schemas | Spesifikasi dari kode |
+| **Design-first** | The spec is written first, then the code follows | Spesifikasi dulu, kode menyusul |
+| **flask-smorest** | The Flask library that produces the spec from your routes and schemas | Pustaka penghasil spesifikasi |
+| **Tag** | A group of endpoints in the docs (jobs, auth) | Pengelompokan endpoint |
+| **Security scheme** | How the docs describe authentication (Bearer JWT) | Cara autentikasi didokumentasikan |
+| **Contract** | The agreement between backend and clients about requests and responses | Kesepakatan API |
+
 ## 🧠 The big idea
 
-:term[OpenAPI]{bahasa="OpenAPI — standar format (JSON/YAML) untuk mendeskripsikan endpoint, parameter, dan respons sebuah API"} is a **machine-readable menu** for your API: every dish (endpoint), its ingredients (parameters and body), what arrives at the table (responses), and allergy warnings (errors, auth). Humans read it through tools like **Swagger UI**; machines use it to generate client code, mock servers and tests.
+:term[OpenAPI]{bahasa="OpenAPI — standar format (JSON/YAML) untuk mendeskripsikan endpoint, parameter, dan respons sebuah API"} is a **machine-readable menu** for your API: every dish (endpoint), its ingredients (parameters and body), what arrives at the table (responses), and the allergy warnings (errors, authentication).
 
-The best menu is printed **from the kitchen's actual recipes** — so it can't list dishes the kitchen no longer makes. That's code-first documentation.
+People read it through tools like **Swagger UI**; machines use it to generate client code, mock servers and tests.
 
-## ❓ Why does this exist?
+The best menu is printed **from the kitchen's actual recipes**, so it can't advertise dishes the kitchen no longer makes. That's code-first documentation.
 
-Frontend, mobile and partner teams need to know exactly how to call your API. Hand-written docs in a wiki go stale within weeks. A spec generated from the same schemas that validate requests stays correct, and tools can use it automatically.
+## ❓ Why it matters
 
-## 💥 What happens if we DON'T document (or document by hand)?
+Frontend, mobile and partner teams need to know exactly how to call your API. Hand-written docs in a wiki go stale within weeks. A spec generated from the same schemas that already validate your requests stays true, and tools can use it automatically.
+
+Without it (or with hand-written docs):
 
 - The README says `POST /jobs` takes `name`; the code expects `title` → hours of frontend debugging.
 - Nobody knows which errors an endpoint returns, so clients show "Something went wrong" for everything.
-- New teammates read controller code to discover parameters.
-- Recruiters opening your portfolio API find no way to try it.
+- New teammates read controller code to discover the parameters.
+- A recruiter opening your portfolio API has no way to try it.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. The spec's main parts
 
@@ -90,6 +106,8 @@ api.spec.components.security_scheme("BearerAuth", {"type": "http", "scheme": "be
 Open `http://localhost:5091/docs/swagger-ui` to try endpoints in the browser.
 
 ### 4. Documenting endpoints with the schemas you already have
+
+This is the payoff of lesson 03: the schema that validates the request also describes it in the docs, so the two can never disagree.
 
 ```python
 from flask.views import MethodView
@@ -149,6 +167,8 @@ def validation_error(error):
 
 ### 7. Test the spec
 
+A test that fails when the spec breaks turns documentation into something the pipeline protects, instead of something people remember to update.
+
 ```python
 def test_openapi_spec(client):
     spec = client.get("/docs/openapi.json").get_json()
@@ -170,7 +190,9 @@ Also run a **spec linter** (e.g. Spectral, Redocly) in CI, and consider **contra
 | Import into API clients | Postman, Bruno, Insomnia |
 | AI tools | agents and LLM "tool" definitions can be generated from OpenAPI (Module 7) |
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -180,30 +202,10 @@ Also run a **spec linter** (e.g. Spectral, Redocly) in CI, and consider **contra
 | Public Swagger UI in production | easy exploration | exposes attack surface — protect or disable for internal APIs |
 | Rich examples | faster onboarding | must be kept realistic |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Every HTTP API that has more than one consumer (including "future you" and your frontend).
 - ✅ Add docstrings, examples, error responses and security to every endpoint.
 - 🚫 Don't expose internal admin endpoints' docs publicly.
 - 🚫 Don't document fields or errors that the code doesn't actually return.
-
-## 🏆 Best practices
-
-- [ ] Generate the spec from the **same schemas** that validate and serialize (code-first) — or enforce design-first with contract tests.
-- [ ] Every operation: **summary**, **description**, **tags**, request schema, success **and** error responses.
-- [ ] Add **descriptions and examples** to schema fields.
-- [ ] Declare **security schemes** and mark protected operations.
-- [ ] Keep one **error schema** and document it on every endpoint that can fail.
-- [ ] **Test the spec** in CI (structure tests, a linter, optionally contract tests).
-- [ ] Version the API (`/api/v1`) and publish a changelog for breaking changes.
-- [ ] Protect or disable Swagger UI in production for non-public APIs.
-- [ ] Generate typed clients from the spec for your frontend.
-
-## 🏭 How it's used in industry
-
-- Most companies publish OpenAPI specs for internal and public APIs; API gateways (AWS API Gateway, Kong) can import them.
-- Frontend teams generate TypeScript types from the spec so API changes surface as compile errors.
-- Portfolio tip: a live Swagger UI link in your README lets recruiters try your backend in seconds.
 
 ## ⚠️ Common mistakes
 
@@ -216,6 +218,18 @@ Also run a **spec linter** (e.g. Spectral, Redocly) in CI, and consider **contra
 :::revoshop
 RevoShop already serves docs: `config/base.py` sets `OPENAPI_URL_PREFIX = '/docs'` and Swagger UI, and `create_app()` adds a `BearerAuth` security scheme with the description *"Paste the access_token returned by /api/v1/auth/login"*. Run the app and open `/docs/swagger-ui`: (1) Do **all** endpoints show their error responses (`404`, `409`, `422`), or only success? (2) Do protected endpoints show the lock icon? (3) Do schemas have field descriptions and examples? (4) Does the documented error format match what your `app/errors.py` actually returns? Pick the three weakest endpoints and improve their docs — then add a test that checks the spec.
 :::
+
+## 🏆 Best practices
+
+- [ ] Generate the spec from the **same schemas** that validate and serialize (code-first) — or enforce design-first with contract tests.
+- [ ] Every operation: **summary**, **description**, **tags**, request schema, success **and** error responses.
+- [ ] Add **descriptions and examples** to schema fields.
+- [ ] Declare **security schemes** and mark protected operations.
+- [ ] Keep one **error schema** and document it on every endpoint that can fail.
+- [ ] **Test the spec** in CI (structure tests, a linter, optionally contract tests).
+- [ ] Version the API (`/api/v1`) and publish a changelog for breaking changes.
+- [ ] Protect or disable Swagger UI in production for non-public APIs.
+- [ ] Generate typed clients from the spec for your frontend.
 
 ::part[Explain & Design]{n="2"}
 
@@ -280,16 +294,6 @@ Name three things an OpenAPI spec enables besides human-readable docs.
 Typed client generation, mock servers, contract/fuzz testing, importing into API clients or gateways, and generating AI tool definitions.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| OpenAPI specification | Spesifikasi standar deskripsi API |
-| Swagger UI | Halaman dokumentasi API interaktif |
-| Code-first / Design-first | Dokumen dari kode / Desain kontrak dulu |
-| Security scheme | Skema autentikasi yang didokumentasikan |
-| Contract test | Tes kesesuaian API dengan kontraknya |
-| Client generation | Pembuatan kode klien otomatis dari spesifikasi |
 
 ## 📚 Keep learning
 

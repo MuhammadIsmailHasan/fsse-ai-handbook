@@ -21,35 +21,52 @@ lastReviewed: 2026-09
 - Implementing it with **Flask-JWT-Extended**, with JSON errors for missing, expired, invalid and revoked tokens
 - JWTs vs **server-side sessions**, and where tokens should live in a browser
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Authentication** | Proving who you are | Membuktikan identitas |
+| **Authorization** | Deciding what you're allowed to do | Menentukan hak akses |
+| **Hashing** | Turning a password into a one-way fingerprint | Mengubah jadi sidik satu arah |
+| **Salt** | Random extra text so identical passwords hash differently | Tambahan acak pada hash |
+| **JWT** | A signed token carrying facts about the user | Token bertanda tangan |
+| **Claim** | One fact inside the token (`sub`, `exp`) | Isi keterangan token |
+| **Access token** | Short-lived proof used on each request | Token akses berumur pendek |
+| **Refresh token** | Longer-lived token used only to get a new access token | Token untuk memperbarui |
+| **Expiry (`exp`)** | The time after which the token stops working | Waktu kedaluwarsa |
+| **Revocation / denylist** | Making a token stop working before it expires (logout) | Mencabut token |
+
 ## 🧠 The big idea
 
 Logging in is like checking into a **hotel**:
 
 1. At reception you prove who you are (email + password) — **authentication**.
-2. You receive a **key card** (a token) with an expiry date. You don't show your ID at every door; the door just checks the card is genuine and not expired.
-3. The card only opens **certain doors** (your room, the gym) — **authorization** (next lesson).
+2. You get a **key card** (a token) with an expiry date. You don't show your ID at every door; the door just checks the card is genuine and still valid.
+3. The card opens only **certain doors** — your room, the gym — which is **authorization** (next lesson).
 4. If you lose the card, reception can **deactivate** it — **revocation**.
 
-A :term[JWT]{bahasa="JSON Web Token — token berisi klaim (mis. id pengguna) yang ditandatangani server agar tidak bisa dipalsukan"} is a key card the server can verify **without looking anything up**: it's signed with a secret only the server knows.
+A :term[JWT]{bahasa="JSON Web Token — token berisi klaim (mis. id pengguna) yang ditandatangani server agar tidak bisa dipalsukan"} is a key card the server can check **without looking anything up**, because it's signed with a secret only the server knows.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-HTTP is stateless (Module 1): every request must prove who's making it. Sending the password with every request would be dangerous and slow (password hashing is deliberately slow). Instead, you log in once and receive a token that proves your identity for a limited time.
+HTTP has no memory (Module 1): every request must prove who is making it. Sending the password every time would be dangerous and slow — password hashing is deliberately slow. So you log in once and receive a token that proves your identity for a limited time.
 
-## 💥 What happens if we DON'T do it properly?
+Done wrong, this is exactly how accounts get taken over:
 
 | Mistake | Consequence |
 |---|---|
-| Passwords stored in plaintext or with fast hashes (MD5/SHA-256) | one database leak = every account (and every other site where users reused the password) |
-| `JWT_SECRET_KEY = "secret"` or a default left in config | anyone can forge a token for any user, including admins |
-| Access tokens valid for 30 days | a stolen token works for a month; logout means nothing |
-| Different errors for "unknown email" vs "wrong password" | attackers discover which emails are registered |
-| No rate limiting on login | password guessing at thousands of attempts per minute |
-| Sensitive data in the JWT payload | anyone holding the token can read it (it's only base64) |
+| Passwords stored as plain text or with fast hashes (MD5/SHA-256) | one database leak = every account, and every other site where users reused that password |
+| `JWT_SECRET_KEY = "secret"` or a leftover default | anyone can forge a token for any user, including admins |
+| Access tokens valid for 30 days | a stolen token works for a month, and logout means nothing |
+| Different errors for "unknown email" and "wrong password" | attackers learn which emails are registered |
+| No rate limit on login | password guessing at thousands of tries per minute |
+| Sensitive data inside the token | anyone holding it can read it — a JWT is only signed, not hidden |
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Password hashing
+
+A hash is a **one-way fingerprint**: you can check a password against it, but you can't turn it back into the password. Slow, salted algorithms (bcrypt, argon2) make mass guessing impractical.
 
 ```python
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -89,6 +106,8 @@ Anyone can decode the payload (try jwt.io). The signature only proves **it wasn'
 :::
 
 ### 3. Access + refresh tokens
+
+Short access token, longer refresh token: like a key card that expires every 15 minutes, plus the right to ask reception for a new one without showing your passport again.
 
 ```mermaid
 sequenceDiagram
@@ -226,7 +245,9 @@ Then use `current_user` in routes.
 
 In **browsers**, storing tokens in `localStorage` exposes them to any XSS bug. Safer: an **httpOnly, Secure, SameSite** cookie (plus CSRF protection), or keep the access token in memory and the refresh token in an httpOnly cookie. Mobile apps use the platform's secure storage. (Module 4 covers the frontend side.)
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -237,12 +258,23 @@ In **browsers**, storing tokens in `localStorage` exposes them to any XSS bug. S
 | Role inside the token | no DB lookup for role checks | role changes apply only after the token expires |
 | Build auth yourself | full control, great learning | easy to get wrong — in production consider proven providers (Auth0, Cognito, Clerk, Supabase Auth, Keycloak) |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ JWT access + refresh tokens for APIs consumed by SPAs, mobile apps or other services.
 - ✅ Server-side sessions for traditional server-rendered apps.
 - 🚫 Don't put permissions that must change instantly **only** in the token.
 - 🚫 Don't invent your own token format or crypto.
+
+## ⚠️ Common mistakes
+
+- Default or weak JWT secret in config.
+- Access tokens that never (or rarely) expire.
+- Returning `password_hash` in user responses.
+- Accepting refresh tokens on normal endpoints.
+- Revealing whether an email exists.
+- Forgetting that deleted users' tokens still verify cryptographically.
+
+:::revoshop
+Open `config/base.py` in RevoShop: access tokens expire after `JWT_ACCESS_TOKEN_EXPIRES` hours (default 1) and refresh tokens after 30 days; `JWT_SECRET_KEY` falls back to `'super-secret-key-change-in-production'`. Then open `app/routes/auth.py`, `app/services/auth_service.py` and `app/auth.py`. Answer: (1) Which hashing library is used (`bcrypt` is in `requirements.txt`)? (2) Is the login error identical for unknown email and wrong password? (3) Is there a refresh endpoint, and can a refresh token be used on normal routes? (4) Is there **logout/revocation**? (5) What happens to a token of a user that was soft-deleted (`is_active = False`)? Fix at least the secret-key fallback in a branch.
+:::
 
 ## 🏆 Best practices
 
@@ -257,25 +289,6 @@ In **browsers**, storing tokens in `localStorage` exposes them to any XSS bug. S
 - [ ] Revoke on logout (denylist with expiry) and **reject tokens of deleted/disabled users**.
 - [ ] Always use **HTTPS**; in browsers prefer httpOnly Secure cookies over `localStorage`.
 - [ ] Consider MFA and a managed identity provider for production systems with sensitive data.
-
-## 🏭 How it's used in industry
-
-- Most APIs you'll integrate with use Bearer tokens (often OAuth 2.0 / OpenID Connect issued by an identity provider).
-- Security incidents frequently start with credential stuffing (reused passwords) → rate limiting, MFA and breach checks matter.
-- Interviewers ask: "How do you log out with JWT?", "Where do you store tokens in the browser?", "Why hash instead of encrypt passwords?"
-
-## ⚠️ Common mistakes
-
-- Default or weak JWT secret in config.
-- Access tokens that never (or rarely) expire.
-- Returning `password_hash` in user responses.
-- Accepting refresh tokens on normal endpoints.
-- Revealing whether an email exists.
-- Forgetting that deleted users' tokens still verify cryptographically.
-
-:::revoshop
-Open `config/base.py` in RevoShop: access tokens expire after `JWT_ACCESS_TOKEN_EXPIRES` hours (default 1) and refresh tokens after 30 days; `JWT_SECRET_KEY` falls back to `'super-secret-key-change-in-production'`. Then open `app/routes/auth.py`, `app/services/auth_service.py` and `app/auth.py`. Answer: (1) Which hashing library is used (`bcrypt` is in `requirements.txt`)? (2) Is the login error identical for unknown email and wrong password? (3) Is there a refresh endpoint, and can a refresh token be used on normal routes? (4) Is there **logout/revocation**? (5) What happens to a token of a user that was soft-deleted (`is_active = False`)? Fix at least the secret-key fallback in a branch.
-:::
 
 ::part[Explain & Design]{n="2"}
 
@@ -350,16 +363,6 @@ How do you "log out" a JWT that hasn't expired yet?
 Store its `jti` in a denylist (database or Redis, until its expiry) and reject tokens found there on every request — or keep access tokens very short and revoke the refresh token.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Authentication | Autentikasi — membuktikan identitas |
-| Authorization | Otorisasi — izin melakukan sesuatu |
-| Hash | Sidik jari satu arah dari data |
-| Salt | Nilai acak tambahan agar hash unik |
-| Access / Refresh token | Token akses (singkat) / Token pembaru (lebih lama) |
-| Revocation | Pencabutan token |
 
 ## 📚 Keep learning
 
