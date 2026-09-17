@@ -1,6 +1,6 @@
 ---
 title: "🚀 Ship RevoShop 1: Production-Ready Containers"
-summary: Apply Week 1 to your real RevoShop — audit the Dockerfile, add build targets and a gunicorn config, fail-fast production settings, a Compose stack with Caddy, one-off migrations and Redis, a login rate limiter, and smoke tests.
+summary: Apply Week 1 to your real RevoShop — audit the Dockerfile, add build targets and a gunicorn config, settings that refuse to start when unsafe, a Compose stack with Caddy, one-off migrations, Redis, a login rate limiter, and smoke tests.
 type: project
 source: original
 roles: { be: core, fe: optional, fs: core, ai: recommended, ops: core }
@@ -10,7 +10,7 @@ tags: [revoshop, docker, compose, redis, caddy, deployment, project]
 
 ## 🎯 Goal
 
-At the end of Module 5, RevoShop will run on AWS with HTTPS, CI/CD and infrastructure as code. This first lab makes it **ready to be deployed anywhere**: a small, safe image, settings that refuse to start when misconfigured, a production-like stack you can run with one command, and tests that tell you in seconds whether a deployment works.
+At the end of Module 5, RevoShop will run on AWS with HTTPS, CI/CD and infrastructure as code. This first lab makes it **ready to deploy anywhere**: a small, safe image, settings that refuse to start when something important is missing, a production-like stack you can start with one command, and tests that tell you in seconds whether a deployment works.
 
 ```text
 Before                                         After this lab
@@ -24,8 +24,21 @@ no rate limiting on /auth/login                Redis sliding-window limit → 42
 "it seems to work"                             smoke tests against the running stack
 ```
 
+## 🔤 Key words
+
+| Word | In simple words |
+|---|---|
+| **Fail fast** | The app stops immediately at startup if a setting is missing or unsafe, instead of failing later in front of users |
+| **Exec form `CMD`** | `CMD ["gunicorn", …]` — no shell in between, so gunicorn itself receives the "please stop" signal |
+| **Non-root image** | The program inside the container runs as a normal user, not as administrator |
+| **One-off job** | A container that runs a task once (here: database migrations) and then exits |
+| **Reverse proxy** | The front door (Caddy) that receives all web traffic and passes it to the API |
+| **Liveness vs readiness** | "Is the process alive?" (restart it if not) vs "can it serve users now?" (send traffic or not) |
+| **Sliding window limit** | Counting attempts in the last N minutes, so 5 tries per 15 minutes really means 5 |
+| **Smoke test** | A handful of quick checks that prove a deployment basically works |
+
 :::warning[Work in your own copy of RevoShop]
-Your RevoShop repository lives in the **the bootcamp organization**, where you may not be able to add GitHub Actions secrets or deploy keys (needed next week). Create a **personal** repository and push a copy there — keep the the bootcamp remote untouched. Check your program's rules before making the copy **public**; a private repo works for everything in Module 5.
+Your RevoShop repository lives in the **the bootcamp organization**, where you may not be able to add GitHub Actions secrets or deploy keys (needed next week). Create a **personal** repository and push a copy there — leave the the bootcamp remote untouched. Check your program's rules before making the copy **public**; a private repo works for everything in Module 5.
 :::
 
 ## 🗺️ Where this fits
@@ -54,7 +67,7 @@ git push personal --tags
 git switch -c deploy/production-containers
 ```
 
-Never commit `.env` or `.env.docker` — check `git check-ignore -v .env .env.docker` prints both.
+Never commit `.env` or `.env.docker` — check that `git check-ignore -v .env .env.docker` prints both.
 
 ### C1 · Audit what you have (30 min)
 
@@ -65,20 +78,20 @@ cd ~/Documents/LEARNING/Programming/Fullstack-Flask-React/fsse-handbook/exercise
 uv run python m5/w1/01-dockerfile-audit/dockerfile_audit.py ~/path/to/revoshop/Dockerfile
 ```
 
-It reports the **shell-form `CMD`** and the missing **`HEALTHCHECK`**. The linter can't see the runtime problems — write them down in a `docs/deployment-audit.md` in your own words:
+It reports the **shell-form `CMD`** and the missing **`HEALTHCHECK`**. A linter can only see the file, not how the app behaves when it runs — like a building inspector who reads the plans but never turns on the water. So write the runtime problems down yourself, in `docs/deployment-audit.md`:
 
 | # | Finding in RevoShop | Why it matters in production |
 |---|---|---|
-| 1 | `CMD gunicorn …` (shell form) after an `ENTRYPOINT` script | a shell sits between Docker and gunicorn; `docker stop` can end in SIGKILL (exit 137) instead of a graceful shutdown |
-| 2 | `docker/entrypoint.sh` runs `flask db upgrade` on **every** start | two replicas migrate at the same time; slow restarts; a failed migration crash-loops the API |
-| 3 | `netcat` wait loop installed via apt | health-ordered startup belongs to Compose/ECS; an extra package in the image |
-| 4 | single stage copies the whole repo (`COPY . .`) | no separation of test tools and runtime; bigger attack surface |
-| 5 | `config/base.py` falls back to `JWT_SECRET_KEY='super-secret-key-change-in-production'` | a forgotten variable silently makes every token forgeable |
-| 6 | `LOG_TO_FILE` defaults to `true` | logs vanish with the container; read-only filesystems break |
-| 7 | `create_app()` reads `FLASK_ENV` | Flask no longer gives `FLASK_ENV` a meaning; an unknown value raises `KeyError` |
+| 1 | `CMD gunicorn …` (shell form) after an `ENTRYPOINT` script | a shell sits between Docker and gunicorn; `docker stop` can end in SIGKILL (exit 137) instead of a clean shutdown |
+| 2 | `docker/entrypoint.sh` runs `flask db upgrade` on **every** start | two copies migrate at the same time; slow restarts; a failed migration restarts forever |
+| 3 | `netcat` wait loop installed with apt | waiting for the database is Compose/ECS's job; this is one more package in the image |
+| 4 | single stage copies the whole repo (`COPY . .`) | test tools ship to production; bigger attack surface |
+| 5 | `config/base.py` falls back to `JWT_SECRET_KEY='super-secret-key-change-in-production'` | one forgotten variable silently makes every token forgeable |
+| 6 | `LOG_TO_FILE` defaults to `true` | logs disappear with the container; a read-only filesystem breaks |
+| 7 | `create_app()` reads `FLASK_ENV` | Flask no longer gives `FLASK_ENV` any meaning; an unknown value raises `KeyError` |
 | 8 | `docker-compose.prod.yml` publishes `8000` straight from gunicorn, no proxy | no TLS, no compression, no security headers; gunicorn exposed to the internet |
-| 9 | fixed `container_name`s | can't scale or run two stacks side by side |
-| 10 | `/api/v1/health` checks the database | good for **readiness**; as a **liveness** check, a DB blip restarts healthy API containers |
+| 9 | fixed `container_name`s | can't scale, and two stacks can't run side by side |
+| 10 | `/api/v1/health` queries the database | good for **readiness**; as a **liveness** check, one database hiccup restarts healthy API containers |
 | 11 | `/auth/login` has no rate limit | password guessing at full speed |
 
 ### C2 · Image with targets and a gunicorn config (1 h)
@@ -165,9 +178,9 @@ HEALTHCHECK --interval=15s --timeout=3s --start-period=15s --retries=3 \
 CMD ["gunicorn", "-c", "gunicorn.conf.py", "run:application"]
 ```
 
-- `prod` copies **only** what runs (`app`, `config`, `migrations`, `run.py`, `gunicorn.conf.py`) — tests, Locust files and docs never reach production, so you can stop excluding `tests/` in `.dockerignore` (the `test` target needs them).
-- Delete `docker/entrypoint.sh` from the production path (keep it for the old dev compose until you replace that too).
-- Your full test suite is slow inside Docker (bcrypt hashing on an emulated/limited VM). Next week CI runs it directly with a real PostgreSQL; the `test` target stays available for local checks.
+- `prod` copies **only** what runs (`app`, `config`, `migrations`, `run.py`, `gunicorn.conf.py`) — tests, Locust files and docs never reach production. So you can stop excluding `tests/` in `.dockerignore` (the `test` target needs them).
+- Take `docker/entrypoint.sh` out of the production path (keep it for the old dev compose until you replace that too).
+- Your full test suite is slow inside Docker (bcrypt hashing on a limited VM). Next week CI runs it directly against a real PostgreSQL; the `test` target stays available for local checks.
 
 **`.dockerignore`** — keep secrets and junk out, but allow `tests/` and `requirements-dev.txt` for the test target:
 
@@ -196,11 +209,13 @@ postman/
 docs/
 ```
 
-Check: `docker build -t revoshop-api:local .` then run the auditor on the new Dockerfile — zero errors.
+Check: `docker build -t revoshop-api:local .`, then run the auditor on the new Dockerfile — zero errors.
 
 ### C3 · Fail-fast settings, stdout logs, a liveness endpoint (45 min)
 
-**`app/__init__.py`** — choose the environment explicitly and validate it:
+A pilot checks fuel and instruments **before** take-off, not in the air. Your app should do the same with its settings.
+
+**`app/__init__.py`** — choose the environment on purpose and check it:
 
 ```python
 def create_app(config_name=None):
@@ -252,7 +267,7 @@ class ProductionConfig(BaseConfig):
             raise RuntimeError('Invalid production configuration: ' + '; '.join(problems))
 ```
 
-**`app/routes/health.py`** — add liveness next to the existing readiness check:
+**`app/routes/health.py`** — add liveness next to the readiness check you already have:
 
 ```python
 @health_blp.route('/live')
@@ -263,7 +278,7 @@ class Liveness(MethodView):
         return make_response('alive')
 ```
 
-Write two tests: production config raises without a strong `JWT_SECRET_KEY`; `/api/v1/health/live` returns 200 even when the database is down (hint: point `DATABASE_URL` at a closed port).
+Liveness is checking a pulse; readiness is checking that the staff member is at their station. Write two tests: production config raises without a strong `JWT_SECRET_KEY`; `/api/v1/health/live` returns 200 even when the database is down (hint: point `DATABASE_URL` at a closed port).
 
 ### C4 · The production-like stack (1.5 h)
 
@@ -393,7 +408,7 @@ volumes:
   caddy_data:
 ```
 
-**`.env.production.example`** (commit this; `.env.production` stays ignored — `.env.*` already is):
+**`.env.production.example`** (commit this one; `.env.production` stays ignored — `.env.*` already is):
 
 ```text
 # Copy to .env.production (never commit it). Generate secrets with: openssl rand -hex 32
@@ -423,17 +438,18 @@ Stop your old `revoshop-db` / `revoshop-web` containers first if they use the sa
 
 ### C5 · Rate-limit login with Redis (1.5 h) — 🚫🤖 core logic by you
 
-Using what you built in exercise 04, add `app/rate_limit.py` with a function:
+Like an ATM that blocks the card after a few wrong PINs. Using what you built in exercise 04, add `app/rate_limit.py` with a function:
 
 ```python
 def allow(identity: str, *, limit: int, window_seconds: int) -> tuple[bool, int]:
     """Return (allowed, retry_after_seconds). Fails open when Redis is not configured or unavailable."""
 ```
 
-and use it at the top of `AuthLogin.post` in `app/routes/auth.py`:
+and call it at the top of `AuthLogin.post` in `app/routes/auth.py`:
+
 - **5 attempts / 15 minutes per email** (lower-cased) **and 20 / 15 minutes per client IP**
 - over the limit → `429` with the usual RevoShop JSON body and a `Retry-After` header
-- no `REDIS_URL` (your test suite) or Redis unreachable → allow, and log a warning
+- no `REDIS_URL` (your test suite) or Redis unreachable → allow the request, and log a warning
 - behind Caddy, the client IP is the first address in `X-Forwarded-For`
 
 Then write tests for it (mock `allow`, or use the exercise Redis on port 6391 with `REDIS_URL=redis://localhost:6391/15`).
@@ -498,7 +514,7 @@ for identity, limit in ((f"login:email:{email}", 5), (f"login:ip:{ip}", 20)):
         return body
 ```
 
-Add `redis==8.1.0` (or the current version) to `requirements.txt`. Trusting `X-Forwarded-For` is only safe because the API is reachable **only** through Caddy on the internal network.
+Add `redis==8.1.0` (or the current version) to `requirements.txt`. Trusting `X-Forwarded-For` is only safe because the API can be reached **only** through Caddy on the internal network.
 :::
 
 Verify:
@@ -511,12 +527,14 @@ for i in 1 2 3 4 5 6; do curl -s -o /dev/null -w "%{http_code} " -X POST http://
 
 ### C6 · Prove it works (45 min)
 
+Smoke tests are the plumber turning on every tap before leaving the house.
+
 ```bash
 cd ~/Documents/LEARNING/Programming/Fullstack-Flask-React/fsse-handbook/exercises
 REVOSHOP_URL=http://localhost:8080 uv run pytest m5/w1/05-revoshop-smoke -v
 ```
 
-Then check the production behaviors by hand and note the results in `docs/deployment-audit.md`:
+Then check the production behaviour by hand and note the results in `docs/deployment-audit.md`:
 
 ```bash
 docker compose --env-file .env.production -f compose.prod.yaml exec api id                    # uid=10001(app)
@@ -546,7 +564,7 @@ Optional: run your Locust scenario against `http://localhost:8080` and compare p
 
 ## 🧠 AI policy
 
-🤖✅ AI may help with Compose/Caddy syntax and README wording. 🚫🤖 Write the rate limiter wiring and tests yourself, and be able to defend every production setting — the *Defend Your RevoShop* questions now include deployment.
+🤖✅ AI may help with Compose/Caddy syntax and README wording. 🚫🤖 Write the rate limiter wiring and tests yourself, and be ready to defend every production setting — the *Defend Your RevoShop* questions now include deployment.
 
 ## ❓ Questions an interviewer might ask
 
