@@ -19,6 +19,19 @@ tags: [algorithms, searching, binary-search, sets]
 - When to skip searching entirely with a `set` or `dict` **index**
 - Python's `in`, `.index()`, `next()` and `bisect`
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Linear search** | Check items one by one from the start | Cari satu per satu |
+| **Binary search** | Halve a sorted list each step | Cari dengan membelah dua |
+| **Sorted** | In order — the requirement for binary search | Terurut |
+| **Search by condition** | Find the first item matching a rule | Cari berdasarkan syarat |
+| **`in`** | Python's "is this present?" check | Pengecekan keberadaan |
+| **`next()`** | Get the first match from a generator, or a default | Ambil yang pertama cocok |
+| **`bisect`** | Python's built-in binary search | Pencari biner bawaan |
+| **Index (data structure)** | A dict or set built once so lookups are instant | Struktur untuk pencarian cepat |
+
 ## 🧠 The big idea
 
 Two ways to find the word *"kucing"* in a paper dictionary:
@@ -28,25 +41,15 @@ Two ways to find the word *"kucing"* in a paper dictionary:
 
 The second works only because the dictionary is **sorted**. That single fact turns a 1,000-page search into about **10 page flips**.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Every app searches constantly: log in (find the user by email), open a product (find by id), check a coupon (find the code). Data grows from 10 rows in development to millions in production. A search that feels instant on your laptop can freeze a real system.
+Searching is the most common operation in any program: find the user with this email, the order with this id, the first job over Rp 10 juta.
 
-## 💥 What happens if we DON'T think about it?
+How you search decides whether a feature stays fast as the data grows. With 100 items, everything feels instant; with 100,000 inside a loop, a linear search is the difference between a page that loads and a page that times out.
 
-```python
-def find_user(users, email):
-    for user in users:              # 1,000,000 users
-        if user["email"] == email:
-            return user
-    return None
+And the fastest search is often no search at all: build a dictionary once, then every later lookup is a single step — the reason databases have indexes at all.
 
-# Called once per incoming request… 500 requests per second…
-```
-
-Worst case: a million comparisons per request, 500 times per second. Your server spends its life scanning a list — and every user waits.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Linear search
 
@@ -79,6 +82,8 @@ job = next((j for j in jobs if j["salary"] >= 10_000_000), None)
 ```
 
 ### 3. Binary search
+
+The cost of sorting is paid once; after that each search throws away half the remaining pages. That trade is why sorted data is so valuable.
 
 Requirement: the list is **sorted**.
 
@@ -131,6 +136,8 @@ bisect.insort(prices, 25)                    # insert while keeping the list sor
 
 ### 5. The best search is no search: build an index
 
+If you'll look things up more than a couple of times, spend one pass building a dict. You're doing by hand exactly what a database index does for you later.
+
 If you search the **same data many times**, spend one pass building a dictionary or set:
 
 ```python
@@ -155,7 +162,9 @@ flowchart TD
     K -- no, by range or order --> S[Keep it sorted + binary search]
 ```
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Approach | Setup cost | Each search | Needs | Good for |
 |---|---|---|---|---|
@@ -163,19 +172,12 @@ flowchart TD
 | Binary | sort once (n log n) | log n | sorted data | ranges, "closest value", huge sorted data |
 | Dict/set index | one pass (n) + memory | ~1 | exact keys | repeated exact lookups |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Linear for small lists (a few hundred) or when you search once.
 - ✅ Binary search when data is sorted and you need ranges or the nearest value.
 - ✅ Dict/set when you look things up by an exact key again and again.
 - 🚫 Don't sort a list just to binary search it **once** — sorting costs more than one linear search.
 - 🚫 Don't binary search unsorted data — it returns wrong answers silently.
 
-## 🏭 How it's used in industry
-
-- Databases use **B-tree indexes** (a binary-search idea spread over disk pages) to find rows among billions.
-- `git bisect` uses binary search over commits to find which change introduced a bug.
-- Caches and sets of "seen ids" prevent processing the same payment or message twice.
 
 ## ⚠️ Common mistakes
 
@@ -262,15 +264,6 @@ When is linear search the better choice?
 For small data, unsorted data you search only once, or when searching by a condition that no index supports.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Linear search | Pencarian linear — cek satu per satu |
-| Binary search | Pencarian biner — bagi dua terus-menerus |
-| Index (data structure) | Indeks — struktur bantu untuk pencarian cepat |
-| Sorted | Terurut |
-| Worst case | Kasus terburuk |
 
 ## 📚 Keep learning
 

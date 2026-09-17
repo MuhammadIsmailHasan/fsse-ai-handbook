@@ -19,34 +19,34 @@ tags: [problem-solving, pseudocode, testing, interviews]
 - What to do when you're **stuck** (and when to ask for help)
 - How this exact process is used in coding interviews
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Process** | A repeatable set of steps that works even on a bad day | Langkah kerja yang bisa diulang |
+| **Edge case** | An unusual input that breaks naive code (empty, zero, huge) | Kasus tepi |
+| **Example** | A concrete input with its expected output | Contoh masukan dan hasil |
+| **Pseudocode** | The plan written in plain words before real code | Rencana dalam bahasa biasa |
+| **Decomposition** | Splitting a big problem into small named pieces | Memecah masalah |
+| **Test** | Checking the result against what you expected | Memeriksa hasil |
+| **Stuck** | Not knowing the next step — normal, and has its own tactics | Buntu |
+| **Review** | Improving the working solution afterwards | Meninjau ulang |
+
 ## 🧠 The big idea
 
 Good developers aren't people who instantly see the answer. They're people with a **process** that works even when they don't.
 
 It's like building furniture: you don't grab a hammer first. You read what you're building, check the parts, follow steps, and check that each part is solid before the next one.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Real tasks don't arrive as neat exercises. They arrive as *"users complain the report is wrong sometimes"* or *"we need a way to schedule interviews"*. Jumping straight into code with a vague idea leads to:
+Interviews and real jobs don't test whether you can recall an answer instantly. They test what you do when you *don't* know it yet: do you ask about the input, write an example, plan before typing, and check your work?
 
-- solving the **wrong** problem,
-- code that works for the happy path and breaks on real data,
-- hours lost rewriting.
+Good developers aren't the ones who instantly see the answer. They're the ones with a process that still works when the problem is unfamiliar — like assembling furniture: read what you're building, check the parts, follow the steps, and make sure each part is solid before the next one.
 
-Interviewers know this. In coding interviews, **how you think** often matters as much as whether the code runs.
+Without a process you get the familiar loop: type something, run it, it fails, change something at random, run again. That can take hours on a problem the process would solve in fifteen minutes.
 
-## 💥 What happens if we DON'T use a process?
-
-> Task: *"Return the second highest salary."*
-
-```python
-def second_highest(salaries):
-    return sorted(salaries)[-2]
-```
-
-Quick! But: what if there's only one salary? (`IndexError`) What if the top two are equal — is the second highest `12` in `[12, 12, 9]`, or `9`? What if the list is empty? Nobody asked, so the code guesses — and a production report is wrong.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ```mermaid
 flowchart LR
@@ -67,6 +67,8 @@ flowchart LR
 > *"Second highest salary" → Input: list of ints, maybe empty. Output: int or None. Question: distinct values? → Assume yes: `[12, 12, 9]` → `9`.*
 
 ### Step 2 · Examples (including edge cases)
+
+Write the boring ones too: empty list, one item, all items the same, a negative number. Most bugs hide in exactly these.
 
 Write input → expected output **before** coding:
 
@@ -117,6 +119,8 @@ def second_highest(salaries: list[int]) -> int | None:
 
 ### Step 5 · Test
 
+Run your examples from step 2. If the code passes the happy case but you never tried the empty list, you don't know yet whether it works.
+
 Turn your Step 2 table into tests — you already wrote them!
 
 ```python
@@ -164,7 +168,9 @@ Talk through the same steps **out loud**:
 
 Silence is the enemy — interviewers can only give you credit for thinking they can hear.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -173,19 +179,11 @@ Silence is the enemy — interviewers can only give you credit for thinking they
 | Lots of upfront planning | Fewer rewrites | Overkill for tiny tasks |
 | Code-first exploration | Good for learning an unknown API | Easy to lose direction |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Use the full process for anything non-trivial, and **always** in interviews.
 - ✅ Scale it down for small tasks: a 30-second mental version still beats none.
 - 🚫 Don't skip examples — they're the cheapest bug-finder that exists.
 - 🚫 Don't optimize before you have a working, tested version (unless the constraints demand it).
 
-## 🏭 How it's used in industry
-
-- Tickets include **acceptance criteria** — that's Step 1 and 2 written down by the team.
-- **Test-driven development (TDD)** writes the tests from Step 5 *before* the code.
-- Design documents are Step 3 for large features.
-- Pull request descriptions are Step 6: what, why, how it was tested.
 
 ## ⚠️ Common mistakes
 
@@ -281,15 +279,6 @@ In an interview, you realize your approach won't work halfway through coding. Wh
 Say it out loud, explain why, go back to planning, and propose an adjusted approach. Recovering with clear reasoning is a positive signal.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Pseudocode | Kode semu — langkah solusi dalam bahasa sederhana |
-| Edge case | Kasus tepi |
-| Assumption | Asumsi |
-| Acceptance criteria | Kriteria penerimaan — syarat fitur dianggap selesai |
-| Time-boxing | Membatasi waktu untuk satu kegiatan |
 
 ## 📚 Keep learning
 

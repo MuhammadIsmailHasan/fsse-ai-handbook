@@ -19,35 +19,32 @@ tags: [algorithms, sorting, lambda, python]
 - Sorting in Python with `sorted()`, `.sort()`, `key=`, `reverse=` and **multi-key** sorts
 - What a **stable** sort is and why it matters for "sort by A, then B"
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Sorting** | Putting items in order | Mengurutkan |
+| **Insertion sort** | Slide each item into place, like sorting cards by hand | Sisip satu per satu |
+| **Merge sort** | Split, sort the halves, then zip them together | Pecah, urutkan, gabungkan |
+| **`sorted()` vs `.sort()`** | Returns a new list / changes the list in place | Hasil baru / ubah langsung |
+| **`key=`** | The function that says what to sort by | Penentu dasar urutan |
+| **`reverse=True`** | Biggest first | Dari besar ke kecil |
+| **Multi-key sort** | Sorting by one field, then another | Urut berdasar beberapa kolom |
+| **Stable sort** | Items with equal keys keep their previous order | Urutan data seri tetap |
+
 ## 🧠 The big idea
 
 Sort a hand of playing cards the way most people do: pick up cards one at a time and **slide each into the right place** among the cards you already hold. That's **insertion sort**.
 
 Now imagine 10,000 cards. Sliding each one past thousands of others takes forever. Faster algorithms **split** the pile, sort the small piles, and **merge** them — like two people each sorting half a deck, then zipping their stacks together.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-- **Humans** need order: newest messages first, cheapest flights first, leaderboard by score.
-- **Algorithms** need order: binary search, finding duplicates by neighbors, merging lists, finding the median.
-- **Reports** need order: "top 10 products", "worst 5 response times".
+Sorting makes data usable: prices from cheapest, applications by date, search results by relevance, leaderboards. It also unlocks other techniques — binary search, grouping duplicates, finding overlaps — because after sorting, related items sit next to each other.
 
-## 💥 What happens if we DON'T understand sorting?
+Knowing what happens inside matters for two reasons. In interviews you'll be asked to explain and compare sorts. In real code, you should almost always use Python's built-in `sorted()` — but you need to know *why* it's O(n log n) and why writing your own nested-loop sort quietly turns a fast page into a slow one.
 
-```python
-jobs.sort(key=lambda job: job["salary"])          # 🐛 ascending: cheapest first
-top_jobs = jobs[:5]                               # "top paying"… are actually the lowest
-```
-
-```python
-names = ["budi", "Ana", "citra"]
-print(sorted(names))   # ['Ana', 'budi', 'citra']  — works here…
-names = ["budi", "Citra", "ana"]
-print(sorted(names))   # ['Citra', 'ana', 'budi']  — uppercase sorts before lowercase! 😬
-```
-
-And a hand-written sort with nested loops is fine for 100 items but takes minutes for 1,000,000.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Insertion sort, by hand
 
@@ -113,6 +110,8 @@ sorted(prices, reverse=True)     # [300, 200, 100]
 
 ### 4. Sorting by a field with `key`
 
+This is the part you'll use daily. `key=lambda job: job["salary"]` reads as "sort by salary" — no custom comparison function needed.
+
 `key` is a function that says **what to compare**:
 
 ```python
@@ -139,6 +138,8 @@ The minus sign flips a number's order. For text you can't write `-"abc"`, so for
 
 ### 6. Stability
 
+Stability is what makes "sort by date, then by city" work: sort by the less important field first, then the more important one, and equal items keep the earlier order.
+
 A sort is :term[stable]{bahasa="stabil — item yang nilainya sama tetap mempertahankan urutan aslinya"} when items that compare equal keep their original relative order. Python's sort is stable, so you can sort in **passes**, from the least important key to the most important:
 
 ```python
@@ -148,7 +149,9 @@ step2 = sorted(step1, key=lambda job: job["salary"], reverse=True) # primary: sa
 
 Equal salaries still appear in the Z→A title order from step 1.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Algorithm | Typical speed | Extra memory | Stable | Notes |
 |---|---|---|---|---|
@@ -163,18 +166,11 @@ Equal salaries still appear in the Z→A title order from step 1.
 | `sorted(x)` | original stays untouched, works on any iterable | uses extra memory |
 | `x.sort()` | in place, no copy | changes data others may be using; returns `None` |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Sort when you need order for **display** or for an algorithm that **requires** it.
 - ✅ If you only need the **top 5** from a million items, `heapq.nlargest(5, items, key=...)` avoids sorting everything.
 - 🚫 Don't sort inside a loop over the same data — sort once, outside.
 - 🚫 Don't sort in Python what the database can sort with `ORDER BY` and an index (Module 2).
 
-## 🏭 How it's used in industry
-
-- APIs accept sort parameters: `GET /jobs?sort=-salary,title` (minus = descending — the same trick as above).
-- Search results are sorted by a **relevance score**; AI retrieval systems (Module 7) sort documents by similarity.
-- Big data tools sort files too large for memory with external merge sort.
 
 ## ⚠️ Common mistakes
 
@@ -260,15 +256,6 @@ What does "stable sort" mean, and how does it help?
 Items that compare equal keep their original order. It lets you sort by the secondary key first and the primary key second, getting a correct multi-key order.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Ascending / Descending | Naik (kecil→besar) / Turun (besar→kecil) |
-| In place | Langsung mengubah data asli |
-| Key function | Fungsi yang menentukan nilai pembanding |
-| Stable sort | Pengurutan stabil |
-| Tie-breaker | Kriteria penentu saat nilainya sama |
 
 ## 📚 Keep learning
 

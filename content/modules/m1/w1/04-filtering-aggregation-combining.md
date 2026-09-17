@@ -19,6 +19,20 @@ tags: [algorithms, comprehensions, grouping, data-processing]
 - **De-duplicate** while keeping order
 - How these map directly to SQL (`WHERE`, `GROUP BY`, `JOIN`) you'll write in Module 2
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Filter** | Keep only the items you want | Menyaring data |
+| **Transform / map** | Reshape each item | Mengubah bentuk data |
+| **Comprehension** | Filtering and transforming in one readable line | Satu baris penyaring dan pengubah |
+| **Aggregate** | Summarise many rows into one number | Meringkas jadi satu nilai |
+| **Group by** | Summarise per category (per city, per status) | Meringkas per kelompok |
+| **Join** | Attach data from another source by a shared id | Menggabungkan sumber data |
+| **`zip`** | Pair up two lists item by item | Memasangkan dua daftar |
+| **De-duplicate** | Remove repeats, keeping the order | Membuang data ganda |
+| **Lookup dict** | A dict built for fast joining | Kamus untuk pencocokan cepat |
+
 ## 🧠 The big idea
 
 Data processing is a kitchen line:
@@ -30,25 +44,13 @@ Data processing is a kitchen line:
 
 Almost every report, dashboard or API response is some combination of these four steps.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-Raw data is too big and too messy to show directly. Users ask **questions**: *How much did we sell per category? Which remote jobs pay over 10 juta? Which customers have orders but no address?* Answering them means filtering, grouping and joining — in Python today, in SQL tomorrow, in data pipelines later.
+Raw data is never the answer. Somebody asks "what's the average salary per city for remote jobs?" and you have a list of 5,000 messy records. The path from one to the other is always the same kitchen line: filter → transform → group → combine.
 
-## 💥 What happens if we DON'T structure it?
+There's a bonus: these four steps are exactly SQL's `WHERE`, `SELECT`, `GROUP BY` and `JOIN`, which you'll meet in Module 2. Doing them in Python first means SQL will feel familiar instead of foreign.
 
-```python
-result = []
-for job in jobs:
-    if job["remote"]:
-        for company in companies:                     # nested scan for every job
-            if company["id"] == job["company_id"]:
-                if job["salary"] > 10_000_000:
-                    result.append(job["title"] + " @ " + company["name"])
-```
-
-It works — but filtering, joining and formatting are tangled together, the nested loop is slow for big data, and changing one rule risks breaking the others.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Comprehensions: filter + transform in one line
 
@@ -87,6 +89,8 @@ all_verified = all(job["verified"] for job in jobs)
 
 ### 3. Group by
 
+The pattern is the counting dictionary again, with a list (or a running total) as the value instead of a number.
+
 The counting pattern from Lesson 01, but collecting **values** instead of counts:
 
 ```python
@@ -120,6 +124,8 @@ report = dict(zip(names, scores))   # {'Ana': 88, 'Budi': 92, 'Citra': 79}
 `zip` stops at the **shortest** list — mismatched lengths are silently truncated. Use `zip(a, b, strict=True)` (Python 3.10+) to get an error instead.
 
 ### 5. Joining records by id
+
+Build a lookup dictionary first, then walk the other list once. Looping inside a loop to match ids is the O(n²) version of the same job.
 
 Build an **index** of one side (Lesson 02!), then look up for each record of the other side:
 
@@ -175,7 +181,9 @@ for email in emails:
 | group by + `sum` | `SELECT city, SUM(amount) FROM sales GROUP BY city` |
 | index + lookup | `SELECT ... FROM jobs LEFT JOIN companies ON ...` |
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -186,18 +194,11 @@ for email in emails:
 | Process in Python | Flexible, easy to test | Slow and memory-hungry for millions of rows |
 | Process in the database | Fast, uses indexes | Needs SQL; logic spread across layers |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Separate steps: `filter → transform → aggregate → format`. Each can be a small pure function.
 - ✅ Decide explicitly what happens with **missing matches** (LEFT vs INNER join behavior).
 - 🚫 Don't load a whole database table into Python just to filter it — use `WHERE`.
 - 🚫 Don't compute an average of an empty list without a guard.
 
-## 🏭 How it's used in industry
-
-- **ETL pipelines** (Extract, Transform, Load) move data between systems with exactly these steps.
-- **pandas** (Python's data library) offers `df[df.remote]`, `groupby`, and `merge` — the same concepts with shorter syntax.
-- API responses often **join** data from several services (user service + order service) — you'll build that with microservices in Module 5.
 
 ## ⚠️ Common mistakes
 
@@ -289,15 +290,6 @@ Why build a dictionary index before joining two lists of records?
 So each lookup is ~1 step instead of scanning the other list for every record (n × m steps).
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Filter | Menyaring data berdasarkan kondisi |
-| Aggregate | Meringkas banyak nilai (total, rata-rata) |
-| Group by | Mengelompokkan berdasarkan nilai tertentu |
-| Join | Menggabungkan dua sumber data berdasarkan kunci |
-| Comprehension | Cara singkat membuat list/dict dari perulangan |
 
 ## 📚 Keep learning
 

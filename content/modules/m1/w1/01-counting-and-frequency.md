@@ -19,6 +19,19 @@ tags: [algorithms, dictionaries, counting, python]
 - Why one loop with a dict beats two nested loops
 - `collections.Counter` — after you can do it by hand
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Dictionary (dict)** | Pairs of key → value, like a word and its meaning | Pasangan kunci dan nilai |
+| **Key / value** | What you look up / what you get back | Yang dicari / yang didapat |
+| **Frequency** | How many times something appears | Jumlah kemunculan |
+| **Tally** | Adding one to a count | Menambah satu hitungan |
+| **`get(key, 0)`** | Read a count, or 0 if the key isn't there yet | Ambil nilai atau 0 |
+| **Tie** | Two items with the same count | Nilai seri |
+| **Duplicate** | A value that appears more than once | Data ganda |
+| **`Counter`** | Python's ready-made counting dictionary | Penghitung siap pakai |
+
 ## 🧠 The big idea
 
 Imagine counting votes on a whiteboard during a class election. For each ballot you find the candidate's name and add a tally mark — adding the name first if it isn't on the board yet. At the end you read the board.
@@ -33,31 +46,15 @@ for name in votes:
 print(tally)   # {'Ana': 3, 'Budi': 2, 'Citra': 1}
 ```
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-"How many of each?" is one of the most common questions in software:
+Counting is behind more real features than any other algorithm: top skills in job listings, most-sold products, duplicate emails, error rates per endpoint, words in a document, votes per candidate.
 
-- Which products sell most? Which errors happen most?
-- Which skills appear most in job listings? *(your CareerPilot CLI!)*
-- Has this username/email already been used? (a count > 1 = a duplicate)
-- Word frequencies are even a first step in how search engines and AI models process text.
+The naive version — for each item, walk the whole list and count matches — is O(n²) and quietly dies on real data. The dictionary version is one pass: touch each item once, add a tally mark.
 
-## 💥 What happens if we DON'T use a dictionary?
+Learning to do it by hand first also means the later shortcuts (`Counter`, SQL's `GROUP BY`, pandas' `value_counts`) are things you understand rather than magic you copy.
 
-A natural first attempt uses nested loops:
-
-```python
-for word in words:
-    count = 0
-    for other in words:       # scans the WHOLE list again for every word
-        if other == word:
-            count += 1
-    print(word, count)        # also prints the same word many times
-```
-
-For 10 words that's 100 comparisons. For 100,000 job listings it's **10 billion** — minutes or hours instead of milliseconds. The dictionary version does **one pass**: 100,000 steps.
-
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Dictionary essentials
 
@@ -77,6 +74,8 @@ for fruit, amount in stock.items():
 Looking up a key in a dict is **fast no matter how big the dict is** — Python jumps straight to it instead of scanning. That's the secret behind everything in this lesson.
 
 ### 2. The counting pattern
+
+Three lines, and you'll reuse them for the rest of your career: look at the item, read its current count (0 if new), write the count back plus one.
 
 ```python
 def count_items(items):
@@ -126,6 +125,8 @@ A :term[set]{bahasa="set/himpunan — kumpulan nilai unik tanpa urutan"} keeps o
 
 ### 6. Counting by a property
 
+The key doesn't have to be the item itself — it can be anything you derive from it: the city, the first letter, the month. That's `GROUP BY` before you've met SQL.
+
 Often you count a **field** of each record, not the record itself:
 
 ```python
@@ -158,7 +159,9 @@ print(c.most_common(2))   # [('python', 2), ('sql', 1)]
 Write the dictionary version until it's automatic (and in interviews, be ready to). In real projects, use `Counter` — it's clearer and well tested.
 :::
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Approach | Speed for n items | Memory | Notes |
 |---|---|---|---|
@@ -167,19 +170,11 @@ Write the dictionary version until it's automatic (and in interviews, be ready t
 | `Counter` | 🚀 ~n | Same | Less code, extra helpers |
 | Sort then count neighbours | n log n | Tiny extra | Useful when data is already sorted or memory is tight |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Frequencies, histograms, "top N", duplicates, anagram checks.
 - ✅ Normalize before counting (`.lower().strip()`), or `"Python"` and `"python "` count separately.
 - 🚫 If you only need **yes/no** "seen before?", a `set` is simpler than counts.
 - 🚫 For **huge** datasets in a database, let the database count (`GROUP BY` — Module 2).
 
-## 🏭 How it's used in industry
-
-- Analytics dashboards: events per day, errors per endpoint, sales per category.
-- Fraud and abuse detection: too many login attempts per IP in a minute.
-- Search and NLP: word counts are a building block for relevance scoring.
-- SQL's `GROUP BY ... COUNT(*)` is the same idea running inside a database.
 
 ## ⚠️ Common mistakes
 
@@ -272,15 +267,6 @@ You only need to know whether a list contains any duplicate. What's the simplest
 Compare `len(set(items))` with `len(items)` — if the set is smaller, something repeated.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Frequency | Frekuensi — seberapa sering sesuatu muncul |
-| Key / Value | Kunci / Nilai |
-| Duplicate | Duplikat — muncul lebih dari sekali |
-| Normalize | Menyeragamkan format data (huruf kecil, tanpa spasi) |
-| Tie | Seri — nilai yang sama besar |
 
 ## 📚 Keep learning
 
