@@ -19,32 +19,48 @@ tags: [postgresql, sql, database, docker, psql]
 - Connecting with **psql** and a **GUI client**; reading a **connection string**
 - Creating your first table with the right **data types** and **defaults**
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Relational database** | Data kept in strict tables that can be linked together | Basis data bertabel |
+| **Table / row / column** | A sheet / one record / one field with a fixed type | Tabel / baris / kolom |
+| **PostgreSQL** | A popular, reliable open-source database server | Server basis data populer |
+| **SQL** | The language you use to ask the database questions | Bahasa bertanya ke database |
+| **Connection string** | One line with user, password, host, port and database name | Alamat koneksi database |
+| **psql** | PostgreSQL's command-line client | Klien database di terminal |
+| **Data type** | What a column may hold (`text`, `integer`, `numeric`, `timestamptz`) | Jenis isi kolom |
+| **Default value** | What the database puts in when you don't provide one | Nilai bawaan |
+| **`numeric`** | The exact number type used for money (never `float`) | Angka presisi untuk uang |
+
 ## 🧠 The big idea
 
-A :term[relational database]{bahasa="basis data relasional — menyimpan data dalam tabel (baris & kolom) yang saling terhubung"} is a set of **very strict spreadsheets** with a **guard** in front of them.
+A :term[relational database]{bahasa="basis data relasional — menyimpan data dalam tabel (baris & kolom) yang saling terhubung"} is a set of **very strict spreadsheets** with a **guard** standing in front of them.
 
-- Each **table** is a sheet (`users`, `applications`), each **row** a record, each **column** a field with a fixed **type**.
-- The guard (the database server) **enforces rules** (no missing email, no negative salary), lets many users read and write **at the same time** safely, and answers questions in **SQL**.
+- Each **table** is a sheet (`users`, `applications`), each **row** is a record, each **column** is a field with a fixed **type**.
+- The guard — the database server — **enforces the rules** (no missing email, no negative salary), lets many people read and write **at the same time** safely, and answers questions written in **SQL**.
 
-## ❓ Why does this exist?
+Files have no guard: anyone can write anything, and two people writing at once ruin the page.
 
-Storing app data in JSON or CSV files works until:
+## ❓ Why it matters
 
-- two requests write the same file at the same moment → corrupted data,
-- you need "all applications for user 7 with status interview" across millions of rows → reading entire files,
+Keeping app data in JSON or CSV files works until:
+
+- two requests write the same file at the same moment → broken data,
+- you need "all applications for user 7 with status interview" across millions of rows → you must read whole files,
 - the server crashes mid-write → half a file,
-- you need rules like "every application must belong to an existing user".
+- you need a rule like "every application must belong to a user that exists".
 
-Databases solve concurrency, querying, durability and integrity — problems every real app has.
+Databases solve exactly these four problems: many users at once, fast questions, surviving crashes, and keeping data valid.
 
-## 💥 What happens if we DON'T use one (or pick types badly)?
+Picking the wrong column types brings its own pain:
 
-- `applications.json` grows to 2 GB; every page load reads the whole file.
-- Salary stored as text: `'9000000'` sorts before `'10000000'` as text, and `'9 juta'` sneaks in.
-- Dates stored as `'13/09/2026'` strings: sorting and date math break.
+- `applications.json` grows to 2 GB, and every page load reads all of it.
+- Salary stored as text: `'9000000'` sorts before `'10000000'`, and `'9 juta'` sneaks in.
+- Dates stored as `'13/09/2026'` strings: sorting and date maths break.
 - Money stored as `float`: rounding errors in invoices.
 
-## 📖 How it works, step by step
+## 📖 Step by step
 
 ### 1. Why PostgreSQL
 
@@ -71,6 +87,8 @@ docker compose down         # stop (data stays in the volume)
 ```
 
 ### 3. Connection strings
+
+Read it like a postal address: who you are, the secret, which building, which door, and which room — `postgresql://user:password@host:port/database`.
 
 Apps connect with a URL:
 
@@ -113,6 +131,8 @@ Connect with host `localhost`, port `5491`, user `fsse`, password `fsse`, databa
 
 ### 6. PostgreSQL data types you'll use most
 
+Choosing a type is like choosing a container in the kitchen: the right shape stops you storing soup in a paper bag. Money always goes in `numeric`, times always in `timestamptz`.
+
 | Use for | Type | Notes |
 |---|---|---|
 | Ids | `bigint GENERATED ALWAYS AS IDENTITY` | auto-incrementing primary key (modern replacement for `serial`) |
@@ -146,7 +166,9 @@ SELECT * FROM study_sessions;
 - `NOT NULL`, `CHECK` and `DEFAULT` are **rules the database enforces** — no matter which app or script writes the data.
 - `RETURNING` gives you back generated values without a second query.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -156,30 +178,10 @@ SELECT * FROM study_sessions;
 | Database in Docker locally | identical setup for everyone | Docker required |
 | Managed cloud database in production | backups, failover, patches handled | cost; less control |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ PostgreSQL as the default for web apps with related data: users, orders, applications.
 - ✅ Constraints in the database for rules that must **always** hold.
 - 🚫 Don't use a relational database as a cache or message queue at high volume (Redis/queues exist for that).
 - 🚫 Don't store large files (CVs, images) in tables — store them in object storage and save the **path/URL**.
-
-## 🏆 Best practices
-
-- [ ] Run the **same major PostgreSQL version** locally as in production (pin the Docker image tag).
-- [ ] Keep connection details in **`DATABASE_URL`** / environment variables; commit only `.env.example`.
-- [ ] Use `bigint ... GENERATED ALWAYS AS IDENTITY` (or `uuid`) for primary keys.
-- [ ] Use **`timestamptz`** for points in time; store in UTC and convert for display.
-- [ ] Never use floating point for money.
-- [ ] Add `NOT NULL` by default; allow `NULL` only when "unknown/not applicable" is a real state.
-- [ ] Put schema changes in **versioned SQL files or migrations**, not only clicks in a GUI.
-- [ ] Use a **least-privilege** database user for the app (not the superuser) in real environments.
-- [ ] Use `snake_case` names; avoid reserved words (`user`, `order`) as table names — prefer `users`, `orders`.
-
-## 🏭 How it's used in industry
-
-- Backend job listings in Indonesia commonly ask for PostgreSQL or MySQL; cloud platforms host them as managed services (AWS RDS/Aurora, Google Cloud SQL).
-- Developers use `psql`/GUI clients daily to debug data, and migrations tools to change schemas safely.
-- **pgvector** turns PostgreSQL into a vector database for AI search — you'll use it for RAG in Module 7.
 
 ## ⚠️ Common mistakes
 
@@ -192,6 +194,18 @@ SELECT * FROM study_sessions;
 :::revoshop
 Open `queries/schema.sql` in RevoShop. Find: the primary keys, the `NOT NULL UNIQUE` on `users.username` and `users.email`, and the `CHECK (price > 0)` on products. Which types did you use for money (`price`, `total_amount`) and timestamps? Compare them with the table in section 6 — would you change any type today, and why? Also check `docker-compose.yml`: which PostgreSQL version does RevoShop pin?
 :::
+
+## 🏆 Best practices
+
+- [ ] Run the **same major PostgreSQL version** locally as in production (pin the Docker image tag).
+- [ ] Keep connection details in **`DATABASE_URL`** / environment variables; commit only `.env.example`.
+- [ ] Use `bigint ... GENERATED ALWAYS AS IDENTITY` (or `uuid`) for primary keys.
+- [ ] Use **`timestamptz`** for points in time; store in UTC and convert for display.
+- [ ] Never use floating point for money.
+- [ ] Add `NOT NULL` by default; allow `NULL` only when "unknown/not applicable" is a real state.
+- [ ] Put schema changes in **versioned SQL files or migrations**, not only clicks in a GUI.
+- [ ] Use a **least-privilege** database user for the app (not the superuser) in real environments.
+- [ ] Use `snake_case` names; avoid reserved words (`user`, `order`) as table names — prefer `users`, `orders`.
 
 ::part[Explain & Design]{n="2"}
 
@@ -274,16 +288,6 @@ Where should the connection string for your app live?
 In an environment variable (e.g. `DATABASE_URL`), loaded from a git-ignored `.env` locally and from the platform's secret settings in production.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Table / Row / Column | Tabel / Baris / Kolom |
-| Primary key | Kunci utama — penanda unik setiap baris |
-| Constraint | Aturan yang dijaga database |
-| Connection string | URL koneksi ke database |
-| Schema | Skema — wadah tabel dalam database |
-| Data type | Tipe data kolom |
 
 ## 📚 Keep learning
 

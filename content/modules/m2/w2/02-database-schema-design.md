@@ -20,21 +20,33 @@ tags: [postgresql, schema-design, normalization, erd, constraints]
 - Using **constraints** as enforced documentation
 - Conventions: naming, timestamps, soft deletes
 
+## 🔤 Key words
+
+| Word | In simple words | Bahasa Indonesia |
+|---|---|---|
+| **Schema** | The design of your tables, columns and links | Rancangan tabel |
+| **Entity** | A thing you store (user, company, application) | Objek yang disimpan |
+| **Primary key** | The column that identifies each row uniquely | Penanda unik baris |
+| **Foreign key** | A column pointing at another table's row | Penunjuk ke tabel lain |
+| **ER diagram** | A picture of tables and how they connect | Diagram hubungan tabel |
+| **Normalization** | Storing each fact in exactly one place | Menata agar tidak berulang |
+| **Anomaly** | A problem caused by duplicated data (updates that miss a copy) | Masalah akibat data ganda |
+| **Constraint** | A rule the database itself enforces (`NOT NULL`, `UNIQUE`, `CHECK`) | Aturan yang dipaksakan database |
+| **Denormalization** | Deliberately duplicating data for speed, with a plan to keep it in sync | Duplikasi sengaja demi kecepatan |
+
 ## 🧠 The big idea
 
-A schema is the **floor plan** of your data. Moving a wall after people live in the house is expensive; drawing it right on paper is cheap.
+A schema is the **floor plan** of your data. Moving a wall after people already live in the house is expensive; drawing it correctly on paper is cheap.
 
-:term[Normalization]{bahasa="normalisasi — menata tabel agar setiap fakta disimpan tepat di satu tempat"} is one simple idea: **store each fact in exactly one place**. If a company's website appears in 500 rows, one day those 500 copies will disagree.
+:term[Normalization]{bahasa="normalisasi — menata tabel agar setiap fakta disimpan tepat di satu tempat"} is one simple idea: **store each fact in exactly one place**. If a company's website appears in 500 rows, one day those 500 copies will disagree — like a phone number written on 500 sticky notes.
 
-## ❓ Why does this exist?
+## ❓ Why it matters
 
-- Apps outlive their first version; data outlives apps. A good schema keeps data **correct** for years.
-- The database is the **last line of defense**: bugs in any app, script or admin tool can't insert invalid data if constraints forbid it.
-- Good structure makes queries simpler and faster.
+- Apps outlive their first version, and data outlives apps. A good schema keeps data **correct** for years.
+- The database is the **last line of defence**: a bug in any app, script or admin tool can't insert invalid data if a constraint forbids it.
+- Good structure also makes queries simpler and faster.
 
-## 💥 What happens if we DON'T design it?
-
-A job hunter's spreadsheet turned directly into one table:
+Here's a job hunter's spreadsheet turned straight into one table:
 
 | user_email | user_name | company | company_website | role | status | skills |
 |---|---|---|---|---|---|---|
@@ -42,14 +54,15 @@ A job hunter's spreadsheet turned directly into one table:
 | ana@mail.com | Ana S. | Kopi Data | www.kopidata.id | Analytics Eng | Interview | python,dbt |
 | budi@mail.com | Budi | kopi data | kopidata.id | QA | aplied | |
 
-Problems:
-- **Update anomaly**: Ana changes her name → you must update every row (and one gets missed: "Ana" vs "Ana S.").
-- **Insert anomaly**: you can't store a company until someone applies there.
-- **Delete anomaly**: delete Budi's only application → you lose that Kopi Data exists at all.
-- **Inconsistent values**: `applied` / `aplied`, `Kopi Data` / `kopi data`.
-- **Multi-value cells**: "SQL, Python" can't be queried or counted reliably.
+What goes wrong:
 
-## 📖 How it works, step by step
+- **Update problem**: Ana changes her name → you must update every row, and one gets missed ("Ana" vs "Ana S.").
+- **Insert problem**: you can't record a company until somebody applies there.
+- **Delete problem**: delete Budi's only application → you lose the fact that Kopi Data exists.
+- **Inconsistent values**: `applied` / `aplied`, `Kopi Data` / `kopi data`.
+- **Many values in one cell**: "SQL, Python" can't be searched or counted reliably.
+
+## 📖 Step by step
 
 ### 1. The design process
 
@@ -102,6 +115,8 @@ erDiagram
 `||--o{` reads "exactly one … to zero or many". You'll implement many-to-many junction tables in lesson 04.
 
 ### 4. Normalization in three steps
+
+A short way to remember it: one value per cell (1NF), every column depends on the whole key (2NF), and nothing depends on another non-key column (3NF).
 
 **1NF — atomic values, no repeating groups.** One value per cell. `skills = "SQL, Python"` becomes separate rows in a `skills` relationship table.
 
@@ -165,6 +180,8 @@ CREATE UNIQUE INDEX users_email_lower_key ON users (lower(email));
 
 ### 7. When to denormalize
 
+Denormalizing is like keeping a copy of the price list at the counter: faster to read, but now you must remember to update it. Do it on purpose, never by accident.
+
 Normalization optimizes **correctness**. Sometimes you deliberately duplicate data for **speed or history**:
 
 - An order stores the **price at purchase time** (`price_ordered`), not just a link to the product — prices change later, orders must not.
@@ -173,7 +190,9 @@ Normalization optimizes **correctness**. Sometimes you deliberately duplicate da
 
 Denormalize **on purpose, with a reason written down** — never by accident.
 
-## ⚖️ Trade-offs
+### Choosing your setup
+
+Every option here is a trade-off:
 
 | Choice | ✅ | ❌ |
 |---|---|---|
@@ -185,32 +204,11 @@ Denormalize **on purpose, with a reason written down** — never by accident.
 | Lookup table for statuses | editable data, can store labels | extra join |
 | Soft delete | recoverable, auditable | every query must filter `deleted_at IS NULL`; uniqueness gets tricky |
 
-## ✅ When to use it / 🚫 When NOT to use it
-
 - ✅ Normalize to 3NF by default for transactional data (users, orders, applications).
 - ✅ Snapshot values that must not change retroactively (prices, addresses on orders).
 - 🚫 Don't put comma-separated lists in a column.
 - 🚫 Don't use `jsonb` to avoid designing a schema for data you query by field.
 - 🚫 Don't over-normalize into dozens of tiny tables for data that never changes independently.
-
-## 🏆 Best practices
-
-- [ ] **Design from queries and requirements**, then draw an ERD before writing SQL.
-- [ ] Every table has a **primary key**; prefer `bigint identity` or `uuid`.
-- [ ] Enforce rules **in the database** (NOT NULL, UNIQUE, CHECK, FK) — not only in application code.
-- [ ] **Name constraints** (`CONSTRAINT applications_status_valid CHECK …`) so error messages are clear.
-- [ ] Case-insensitive uniqueness for emails/usernames (`UNIQUE` index on `lower(email)`, or the `citext` type).
-- [ ] Add `created_at` / `updated_at` (`timestamptz`, default `now()`) to business tables.
-- [ ] Store money as `bigint` (smallest unit) or `numeric`; store historical snapshots on orders/invoices.
-- [ ] Decide deletion strategy per table (hard vs soft delete) and document it.
-- [ ] Keep names consistent and boring; avoid reserved words.
-- [ ] Review schema changes like code — through migrations and pull requests.
-
-## 🏭 How it's used in industry
-
-- Teams write short **design docs** with an ERD before big features; reviewers focus on keys, constraints and future queries.
-- Data warehouses (analytics) intentionally use **denormalized** star schemas, while operational databases stay normalized.
-- Schema mistakes are among the costliest to fix later: migrations on huge tables need careful planning (Week 4).
 
 ## ⚠️ Common mistakes
 
@@ -224,6 +222,19 @@ Denormalize **on purpose, with a reason written down** — never by accident.
 :::revoshop
 RevoShop is full of real design decisions. In `queries/schema.sql`, find the `CHECK (status IN (…))` on `orders` and the checks on prices and quantities. Then look at the migration names in `migrations/versions/`: `add_shipping_snapshot_to_orders`, `rebuild_order_items_as_full_model`, `add_is_active_column_to_all_tables`, `add_deleted_at_column_in_order_model`. For each, explain **which design principle** it applies (denormalized snapshot? soft delete?) and **why** it was needed. Could you defend these choices in an interview?
 :::
+
+## 🏆 Best practices
+
+- [ ] **Design from queries and requirements**, then draw an ERD before writing SQL.
+- [ ] Every table has a **primary key**; prefer `bigint identity` or `uuid`.
+- [ ] Enforce rules **in the database** (NOT NULL, UNIQUE, CHECK, FK) — not only in application code.
+- [ ] **Name constraints** (`CONSTRAINT applications_status_valid CHECK …`) so error messages are clear.
+- [ ] Case-insensitive uniqueness for emails/usernames (`UNIQUE` index on `lower(email)`, or the `citext` type).
+- [ ] Add `created_at` / `updated_at` (`timestamptz`, default `now()`) to business tables.
+- [ ] Store money as `bigint` (smallest unit) or `numeric`; store historical snapshots on orders/invoices.
+- [ ] Decide deletion strategy per table (hard vs soft delete) and document it.
+- [ ] Keep names consistent and boring; avoid reserved words.
+- [ ] Review schema changes like code — through migrations and pull requests.
 
 ::part[Explain & Design]{n="2"}
 
@@ -298,16 +309,6 @@ Give one good reason to denormalize.
 To keep a historical snapshot that must not change (e.g. the product price stored on an order), or to speed up a hot read path — done deliberately and documented.
 :::
 
-## 📖 Kamus (glossary)
-
-| Term | Bahasa Indonesia |
-|---|---|
-| Entity | Entitas — objek yang disimpan (user, perusahaan) |
-| Attribute | Atribut — kolom/sifat entitas |
-| Foreign key | Kunci tamu — kolom yang merujuk tabel lain |
-| Normalization | Normalisasi |
-| Anomaly | Anomali — kejanggalan data akibat duplikasi |
-| Soft delete | Penghapusan lunak — ditandai, bukan dihapus |
 
 ## 📚 Keep learning
 
