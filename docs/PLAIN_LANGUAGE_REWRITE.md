@@ -191,7 +191,7 @@ Two subagents can work on two different lessons at the same time; they must neve
 
 ### A — Start a new session (default)
 
-> Baca `CLAUDE.md` dan `docs/PLAIN_LANGUAGE_REWRITE.md`, lalu lanjutkan penulisan ulang gaya bahasa sederhana dari materi pertama yang belum dicentang di checklist Module 5. Satu materi per commit (EN + ID), `content:check` harus lulus, jangan push.
+> Baca `CLAUDE.md` dan `docs/PLAIN_LANGUAGE_REWRITE.md`, lalu lanjutkan pekerjaan dari bagian yang belum selesai di checklist (saat ini: pass terjemahan Indonesia). Satu materi per commit, `content:check` harus lulus, jangan push.
 
 ### B — Continue a specific module
 
@@ -216,13 +216,19 @@ Two subagents can work on two different lessons at the same time; they must neve
 
 > Berikan status plain-language rewrite: berapa materi selesai per modul, apa yang sedang dikerjakan, dan sisa tugasnya. Jangan ubah file apa pun.
 
-### E — After Module 5: new material
+### E — New material (after the rewrite)
 
-> Modul yang ada sudah ditulis ulang. Lanjutkan membuat materi baru C5b part 2 (M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) sesuai `docs/IMPLEMENTATION_PLAN.md`, langsung dalam gaya bahasa sederhana dan dua bahasa (EN + ID).
+> Semua materi lama sudah ditulis ulang dalam bahasa Inggris. Lanjutkan membuat materi baru C5b part 2 (M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) sesuai `docs/IMPLEMENTATION_PLAN.md`, langsung dalam gaya bahasa sederhana sesuai `docs/WRITING_STYLE.md` (tabel 🔤 Key words, analogi sehari-hari, ❓ Why it matters yang digabung). Satu materi per commit, `content:check` harus lulus, jangan push.
 
 ### F — Health check before closing a session
 
 > Jalankan semua pengecekan (`typecheck`, `lint`, `test`, `build`, `content:check`, `i18n`), pastikan `git status` bersih, update checklist di `docs/PLAIN_LANGUAGE_REWRITE.md`, lalu laporkan hasilnya.
+
+### H — Indonesian pass (the main remaining work)
+
+> Baca `CLAUDE.md`, `docs/PLAIN_LANGUAGE_REWRITE.md` dan `docs/TRANSLATION_GUIDE.md`. Jalankan `npm run -s i18n` untuk melihat modul mana yang belum punya versi Indonesia, lalu buat file `.id.md` untuk materi berikutnya yang belum diterjemahkan (mulai dari `content/modules/m5/w1/05-*`, lanjut ke M5 W2–W4, lalu Module 2, Module 1, tracks, projects, Module 8).
+>
+> Untuk tiap materi: ambil hash dengan `npm run -s i18n -- hash <file EN>`, tulis `<file>.id.md` dengan `sourceHash` itu, blok kode **identik** dengan versi Inggris, directive dan link internal sama persis, heading Indonesia sesuai panduan terjemahan. Jalankan `npm run -s content:check`, lalu commit per materi dengan trailer standar. Jangan push, jangan ubah file Inggrisnya.
 
 ### G — Fix one lesson that feels wrong
 
