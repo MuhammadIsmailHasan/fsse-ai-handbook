@@ -45,11 +45,10 @@ The learner's first language is Indonesian. Plain words, short sentences, **more
 
 ## Current state
 
-The **plain-language rewrite is complete in English for every existing lesson** (Modules 1, 2, 4, 5, 8, both tracks, projects and guides).
+The **plain-language rewrite is complete in both English and Indonesian for every existing lesson** (Modules 1, 2, 4, 5, 8, both tracks, projects and guides — 193/194; `components-showcase` is an authoring reference and isn't counted).
 
-Two things remain, in this order:
+What remains:
 
-1. **Indonesian pass** — Module 2, Module 4, Module 5, Module 8, tracks/architecture, tracks/DSA and projects all have `.id.md` files (178/194). Only Module 1 (14 lessons) and the how-to-study guide still need one. Run `npm run -s i18n` for the current coverage, and use prompt **H** in `docs/PLAIN_LANGUAGE_REWRITE.md` section 6.
-2. **New material** — C5b part 2: Module 5 W5–W7, Architecture stages F/H/I, CareerPilot Phase 5 (see `docs/IMPLEMENTATION_PLAN.md`). Write these in the new plain style from the start.
+1. **New material** — C5b part 2: Module 5 W5–W7, Architecture stages F/H/I, CareerPilot Phase 5 (see `docs/IMPLEMENTATION_PLAN.md`). Write these in the new plain style, in both languages, from the start.
 
 Progress, per-lesson workflow and copy-paste prompts: `docs/PLAIN_LANGUAGE_REWRITE.md`.
