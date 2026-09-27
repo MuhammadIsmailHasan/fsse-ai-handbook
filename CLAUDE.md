@@ -49,7 +49,7 @@ The **plain-language rewrite is complete in English for every existing lesson** 
 
 Two things remain, in this order:
 
-1. **Indonesian pass** — Module 4 (50/50), Module 5 (27/27) and Module 2 (52/52) have `.id.md` files; 65 lessons still need one (Module 1, tracks, projects, Module 8). Run `npm run -s i18n` for the current coverage, and use prompt **H** in `docs/PLAIN_LANGUAGE_REWRITE.md` section 6.
+1. **Indonesian pass** — Module 2, Module 4, Module 5, Module 8, tracks/architecture, tracks/DSA and projects all have `.id.md` files (178/194). Only Module 1 (14 lessons) and the how-to-study guide still need one. Run `npm run -s i18n` for the current coverage, and use prompt **H** in `docs/PLAIN_LANGUAGE_REWRITE.md` section 6.
 2. **New material** — C5b part 2: Module 5 W5–W7, Architecture stages F/H/I, CareerPilot Phase 5 (see `docs/IMPLEMENTATION_PLAN.md`). Write these in the new plain style from the start.
 
 Progress, per-lesson workflow and copy-paste prompts: `docs/PLAIN_LANGUAGE_REWRITE.md`.
