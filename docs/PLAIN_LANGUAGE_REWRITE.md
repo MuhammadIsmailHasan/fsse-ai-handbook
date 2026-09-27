@@ -89,7 +89,7 @@ Counts are lessons (files), from `npm run -s i18n`.
 | Module 4 (frontend) | 50 | 50 | 50 | ✅ done |
 | Module 5 (deployment) | 27 | 27 | 27 | ✅ done |
 | Module 1 | 14 | 12 | 0 | ✅ English done (2 placement checks already plain) |
-| Module 2 (backend) | 52 | 45 | 0 | ✅ English done (7 placement checks were already plain) |
+| Module 2 (backend) | 52 | 45 | 52 | ✅ done |
 | Module 8 (career) | 12 | 12 | 0 | ✅ English done, aimed at remote/US roles |
 | Tracks: architecture | 19 | 19 | 0 | ✅ English done |
 | Tracks: DSA | 12 | 12 | 0 | ✅ English done |
@@ -134,7 +134,7 @@ The 7 placement checks were left as they were: short, already plain, and mostly 
 
 All 27 Module 5 lessons now have `.id.md` files — the Indonesian pass for this module is done.
 
-**The English pass is complete for every existing lesson, and the Indonesian pass for Module 5 is complete (27/27).** What remains: the Indonesian pass for Module 2, Module 1, tracks, projects and Module 8 (117 lessons — see the coverage table above and template H), and new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) — written in the new style in both languages from the start.
+**The English pass is complete for every existing lesson, and the Indonesian pass for Module 5 and Module 2 is complete (27/27, 52/52).** What remains: the Indonesian pass for Module 1, tracks, projects and Module 8 (65 lessons — see the coverage table above and template H), and new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) — written in the new style in both languages from the start.
 
 ---
 
