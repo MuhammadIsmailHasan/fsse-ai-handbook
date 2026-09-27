@@ -134,7 +134,7 @@ The 7 placement checks were left as they were: short, already plain, and mostly 
 
 All 27 Module 5 lessons now have `.id.md` files — the Indonesian pass for this module is done.
 
-**Both the English pass and the Indonesian pass are complete for every existing lesson (193/194 — the only one left out, `components-showcase`, is an authoring reference and isn't counted).** What remains is new material: C5b part 2 (M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) — written in the new plain-language style, in both languages, from the start. See `docs/IMPLEMENTATION_PLAN.md` for the content plan.
+**Both the English pass and the Indonesian pass are complete for every existing lesson.** New material since then, written in the plain-language style from the start (EN + ID): **Module 5 W5 (Microservices), W6 (Orchestration) and W7 (IaC & Operations) — 14 lessons + 11 exercises — and CareerPilot Phase 5** (deploy to AWS with Terraform). The only remaining new material from C5b part 2 is **Architecture stages F, H and I** (see `docs/IMPLEMENTATION_PLAN.md`).
 
 ---
 

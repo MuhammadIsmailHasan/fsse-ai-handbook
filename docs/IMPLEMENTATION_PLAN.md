@@ -1,6 +1,6 @@
 # FSSE Handbook — Implementation Plan
 
-> **Status:** v1.7 — B1–B6, C1, C2, C5a done; C5b Weeks 3–4 done (awaiting learner review ✋)
+> **Status:** v1.8 — B1–B6, C1, C2, C5a done; C5b Weeks 3–7 + CareerPilot Phase 5 done (Architecture F/H/I still remaining)
 > **Last updated:** 2026-09-13
 > **Owner:** Muhammad Ismail Hasan (learner) · written with Claude Code
 
@@ -763,6 +763,13 @@ type LessonMeta = {
 - [x] Module 5 W3 AWS Foundations: 6 lessons + RevoShop boxes, 5 exercises (IAM simulator, cost guard, VPC & security groups, cloud-init, S3/RDS secrets with moto), 🚀 Ship RevoShop 3 (EC2 + RDS + HTTPS; deploy scripts tested locally incl. rollback)
 - [x] Module 5 W4 Deploying to AWS: 5 lessons + RevoShop boxes, 5 exercises (static sync plan, blue/green, ECS task definition, Lambda jobs, SSM config loader), 🚀 Ship RevoShop 4 (ECS Fargate + ALB + OIDC deploys + teardown)
 - [ ] **Learner reviews W3–W4** ✋
+
+#### C5b — progress (part 2: Weeks 5–7 + Phase 5)
+- [x] Module 5 W5 Microservices: 5 lessons + RevoShop boxes, 5 exercises (should-split, data-ownership, idempotent consumer, gateway routing, trace bottleneck) — plain-language style, EN + ID
+- [x] Module 5 W6 Orchestration: 4 lessons (Kubernetes concepts, kind local, ECS/Fargate/EKS, Helm), 2 exercises (reconcile control loop, Helm render) — EN + ID
+- [x] Module 5 W7 IaC & Operations: 5 lessons (Terraform basics, Terraform for CareerPilot, observability, rollbacks/blue-green/canary, teardown & cost review), 4 exercises (terraform plan, evaluate alarms, canary decision, cost review) — EN + ID
+- [x] CareerPilot Phase 5 brief (deploy to AWS with Terraform — ECS Fargate + RDS + IaC + observability + teardown) — EN + ID
+- [ ] Architecture stages F (Data & API Design), H (Distributed Systems), I (System Design Practice) — still to write
 
 Batch order follows the **milestone path**, not module numbers.
 

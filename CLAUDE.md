@@ -47,8 +47,10 @@ The learner's first language is Indonesian. Plain words, short sentences, **more
 
 The **plain-language rewrite is complete in both English and Indonesian for every existing lesson** (Modules 1, 2, 4, 5, 8, both tracks, projects and guides — 193/194; `components-showcase` is an authoring reference and isn't counted).
 
+Module 5 **W5–W7** (Microservices, Orchestration, IaC & Operations — 14 lessons + 11 exercises) and **CareerPilot Phase 5** (deploy to AWS with Terraform) are now written in the plain style, in both languages.
+
 What remains:
 
-1. **New material** — C5b part 2: Module 5 W5–W7, Architecture stages F/H/I, CareerPilot Phase 5 (see `docs/IMPLEMENTATION_PLAN.md`). Write these in the new plain style, in both languages, from the start.
+1. **New material** — the last of C5b part 2: **Architecture stages F (Data & API Design), H (Distributed Systems), I (System Design Practice)** (see `docs/IMPLEMENTATION_PLAN.md`). Write these in the plain style, in both languages, from the start.
 
 Progress, per-lesson workflow and copy-paste prompts: `docs/PLAIN_LANGUAGE_REWRITE.md`.
