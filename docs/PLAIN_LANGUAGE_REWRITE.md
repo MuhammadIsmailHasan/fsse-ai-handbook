@@ -87,7 +87,7 @@ Counts are lessons (files), from `npm run -s i18n`.
 | Area | Total | English rewritten | Indonesian | Status |
 |---|---|---|---|---|
 | Module 4 (frontend) | 50 | 50 | 50 | ✅ done |
-| Module 5 (deployment) | 27 | 27 | 5 | ✅ English done · Indonesian pending |
+| Module 5 (deployment) | 27 | 27 | 27 | ✅ done |
 | Module 1 | 14 | 12 | 0 | ✅ English done (2 placement checks already plain) |
 | Module 2 (backend) | 52 | 45 | 0 | ✅ English done (7 placement checks were already plain) |
 | Module 8 (career) | 12 | 12 | 0 | ✅ English done, aimed at remote/US roles |
@@ -132,9 +132,9 @@ The 7 placement checks were left as they were: short, already plain, and mostly 
 - [x] w3: 00 placement · 01 IAM & budgets · 02 regions & VPC · 03 EC2 · 04 RDS · 05 S3 & CloudFront · 06 cloud translation table · 07 Ship RevoShop EC2+RDS
 - [x] w4: 00 placement · 01 frontends on AWS · 02 backend on EC2 · 03 ECS Fargate · 04 Lambda jobs · 05 Parameter Store & Secrets Manager · 06 Ship RevoShop ECS
 
-Indonesian versions exist only for w1 00–04; the rest are a later pass (see section 0 and template C2).
+All 27 Module 5 lessons now have `.id.md` files — the Indonesian pass for this module is done.
 
-**The English pass is complete for every existing lesson.** What remains: the Indonesian pass (a separate batch, see section 0 and template C2) and new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5). Then new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) — written in the new style in both languages from the start.
+**The English pass is complete for every existing lesson, and the Indonesian pass for Module 5 is complete (27/27).** What remains: the Indonesian pass for Module 2, Module 1, tracks, projects and Module 8 (117 lessons — see the coverage table above and template H), and new material (C5b part 2: M5 W5–W7, Architecture F/H/I, CareerPilot Phase 5) — written in the new style in both languages from the start.
 
 ---
 
