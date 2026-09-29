@@ -91,7 +91,7 @@ Counts are lessons (files), from `npm run -s i18n`.
 | Module 1 | 14 | 12 | 14 | ✅ done |
 | Module 2 (backend) | 52 | 45 | 52 | ✅ done |
 | Module 8 (career) | 12 | 12 | 12 | ✅ done, aimed at remote/US roles |
-| Tracks: architecture | 19 | 19 | 19 | ✅ done |
+| Tracks: architecture | 34 | 34 | 34 | ✅ done (incl. new stages F, H, I) |
 | Tracks: DSA | 12 | 12 | 12 | ✅ done |
 | Projects (careerpilot, studymind, supportdesk-ai) | 6 | 6 | 6 | ✅ done |
 | Guides | 2 | 2 | 1 | ✅ how-to-study done; components-showcase is an authoring reference, left as is (not counted) |
@@ -134,7 +134,9 @@ The 7 placement checks were left as they were: short, already plain, and mostly 
 
 All 27 Module 5 lessons now have `.id.md` files — the Indonesian pass for this module is done.
 
-**Both the English pass and the Indonesian pass are complete for every existing lesson.** New material since then, written in the plain-language style from the start (EN + ID): **Module 5 W5 (Microservices), W6 (Orchestration) and W7 (IaC & Operations) — 14 lessons + 11 exercises — and CareerPilot Phase 5** (deploy to AWS with Terraform). The only remaining new material from C5b part 2 is **Architecture stages F, H and I** (see `docs/IMPLEMENTATION_PLAN.md`).
+**Both the English pass and the Indonesian pass are complete for every existing lesson.** New material since then, written in the plain-language style from the start (EN + ID): **Module 5 W5 (Microservices), W6 (Orchestration) and W7 (IaC & Operations) — 14 lessons + 11 exercises — and CareerPilot Phase 5** (deploy to AWS with Terraform).
+
+**C5b part 2 is now complete.** The final new material — **Architecture stages F (Data & API Design, 6 lessons), H (Distributed Systems, 4 lessons) and I (System Design Practice, 5 lessons)** — is written in both languages, each lesson with a verified starter/solution exercise. That closes out C5b part 2; the architecture track is now 34/34 lessons. (Stage J · Interviews remains as future C8 material, not part of C5b.)
 
 ---
 

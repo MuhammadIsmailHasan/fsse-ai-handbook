@@ -1,7 +1,7 @@
 # FSSE Handbook — Implementation Plan
 
-> **Status:** v1.8 — B1–B6, C1, C2, C5a done; C5b Weeks 3–7 + CareerPilot Phase 5 done (Architecture F/H/I still remaining)
-> **Last updated:** 2026-09-13
+> **Status:** v1.9 — B1–B6, C1, C2, C5a done; **C5b complete** (Weeks 3–7 + CareerPilot Phase 5 + Architecture F/H/I)
+> **Last updated:** 2026-09-29
 > **Owner:** Muhammad Ismail Hasan (learner) · written with Claude Code
 
 This document is the roadmap for the whole project: **what** we build (a local handbook app + course content), **why** each decision was made, and **in what order** we build it. Come back to it whenever you feel lost.
@@ -769,7 +769,9 @@ type LessonMeta = {
 - [x] Module 5 W6 Orchestration: 4 lessons (Kubernetes concepts, kind local, ECS/Fargate/EKS, Helm), 2 exercises (reconcile control loop, Helm render) — EN + ID
 - [x] Module 5 W7 IaC & Operations: 5 lessons (Terraform basics, Terraform for CareerPilot, observability, rollbacks/blue-green/canary, teardown & cost review), 4 exercises (terraform plan, evaluate alarms, canary decision, cost review) — EN + ID
 - [x] CareerPilot Phase 5 brief (deploy to AWS with Terraform — ECS Fargate + RDS + IaC + observability + teardown) — EN + ID
-- [ ] Architecture stages F (Data & API Design), H (Distributed Systems), I (System Design Practice) — still to write
+- [x] Architecture Stage F Data & API Design: 6 lessons (SQL vs NoSQL, indexing, replication & sharding, REST/GraphQL/gRPC, pagination/versioning/idempotency, rate limiting & Redis caching), 6 exercises — plain-language style, EN + ID
+- [x] Architecture Stage H Distributed Systems: 4 lessons (CAP & eventual consistency, queues & async messaging, retries/backoff/circuit breaker, saga & distributed transactions), 4 exercises — EN + ID
+- [x] Architecture Stage I System Design Practice: 5 lessons (framework + URL shortener, rate limiter & notifications, chat & file upload, RAG at scale, LLM gateway), 5 exercises — EN + ID
 
 Batch order follows the **milestone path**, not module numbers.
 
