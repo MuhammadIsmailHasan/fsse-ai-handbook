@@ -51,6 +51,8 @@ Module 5 **W5–W7** (Microservices, Orchestration, IaC & Operations — 14 less
 
 **C5b part 2 is complete.** Architecture stages **F (Data & API Design, 6 lessons), H (Distributed Systems, 4 lessons) and I (System Design Practice, 5 lessons)** are written in both languages, each with a verified starter/solution exercise. The architecture track is now 34/34 lessons.
 
+**C3 is nearly done.** Module 3 (W1–W3, 14 lessons) and the CareerPilot Phase 3 brief + starter kit (70 acceptance tests) are written in both languages. Left in C3: **DSA Stage 4 (Trees & Graphs)**.
+
 What remains: only future-batch material outside C5b — e.g. **Architecture Stage J · Interviews** (C8), other Module 5 depth, Modules 3/6/7. There is no outstanding C5b work.
 
 Progress, per-lesson workflow and copy-paste prompts: `docs/PLAIN_LANGUAGE_REWRITE.md`.
