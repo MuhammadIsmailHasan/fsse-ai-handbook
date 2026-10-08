@@ -1,6 +1,6 @@
 # FSSE Handbook — Implementation Plan
 
-> **Status:** v1.9 — B1–B6, C1, C2, C5a done; **C5b complete** (Weeks 3–7 + CareerPilot Phase 5 + Architecture F/H/I); C3 in progress (Module 3 + Phase 3 done, DSA Stage 4 left)
+> **Status:** v1.9 — B1–B6, C1, C2, C5a done; **C5b complete** (Weeks 3–7 + CareerPilot Phase 5 + Architecture F/H/I); C3 done pending learner review (Module 3, Phase 3, DSA Stage 4)
 > **Last updated:** 2026-09-29
 > **Owner:** Muhammad Ismail Hasan (learner) · written with Claude Code
 
@@ -764,12 +764,12 @@ type LessonMeta = {
 - [x] Module 5 W4 Deploying to AWS: 5 lessons + RevoShop boxes, 5 exercises (static sync plan, blue/green, ECS task definition, Lambda jobs, SSM config loader), 🚀 Ship RevoShop 4 (ECS Fargate + ALB + OIDC deploys + teardown)
 - [ ] **Learner reviews W3–W4** ✋
 
-#### C3 — progress (in progress)
+#### C3 — progress
 - [x] Module 3 W1 Foundations (4 lessons + placement check) — EN + ID
 - [x] Module 3 W2 Core (async, DI, SQLAlchemy 2.0, JWT + placement check) — EN + ID
 - [x] Module 3 W3 Real Apps: placement check + 4 lessons (testing with pytest & TestClient, project structure, background tasks & streaming, Flask vs FastAPI), 4 exercises — plain-language style, EN + ID
 - [x] CareerPilot Phase 3 brief + starter kit (70 acceptance tests, no DB or API key needed; validated against a private reference app) — EN + ID
-- [ ] DSA Stage 4 (Trees & Graphs)
+- [x] DSA Stage 4 Trees & Graphs: 5 lessons (binary trees, BST, heaps & priority queues, graphs BFS/DFS, basic graph problems), 20 problems — plain-language style, EN + ID
 - [ ] **Learner reviews C3** ✋
 
 #### C5b — progress (part 2: Weeks 5–7 + Phase 5)
