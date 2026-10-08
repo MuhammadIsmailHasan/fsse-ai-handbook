@@ -1,6 +1,6 @@
 # FSSE Handbook — Implementation Plan
 
-> **Status:** v1.9 — B1–B6, C1, C2, C5a done; **C5b complete** (Weeks 3–7 + CareerPilot Phase 5 + Architecture F/H/I); C3 done pending learner review (Module 3, Phase 3, DSA Stage 4)
+> **Status:** v1.9 — B1–B6, C1, C2, C5a done; **C5b complete** (Weeks 3–7 + CareerPilot Phase 5 + Architecture F/H/I); C3 and C4 done pending learner review (Module 3, Phase 3, DSA Stage 4; Module 7 W1–W5, SupportDesk AI)
 > **Last updated:** 2026-09-29
 > **Owner:** Muhammad Ismail Hasan (learner) · written with Claude Code
 
@@ -771,6 +771,15 @@ type LessonMeta = {
 - [x] CareerPilot Phase 3 brief + starter kit (70 acceptance tests, no DB or API key needed; validated against a private reference app) — EN + ID
 - [x] DSA Stage 4 Trees & Graphs: 5 lessons (binary trees, BST, heaps & priority queues, graphs BFS/DFS, basic graph problems), 20 problems — plain-language style, EN + ID
 - [ ] **Learner reviews C3** ✋
+
+#### C4 — progress
+- [x] Module 7 W1 LLM Basics (5 lessons + placement check, 5 exercises: token budget, model choice, chat stream, structured output, local LLM) — EN + ID
+- [x] Module 7 W2 Prompts & Tools (4 lessons: prompts as code, tool calling, guardrails, prompt caching; 4 exercises)
+- [x] Module 7 W3 Embeddings & Vector Search (4 lessons: embeddings, pgvector, semantic search, hybrid search; 4 exercises)
+- [x] Module 7 W4 RAG in Depth (5 lessons: architecture, chunking, retrieval & reranking, citations, why RAG fails; 5 exercises)
+- [x] Module 7 W5 Evals & Observability (5 lessons: why evals, test datasets, LLM as judge, eval libraries, tracing with Langfuse; 5 exercises)
+- [x] SupportDesk AI brief & checkpoints (C1–C11) + starter kit (132 offline acceptance tests, fake LLM/embedder/order API/tracer; validated against a private reference app: starter fails, reference passes 132/132; the learner writes `evals/cases.jsonl`) — EN + ID
+- [ ] **Learner reviews C4** ✋
 
 #### C5b — progress (part 2: Weeks 5–7 + Phase 5)
 - [x] Module 5 W5 Microservices: 5 lessons + RevoShop boxes, 5 exercises (should-split, data-ownership, idempotent consumer, gateway routing, trace bottleneck) — plain-language style, EN + ID

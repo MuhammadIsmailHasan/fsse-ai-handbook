@@ -53,6 +53,8 @@ Module 5 **W5–W7** (Microservices, Orchestration, IaC & Operations — 14 less
 
 **C3 is written and waiting for the learner's review ✋.** Module 3 (W1–W3, 15 files incl. placement checks), the CareerPilot Phase 3 brief + starter kit (70 acceptance tests) and **DSA Stage 4 — Trees & Graphs** (5 lessons, 20 problems: binary trees, BST, heaps, BFS/DFS, basic graph problems) are all written in both languages.
 
-What remains: only future-batch material outside C5b — e.g. **Architecture Stage J · Interviews** (C8), other Module 5 depth, Modules 3/6/7. There is no outstanding C5b work.
+**C4 is written and waiting for the learner's review ✋.** Module 7 **W1–W5** (LLM basics, prompts & tools, embeddings & vector search, RAG in depth, evals & observability — 23 lessons + 5 placement checks, 23 offline exercises) and the **SupportDesk AI** brief + starter kit (132 acceptance tests) are written in both languages.
+
+What remains: only future-batch material outside C5b — e.g. **Architecture Stage J · Interviews** (C8), other Module 5 depth, Module 6 (C6), Module 7 W0/W6–W8, Phase 7, StudyMind (C7), DSA Stages 5–6 (C8). There is no outstanding C5b work.
 
 Progress, per-lesson workflow and copy-paste prompts: `docs/PLAIN_LANGUAGE_REWRITE.md`.
