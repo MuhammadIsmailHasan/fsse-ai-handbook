@@ -1,0 +1,102 @@
+#cloud-config
+# Runs once, on the instance's first boot. Installs Docker, mounts the data disk
+# and starts the same Postgres + Redis that exercises/compose.yaml runs locally.
+package_update: true
+
+packages:
+  - docker
+  - git
+
+write_files:
+  - path: /etc/fsse/compose.yaml
+    permissions: '0644'
+    content: |
+      # Mirrors exercises/compose.yaml, with two differences:
+      #   - data lives on the attached EBS volume, so it survives a rebuild
+      #   - the password comes from Terraform, not the local practice default
+      services:
+        db:
+          image: postgres:17-alpine
+          container_name: fsse-db
+          restart: unless-stopped
+          environment:
+            POSTGRES_USER: fsse
+            POSTGRES_PASSWORD: ${postgres_password}
+            POSTGRES_DB: fsse
+          ports:
+            - "${postgres_port}:5432"
+          volumes:
+            - /data/pgdata:/var/lib/postgresql/data
+          healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U fsse -d fsse"]
+            interval: 10s
+            timeout: 3s
+            retries: 10
+
+        redis:
+          image: redis:8-alpine
+          container_name: fsse-redis
+          restart: unless-stopped
+          command: ["redis-server", "--requirepass", "${redis_password}", "--save", "", "--appendonly", "no"]
+          ports:
+            - "${redis_port}:6379"
+          healthcheck:
+            test: ["CMD", "redis-cli", "-a", "${redis_password}", "ping"]
+            interval: 10s
+            timeout: 3s
+            retries: 10
+
+  - path: /opt/fsse/mount-data.sh
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      # Mount the attached EBS volume at /data. Formats it ONLY if it has no
+      # filesystem yet, so a reboot or a replaced instance keeps the databases.
+      set -euo pipefail
+
+      DEV=""
+      for candidate in /dev/sdf /dev/xvdf /dev/nvme1n1; do
+        if [ -b "$candidate" ]; then DEV=$(readlink -f "$candidate"); break; fi
+      done
+      if [ -z "$DEV" ]; then
+        echo "data volume not attached yet" >&2
+        exit 1
+      fi
+
+      blkid "$DEV" >/dev/null 2>&1 || mkfs -t xfs "$DEV"
+      mkdir -p /data
+      UUID=$(blkid -s UUID -o value "$DEV")
+      grep -q " /data " /etc/fstab || echo "UUID=$UUID /data xfs defaults,nofail 0 2" >> /etc/fstab
+      systemctl daemon-reload
+      mountpoint -q /data || mount /data
+      mkdir -p /data/pgdata
+
+  - path: /etc/systemd/system/fsse-stack.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=FSSE exercise services (Postgres + Redis)
+      Requires=docker.service data.mount
+      After=docker.service data.mount
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      ExecStart=/usr/bin/docker compose -f /etc/fsse/compose.yaml up -d
+      ExecStop=/usr/bin/docker compose -f /etc/fsse/compose.yaml down
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  # Docker Compose v2 ships as a plugin, not a package, on Amazon Linux 2023.
+  - mkdir -p /usr/libexec/docker/cli-plugins
+  - curl -fsSL "https://github.com/docker/compose/releases/download/v2.40.3/docker-compose-linux-aarch64" -o /usr/libexec/docker/cli-plugins/docker-compose
+  - chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+
+  # The volume can attach a few seconds after boot, so retry rather than fail.
+  - [ bash, -c, "for i in 1 2 3 4 5 6 7 8 9 10; do /opt/fsse/mount-data.sh && break || sleep 5; done" ]
+
+  - systemctl enable --now docker
+  - usermod -aG docker ec2-user
+  - systemctl enable --now fsse-stack.service

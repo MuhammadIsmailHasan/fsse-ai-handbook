@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (gitignored) and fill in.
+bucket_name = "fsse-handbook-CHANGE-ME-2026"
+region      = "ap-southeast-1" # Singapore (works in any account)
+
+basic_auth_user     = "learner"
+basic_auth_password = "change-me" # "" disables the browser password prompt
