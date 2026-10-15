@@ -48,10 +48,9 @@ This document is the roadmap for the whole project: **what** we build (a local h
 
 ## 2. Content Policy (Originality)
 
-- **Taken from the bootcamp:** only the course **outline** — module, week and lesson **titles** and their order. Saved in [`content/outline.json`](../content/outline.json).
-- **Not taken from the bootcamp:** lesson text, bullet points, code, diagrams, quizzes, assignment briefs, logo or branding.
 - **Written originally:** every explanation, example, exercise, project brief and template in this repo.
-- Lessons based on a the bootcamp lesson carry a `source: core` tag so you can match them with your class.
+- **Never copied from a paid course:** lesson text, bullet points, code, diagrams, quizzes, assignment briefs, logos or branding.
+- Core-curriculum lessons carry a `source: core` tag; the module and week ordering lives in [`content/outline.json`](../content/outline.json).
 - Bonus material is marked 🔥 **Bonus**.
 
 ---
@@ -60,7 +59,7 @@ This document is the roadmap for the whole project: **what** we build (a local h
 
 | Item | Value |
 |---|---|
-| Progress in the bootcamp | Finished through **Module 2 (Backend)** |
+| Starting point | Comfortable through **backend fundamentals (Module 2)** |
 | Existing portfolio | RevoShop backend — Flask, flask-smorest, SQLAlchemy, Flask-Migrate, JWT + RBAC, Midtrans webhooks, pytest, Locust, Docker, layered architecture |
 | Honest gap | Much of RevoShop was implemented with Kiro → understanding is weaker than the code suggests |
 | Study time | ~3 h/day → planned as **6 days/week ≈ 18 h/week** (buffer for missed days) |
@@ -140,7 +139,7 @@ This document is the roadmap for the whole project: **what** we build (a local h
 ### Other badges
 | Badge | Meaning |
 |---|---|
-| 🔥 Bonus | Not in bootcamp outline |
+| 🔥 Bonus | Beyond the core curriculum |
 | 🚫🤖 No-AI / 🤖✅ AI-allowed | Exercise AI policy |
 | 🟢 Free / 🟡 Small cost / 🔴 Concept only | AWS cost badge |
 | 🕒 Last reviewed | Date, on fast-changing topics (AI, cloud) |
@@ -169,14 +168,14 @@ Per-lesson labels are set in each lesson's frontmatter while writing content (th
 ## 6. Course Map
 
 ```
-MODULES (in order)                               PARALLEL TRACKS
-1  Algorithm & Programming           ┌ 🧩 DSA for Interviews (Python)
-2  Backend: Flask                    │
-3  Backend: FastAPI             (🔥 bonus)      │ 🏛️ Architecture:
-4  Frontend: Next.js                 │   principles → design patterns
-5  Cloud, DevOps & AWS          (🔥 bonus)      │   → system design
-6  AI-Assisted Development           │
-7  AI Engineering in Production (🔥 bonus)      └
+MODULES (in order)                            PARALLEL TRACKS
+1  Algorithm & Programming                    ┌ 🧩 DSA for Interviews (Python)
+2  Backend: Flask                             │
+3  Backend: FastAPI             (🔥 bonus)    │ 🏛️ Architecture:
+4  Frontend: Next.js                          │   principles → design patterns
+5  Cloud, DevOps & AWS          (🔥 bonus)    │   → system design
+6  AI-Assisted Development                    │
+7  AI Engineering in Production (🔥 bonus)    └
 8  Career & Portfolio           — unlocks at Milestone 1
 
 ⭐ CareerPilot: Phase 1 (M1) → Phase 7 (M7), monolith → microservices on AWS
@@ -186,7 +185,7 @@ MODULES (in order)                               PARALLEL TRACKS
 
 **Approximate size:** ~200 lessons + 2 tracks + 3 projects. Exact counts are finalized while writing each module.
 
-**Numbering:** the handbook uses its own module numbers. the bootcamp's M3 is our Module 4, the bootcamp's M4 is our Module 6.
+**Numbering:** the handbook uses its own module numbers, so they do not line up with any particular course's numbering.
 
 ---
 
@@ -200,7 +199,7 @@ Legend: `L` = core-curriculum lesson · `S` = split from a long curriculum lesso
 | Week | Lessons |
 |---|---|
 | **W0 Logic Foundations & Web Architecture** | ✅ Placement check · S How the Web Works: Client, Server & HTTP · S Data Containers: Variables & Data Types · L Operators: Arithmetic, Comparison, Logic · L Conditionals · L Lists & Loops · L Functions · 🔥 Reading Errors & Debugging Basics |
-| **W1 Algorithms & System Logic** | ✅ Placement check · L Counting & Frequency · L Searching · L Sorting · L Filtering, Aggregation & Combining · L Problem Solving Process · 📋 **CareerPilot Phase 1** (replaces the bootcamp mini project & assignment) |
+| **W1 Algorithms & System Logic** | ✅ Placement check · L Counting & Frequency · L Searching · L Sorting · L Filtering, Aggregation & Combining · L Problem Solving Process · 📋 **CareerPilot Phase 1** (replaces the usual mini project & assignment) |
 
 Tracks alongside: 🧩 DSA Stage 1 (Big-O, memory, recursion) · 🏛️ Architecture Stages A–B.
 
@@ -577,7 +576,7 @@ fsse-handbook/
 │   ├── LEARN_THE_CODEBASE.md
 │   └── ADDING_CONTENT.md
 ├── content/
-│   ├── outline.json             ← bootcamp outline (titles only)
+│   ├── outline.json             ← module/week/lesson ordering
 │   ├── course.json              ← handbook structure: modules, weeks, tracks, order
 │   ├── modules/m1/w0/01-how-the-web-works.md
 │   ├── tracks/dsa/…  tracks/architecture/…
@@ -671,7 +670,7 @@ type LessonMeta = {
 ✋ = stop for learner review.
 
 ### B0 — Plan ✋
-- [x] Map bootcamp outline → `content/outline.json`
+- [x] Define module/week ordering → `content/outline.json`
 - [x] Market check → `docs/MARKET_CHECK.md`
 - [x] Learner approves this plan
 

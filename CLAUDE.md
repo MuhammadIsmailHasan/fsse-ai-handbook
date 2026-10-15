@@ -39,7 +39,7 @@ npm run -s typecheck && npm run -s lint && npm run -s test && npm run -s build  
 - **No browser/Chrome checks** of the handbook UI — the learner checks the display themselves.
 - **Non-default ports everywhere**: handbook 5391, Flask 5091, FastAPI 8091, Next.js 3091, Postgres 5491, Redis 6391.
 - **RevoShop repo** (`~/path/to/revoshop`) is **read-only** here: never modify it, never read or print its `.env` / `.env.docker` secrets.
-- **Never** enter credentials, create cloud accounts, or use the learner's bootcamp login.
+- **Never** enter credentials, create cloud accounts, or use any of the learner's course logins.
 - Lessons must teach **industry best practices** (🏆 section), include a **🔍 RevoShop box** when the topic touches the learner's project, and ship in **English + Indonesian**.
 
 ## Writing style (summary)

@@ -38,7 +38,7 @@ no rate limiting on /auth/login                Redis sliding-window limit → 42
 | **Smoke test** | A handful of quick checks that prove a deployment basically works |
 
 :::warning[Work in your own copy of RevoShop]
-Your RevoShop repository lives in your **bootcamp's GitHub organization**, where you may not be able to add GitHub Actions secrets or deploy keys (needed next week). Create a **personal** repository and push a copy there — leave the bootcamp remote untouched. Check your program's rules before making the copy **public**; a private repo works for everything in Module 5.
+If your RevoShop repository lives in **someone else's GitHub organization**, you may not be able to add GitHub Actions secrets or deploy keys (needed next week). Create a **personal** repository and push a copy there — leave the original remote untouched. Check the organization's rules before making the copy **public**; a private repo works for everything in Module 5.
 :::
 
 ## 🗺️ Where this fits

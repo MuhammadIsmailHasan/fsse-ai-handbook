@@ -1,7 +1,7 @@
 ---
 title: "Docker Lebih Dalam"
 summary: Memahami apa sebenarnya container itu — namespace, cgroup, dan layer, image dan digest, jenis CPU, jaringan, penyimpanan, batas dan exit code, debugging, serta membuat container lebih aman.
-sourceHash: cdf952d15749
+sourceHash: 7cf1b15b32e9
 ---
 
 ::part[Pelajari Konsepnya]{n="1"}

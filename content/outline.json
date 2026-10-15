@@ -1,5 +1,5 @@
 {
-  "_note": "Course outline (module/week/lesson titles only) mapped from a Full-Stack Software Engineering bootcamp syllabus. All lesson content in this project is original.",
+  "_note": "Module/week/lesson titles and their order. All lesson content in this project is original.",
   "modules": [
     {
       "id": "m1",
@@ -28,7 +28,10 @@
           ]
         }
       ],
-      "assignment": ["Full Brief", "Advanced (Optional)"]
+      "assignment": [
+        "Full Brief",
+        "Advanced (Optional)"
+      ]
     },
     {
       "id": "m2",
@@ -101,7 +104,13 @@
           ]
         }
       ],
-      "assignment": ["Full Brief", "Checkpoint 1", "Checkpoint 2", "Checkpoint 3", "Advanced (Optional)"]
+      "assignment": [
+        "Full Brief",
+        "Checkpoint 1",
+        "Checkpoint 2",
+        "Checkpoint 3",
+        "Advanced (Optional)"
+      ]
     },
     {
       "id": "m3",
@@ -174,7 +183,13 @@
           ]
         }
       ],
-      "assignment": ["Full Brief", "Checkpoint 1", "Checkpoint 2", "Checkpoint 3", "Advanced (Optional)"]
+      "assignment": [
+        "Full Brief",
+        "Checkpoint 1",
+        "Checkpoint 2",
+        "Checkpoint 3",
+        "Advanced (Optional)"
+      ]
     },
     {
       "id": "m4",
@@ -214,7 +229,10 @@
           ]
         }
       ],
-      "assignment": ["Full Brief", "Advanced (Optional)"]
+      "assignment": [
+        "Full Brief",
+        "Advanced (Optional)"
+      ]
     },
     {
       "id": "special",
@@ -223,7 +241,9 @@
         {
           "id": "special-1",
           "title": "Special Module",
-          "lessons": ["Enhancing Your Software Engineering Portfolio"]
+          "lessons": [
+            "Enhancing Your Software Engineering Portfolio"
+          ]
         }
       ]
     }

@@ -1,7 +1,7 @@
 ---
 title: "🚀 Kirim RevoShop 1: Container Siap Production"
 summary: Terapkan Minggu 1 ke RevoShop nyata — audit Dockerfile, tambah build target dan konfigurasi gunicorn, setting yang menolak startup jika ada yang tidak aman, stack Compose dengan Caddy, migrasi sekali jalan, Redis, pembatas login, dan smoke test.
-sourceHash: 22ea7d62bcc9
+sourceHash: 3a04fa8e78f4
 ---
 
 ## 🎯 Tujuan
@@ -34,7 +34,7 @@ tidak ada pembatas di /auth/login          pembatas sliding-window Redis → 429
 | **Smoke test** | Segelintir cek cepat yang membuktikan deployment sebenarnya berfungsi |
 
 :::warning[Kerja di salinanmu sendiri dari RevoShop]
-Repository RevoShop-mu tinggal di **organisasi GitHub bootcamp-mu**, di mana kamu mungkin tidak bisa menambah GitHub Actions secret atau deploy key (dibutuhkan minggu depan). Buat repository **pribadi** dan push salinannya ke sana — biarkan remote bootcamp tetap tidak berubah. Cek aturan program-mu sebelum membuat salinannya **publik**; repo pribadi berhasil untuk semuanya di Module 5.
+Kalau repository RevoShop-mu tinggal di **organisasi GitHub orang lain**, kamu mungkin tidak bisa menambah GitHub Actions secret atau deploy key (dibutuhkan minggu depan). Buat repository **pribadi** dan push salinannya ke sana — biarkan remote asalnya tetap tidak berubah. Cek aturan organisasinya sebelum membuat salinannya **publik**; repo pribadi berhasil untuk semuanya di Module 5.
 :::
 
 ## 🗺️ Di mana ini cocok
