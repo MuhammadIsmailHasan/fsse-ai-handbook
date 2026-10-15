@@ -131,11 +131,7 @@ function LessonHeader({ lesson }: { lesson: LessonMeta }) {
       )}
 
       <div className="mt-5 flex flex-wrap items-center gap-2 text-xs">
-        {lesson.source === 'core' ? (
-          <Chip>{t('lesson.sourceRef', { ref: lesson.sourceRef ?? '' })}</Chip>
-        ) : (
-          <Chip>{t('lesson.bonus')}</Chip>
-        )}
+        {lesson.source === 'original' && <Chip>{t('lesson.bonus')}</Chip>}
         {lesson.split && <Chip>{t('lesson.split')}</Chip>}
         <Chip>
           {t('lesson.studyHours', {

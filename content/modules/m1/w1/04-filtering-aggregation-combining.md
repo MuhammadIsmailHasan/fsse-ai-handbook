@@ -3,7 +3,6 @@ title: "Filtering, Aggregation & Combining Algorithms"
 summary: Turn raw records into answers — filter with comprehensions, group and summarize, and combine data from several sources.
 type: lesson
 source: core
-sourceRef: "M1 · W1 · L4"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 150
 tags: [algorithms, comprehensions, grouping, data-processing]

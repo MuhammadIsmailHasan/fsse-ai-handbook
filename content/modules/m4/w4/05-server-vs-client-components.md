@@ -3,7 +3,6 @@ title: "Server vs Client Components"
 summary: The main idea of the App Router — what runs where, the "use client" line, which props can cross it, putting server content inside client wrappers, keeping secrets on the server, and small interactive "islands".
 type: lesson
 source: core
-sourceRef: "M3 · W4 · L5"
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 180
 tags: [nextjs, react-server-components, use-client, architecture, performance]

@@ -3,7 +3,6 @@ title: "Performance Testing with Locust"
 summary: Find out how your API behaves under load before users do — latency percentiles, throughput, realistic user scenarios with Locust, and turning results into decisions.
 type: lesson
 source: core
-sourceRef: "M2 · W6 · L3"
 roles: { be: core, fe: optional, fs: recommended, ai: recommended, ops: core }
 durationMinutes: 150
 tags: [performance, load-testing, locust, latency, slo]

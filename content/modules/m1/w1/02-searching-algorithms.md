@@ -3,7 +3,6 @@ title: "Searching Algorithms"
 summary: Find things fast — linear search, binary search, and choosing the right data structure so you barely have to search at all.
 type: lesson
 source: core
-sourceRef: "M1 · W1 · L2"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 150
 tags: [algorithms, searching, binary-search, sets]

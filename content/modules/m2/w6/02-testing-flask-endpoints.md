@@ -3,7 +3,6 @@ title: "Unit Testing Flask API Endpoints"
 summary: Test your API the way clients use it — the Flask test client, a real PostgreSQL database, isolated fixtures, auth headers, and assertions on status, body and persistence.
 type: lesson
 source: core
-sourceRef: "M2 · W6 · L2"
 roles: { be: core, fe: optional, fs: core, ai: recommended, ops: recommended }
 durationMinutes: 180
 tags: [testing, pytest, flask, integration-tests, postgresql, fixtures]

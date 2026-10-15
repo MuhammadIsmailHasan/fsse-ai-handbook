@@ -3,7 +3,6 @@ title: "Control Flow: Pattern Matching, Dispatch & State Machines"
 summary: Go beyond if/else — structural pattern matching, dispatch tables instead of long chains, and modeling allowed status changes as a state machine.
 type: lesson
 source: core
-sourceRef: "M2 · W3 · L1"
 split: true
 roles: { be: core, fe: optional, fs: core, ai: recommended, ops: optional }
 durationMinutes: 120

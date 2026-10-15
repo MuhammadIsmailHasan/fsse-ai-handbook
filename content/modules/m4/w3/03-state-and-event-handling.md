@@ -3,7 +3,6 @@ title: "State Management & Event Handling"
 summary: Make components remember and respond — useState, events in React, why state must be replaced instead of changed, updater functions, sharing state between components, and deciding where state lives.
 type: lesson
 source: core
-sourceRef: "M3 · W3 · L3"
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 180
 tags: [react, state, usestate, events, lifting-state]

@@ -3,7 +3,6 @@ title: "Functions: Creating Reusable Blocks of Logic"
 summary: Package logic into named, testable functions — parameters, return values, scope, and pure vs side-effect code.
 type: lesson
 source: core
-sourceRef: "M1 · W0 · L5"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 150
 tags: [python, functions, testing, clean-code]

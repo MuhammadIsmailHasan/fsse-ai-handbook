@@ -3,7 +3,6 @@ title: "JavaScript Basics & Functions"
 summary: JavaScript for Python developers — values and types, comparing values, const/let, strings, functions, arrow functions, closures and modules, plus the small differences that cause real bugs.
 type: lesson
 source: core
-sourceRef: "M3 · W1 · L3"
 roles: { be: recommended, fe: core, fs: core, ai: core, ops: optional }
 durationMinutes: 180
 tags: [javascript, functions, closures, types, modules]

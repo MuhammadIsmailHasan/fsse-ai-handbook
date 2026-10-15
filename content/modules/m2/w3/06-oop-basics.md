@@ -3,7 +3,6 @@ title: "OOP Basics: Classes, Objects & Methods"
 summary: Model real concepts as classes that protect their own rules — attributes, methods, properties, special methods, and when to prefer composition over inheritance.
 type: lesson
 source: core
-sourceRef: "M2 · W3 · L5"
 roles: { be: core, fe: optional, fs: core, ai: core, ops: optional }
 durationMinutes: 180
 tags: [python, oop, classes, composition, dataclasses]

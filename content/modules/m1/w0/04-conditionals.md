@@ -3,7 +3,6 @@ title: "Conditionals: Logic Flow (if, elif, else)"
 summary: Make programs choose — if/elif/else, guard clauses, and how to keep branching code readable and bug-free.
 type: lesson
 source: core
-sourceRef: "M1 · W0 · L3"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 150
 tags: [python, conditionals, control-flow]

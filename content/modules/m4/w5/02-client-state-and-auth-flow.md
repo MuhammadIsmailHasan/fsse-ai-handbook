@@ -3,7 +3,6 @@ title: "Client State & Authentication Flow"
 summary: Log in to a Flask API from Next.js safely — where tokens should live, signed httpOnly session cookies with jose, login/logout Server Actions, a Data Access Layer, quick proxy.ts redirects and blocking open redirects.
 type: lesson
 source: core
-sourceRef: "M3 · W5 · L2"
 roles: { be: recommended, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 210
 tags: [authentication, sessions, cookies, jwt, jose, proxy, security, nextjs]

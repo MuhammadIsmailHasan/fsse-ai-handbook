@@ -3,7 +3,6 @@ title: "Enhancing Your Software Engineering Portfolio"
 summary: Turn projects into interview evidence — what reviewers look for, choosing 2–3 flagship projects, READMEs that sell, demos and live links, showing tests and decisions, and presenting AI-assisted work honestly.
 type: career
 source: core
-sourceRef: "Special · L1"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 180
 tags: [career, portfolio, github, readme, projects]

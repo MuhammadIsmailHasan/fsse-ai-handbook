@@ -3,7 +3,6 @@ title: "CSS Fundamentals"
 summary: How CSS decides what an element looks like — selectors, which rule wins, the box model, units, colors, CSS variables and hover/focus states — with habits that keep stylesheets easy to change.
 type: lesson
 source: core
-sourceRef: "M3 · W1 · L1"
 split: true
 roles: { be: optional, fe: core, fs: core, ai: optional, ops: none }
 durationMinutes: 120

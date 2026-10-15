@@ -3,7 +3,6 @@ title: "Flask Intro: Routes & Application Structure"
 summary: Build a Flask API the way teams do — routing, request and response handling, JSON errors, configuration classes, the application factory and blueprints.
 type: lesson
 source: core
-sourceRef: "M2 · W4 · L1"
 roles: { be: core, fe: optional, fs: core, ai: recommended, ops: optional }
 durationMinutes: 180
 tags: [flask, routing, blueprints, app-factory, configuration]

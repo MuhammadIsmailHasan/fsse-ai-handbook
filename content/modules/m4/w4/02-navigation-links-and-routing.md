@@ -3,7 +3,6 @@ title: "Navigation: Link, Active Styling & Programmatic Routing"
 summary: Move between pages the Next.js way — Link with fast page changes, highlighting the current link, breadcrumbs, keeping filters in the URL, and useRouter to navigate after an action.
 type: lesson
 source: core
-sourceRef: "M3 · W4 · L2"
 roles: { be: optional, fe: core, fs: core, ai: optional, ops: none }
 durationMinutes: 150
 tags: [nextjs, navigation, link, userouter, search-params, url-state]

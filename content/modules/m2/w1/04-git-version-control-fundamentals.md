@@ -3,7 +3,6 @@ title: "Git: Version Control Fundamentals"
 summary: Save meaningful snapshots of your work, understand the three areas of Git, write good commit messages, and undo mistakes safely.
 type: lesson
 source: core
-sourceRef: "M2 · W1 · L4"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 150
 tags: [git, version-control, commits, tooling]

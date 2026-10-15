@@ -3,7 +3,6 @@ title: "HTTP Methods from the Frontend"
 summary: Call GET, POST, PATCH and DELETE correctly from a Next.js app — Route Handlers as a Backend-for-Frontend, passing the session token, status codes like 201/204/422, safe retries, and a typed browser client.
 type: lesson
 source: core
-sourceRef: "M3 · W5 · L5"
 split: true
 roles: { be: recommended, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 150

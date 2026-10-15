@@ -3,7 +3,6 @@ title: "HTML Structure & Semantics"
 summary: Build pages with the right HTML elements — page skeleton, main areas, headings, lists, links, images and forms — so browsers, search engines and screen readers understand them.
 type: lesson
 source: core
-sourceRef: "M3 · W1 · L1"
 split: true
 roles: { be: recommended, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 120

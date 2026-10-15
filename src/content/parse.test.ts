@@ -12,7 +12,6 @@ title: How the Web Works
 summary: What happens between typing a URL and seeing a page.
 type: lesson
 source: core
-sourceRef: "M1 · W0 · L1"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 120
 ---
@@ -53,9 +52,9 @@ describe('buildLessonMeta', () => {
     expect(meta.readingMinutes).toBeGreaterThanOrEqual(1)
   })
 
-  it('requires sourceRef for the bootcamp-based lessons', () => {
-    const source = validFrontmatter.replace(/sourceRef:.*\n/, '')
-    expect(() => buildLessonMeta('content/modules/m1/w0/01-a.md', source)).toThrow(/sourceRef/)
+  it('rejects an unknown source value', () => {
+    const source = validFrontmatter.replace('source: core', 'source: elsewhere')
+    expect(() => buildLessonMeta('content/modules/m1/w0/01-a.md', source)).toThrow(/source/)
   })
 
   it('reports unknown fields (typos)', () => {

@@ -3,7 +3,6 @@ title: "Interfaces, Type Aliases & Union Types"
 summary: Describe real data precisely — object types, optional and readonly fields, unions where each state has only its own data, type guards, switches that cover every case, and building new types from existing ones.
 type: lesson
 source: core
-sourceRef: "M3 · W2 · L2"
 roles: { be: recommended, fe: core, fs: core, ai: core, ops: optional }
 durationMinutes: 150
 tags: [typescript, interfaces, unions, discriminated-unions, utility-types]

@@ -3,7 +3,6 @@ title: "Database Schema Design & Normalization"
 summary: Turn messy real-world data into clean tables — entities, keys, relationships, normalization, and constraints that protect your data.
 type: lesson
 source: core
-sourceRef: "M2 · W2 · L2"
 roles: { be: core, fe: optional, fs: core, ai: recommended, ops: optional }
 durationMinutes: 180
 tags: [postgresql, schema-design, normalization, erd, constraints]

@@ -3,7 +3,6 @@ title: "TypeScript Setup & Basics"
 summary: What TypeScript adds to JavaScript, how to set it up in strict mode, typing variables and functions, letting TypeScript guess types, unions, null safety — and what types can't check while the app runs.
 type: lesson
 source: core
-sourceRef: "M3 · W2 · L1"
 roles: { be: recommended, fe: core, fs: core, ai: core, ops: optional }
 durationMinutes: 150
 tags: [typescript, types, strict-mode, tooling]

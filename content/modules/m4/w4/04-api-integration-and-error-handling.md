@@ -3,7 +3,6 @@ title: "API Integration & Error Handling"
 summary: Connect the Next.js frontend to your Flask API — a typed API client, where requests should run, tokens, turning API errors into good screens, expected vs unexpected errors, redirects, 404s and error screens with a retry button.
 type: lesson
 source: core
-sourceRef: "M3 · W4 · L4"
 roles: { be: recommended, fe: core, fs: core, ai: recommended, ops: optional }
 durationMinutes: 180
 tags: [nextjs, api, fetch, error-handling, error-boundary, bff]

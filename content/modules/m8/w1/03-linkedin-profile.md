@@ -62,7 +62,7 @@ Avoid "aspiring" if you have deployed projects — describe what you do.
 ### 2. About (3 short paragraphs)
 
 ```text
-I build web products end to end: Python APIs, Next.js frontends, PostgreSQL, Docker and CI. After [previous career / study], I completed an intensive software engineering program (the bootcamp FSSE) and kept going with my own projects.
+I build web products end to end: Python APIs, Next.js frontends, PostgreSQL, Docker and CI. After [previous career / study], I completed an intensive software engineering program and kept going with my own projects.
 
 Recently I built CareerPilot, a job-hunt tracker with a Flask API and a Next.js app (secure sessions, 130+ automated tests, deployed with Docker), and RevoShop, an e-commerce backend with Midtrans payment webhooks and role-based access.
 
@@ -78,7 +78,7 @@ Specific > impressive. Numbers (tests, users, response times) make claims concre
 | **Featured** | CareerPilot live link or demo video, GitHub profile, one LinkedIn post about a hard problem you solved |
 | **Projects** | CareerPilot, RevoShop — with dates, skills and a link |
 | **Experience** | previous jobs with **transferable** results (e.g. "automated weekly reports with Excel macros, saving 4 h/week"); a bootcamp can go under Education or as a program entry |
-| **Education / Licenses** | the bootcamp FSSE; relevant certificates (AWS later) |
+| **Education / Licenses** | [Bootcamp name]; relevant certificates (AWS later) |
 | **Skills** | 10–15 relevant skills, top 3 pinned (Python, TypeScript, PostgreSQL) — endorsements matter less than projects |
 
 ### 4. Settings that matter
@@ -176,7 +176,7 @@ Show a review rubric
 :::linkedin{type="concept"}
 🧭 I rewrote my LinkedIn headline from "Student" to what I actually build.
 
-Before: "the bootcamp student | Aspiring developer"
+Before: "Bootcamp student | Aspiring developer"
 After: "Full-Stack Developer | Python · Flask · Next.js · PostgreSQL | Building CareerPilot"
 
 What changed my mind: recruiters search by role and stack, and a profile is a search result before it's a story.

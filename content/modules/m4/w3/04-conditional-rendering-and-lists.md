@@ -3,7 +3,6 @@ title: "Conditional Rendering & Dynamic Lists"
 summary: Show the right screen for every situation — early returns, ternaries and && used safely, loading/error/empty states, lists and groups with correct keys, and filtering without storing extra state.
 type: lesson
 source: core
-sourceRef: "M3 · W3 · L4"
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 150
 tags: [react, conditional-rendering, lists, keys, ui-states]

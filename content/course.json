@@ -5,7 +5,6 @@
       "number": 1,
       "title": "Algorithm & Programming",
       "source": "core",
-      "sourceRef": "M1",
       "summary": "Think like a programmer: how the web works, data, logic, loops, functions, and the classic algorithms every developer uses.",
       "roles": {
         "be": "core",
@@ -32,7 +31,6 @@
       "number": 2,
       "title": "Backend: Flask",
       "source": "mixed",
-      "sourceRef": "M2",
       "summary": "Rebuild your backend understanding: tools, PostgreSQL, Python, Flask, REST APIs, auth, testing and deployment.",
       "roles": {
         "be": "core",
@@ -101,7 +99,6 @@
       "number": 4,
       "title": "Frontend: Next.js",
       "source": "mixed",
-      "sourceRef": "M3",
       "summary": "HTML, CSS and JavaScript up to TypeScript, Tailwind, React and Next.js — with forms, auth and end-to-end tests.",
       "roles": {
         "be": "optional",
@@ -186,7 +183,6 @@
       "number": 6,
       "title": "AI-Assisted Development",
       "source": "core",
-      "sourceRef": "M4",
       "summary": "Work with AI coding agents like a professional: specs, steering, reviewing AI output, and shipping a full-stack feature.",
       "roles": {
         "be": "core",
@@ -267,7 +263,6 @@
       "number": 8,
       "title": "Career & Portfolio",
       "source": "mixed",
-      "sourceRef": "Special",
       "summary": "Turn your skills into offers: portfolio, LinkedIn, CV, job search and every type of interview.",
       "roles": {
         "be": "core",

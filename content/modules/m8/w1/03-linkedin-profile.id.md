@@ -1,7 +1,7 @@
 ---
 title: "Profil LinkedIn: Judul, About, Featured"
 summary: Bangun profil LinkedIn yang ditemukan recruiter dan dipercaya — formula judul, section About, project Featured, entri pengalaman dan bootcamp, skill dan keyword, pengaturan Open to Work, dan networking tanpa spam.
-sourceHash: efc41c9799e3
+sourceHash: 81850b3fac05
 ---
 
 ::part[Pelajari Konsepnya]{n="1"}
@@ -58,7 +58,7 @@ Hindari "aspiring" kalau kamu sudah deploy project — jelaskan apa yang kamu la
 ### 2. About (3 paragraf pendek)
 
 ```text
-I build web products end to end: Python APIs, Next.js frontends, PostgreSQL, Docker and CI. After [previous career / study], I completed an intensive software engineering program (the bootcamp FSSE) and kept going with my own projects.
+I build web products end to end: Python APIs, Next.js frontends, PostgreSQL, Docker and CI. After [previous career / study], I completed an intensive software engineering program and kept going with my own projects.
 
 Recently I built CareerPilot, a job-hunt tracker with a Flask API and a Next.js app (secure sessions, 130+ automated tests, deployed with Docker), and RevoShop, an e-commerce backend with Midtrans payment webhooks and role-based access.
 
@@ -74,7 +74,7 @@ Spesifik > berkesan. Angka (test, user, waktu respon) buat klaim jadi konkret.
 | **Featured** | Link live CareerPilot atau video demo, profil GitHub, satu postingan LinkedIn tentang masalah sulit yang kamu selesaikan |
 | **Projects** | CareerPilot, RevoShop — dengan tanggal, skill, dan link |
 | **Experience** | pekerjaan sebelumnya dengan **hasil yang bisa dipindah** (misalnya "otomasi laporan mingguan dengan Excel macro, hemat 4 jam/minggu"); bootcamp bisa di Education atau sebagai entri program |
-| **Education / Licenses** | the bootcamp FSSE; sertifikat yang relevan (AWS nanti) |
+| **Education / Licenses** | [Nama bootcamp]; sertifikat yang relevan (AWS nanti) |
 | **Skills** | 10–15 skill relevan, 3 teratas disematkan (Python, TypeScript, PostgreSQL) — endorsement kurang penting dibanding project |
 
 ### 4. Pengaturan yang penting
@@ -172,7 +172,7 @@ Lihat rubrik review
 :::linkedin{type="concept"}
 🧭 Aku tulis ulang judul LinkedIn-ku dari "Student" jadi apa yang aku benar-benar buat.
 
-Sebelum: "the bootcamp student | Aspiring developer"
+Sebelum: "Bootcamp student | Aspiring developer"
 Sesudah: "Full-Stack Developer | Python · Flask · Next.js · PostgreSQL | Building CareerPilot"
 
 Yang ubah pikiranku: recruiter cari by role dan stack, dan profil adalah search result sebelum jadi cerita.

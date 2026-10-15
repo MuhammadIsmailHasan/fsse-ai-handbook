@@ -3,7 +3,6 @@ title: "Deployment: Hosting the Flask API"
 summary: Take the API from your laptop to a server — Gunicorn and workers, reverse proxies and TLS, migrations as a release step, liveness vs readiness checks, zero-downtime deploys, rollbacks and choosing a host.
 type: lesson
 source: core
-sourceRef: "M2 · W6 · L5"
 roles: { be: core, fe: optional, fs: core, ai: recommended, ops: core }
 durationMinutes: 180
 tags: [deployment, gunicorn, wsgi, health-checks, reverse-proxy, paas]

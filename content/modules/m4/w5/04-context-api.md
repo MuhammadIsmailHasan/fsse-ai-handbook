@@ -3,7 +3,6 @@ title: "Context API"
 summary: Share values without passing props through every layer — createContext, providers in the App Router, hooks that give clear errors, useReducer with separate state and dispatch contexts, stable values, and when Context is the wrong tool.
 type: lesson
 source: core
-sourceRef: "M3 · W5 · L5"
 split: true
 roles: { be: none, fe: core, fs: core, ai: optional, ops: none }
 durationMinutes: 120

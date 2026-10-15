@@ -3,7 +3,6 @@ title: "Forms & Async Responses"
 summary: Build forms that work even before JavaScript loads — Server Actions, FormData, server checks with Zod, useActionState for errors, useFormStatus for "Saving…", showing Flask 422/409 errors, and redirecting.
 type: lesson
 source: core
-sourceRef: "M3 · W5 · L1"
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 180
 tags: [forms, server-actions, useactionstate, zod, validation, nextjs]

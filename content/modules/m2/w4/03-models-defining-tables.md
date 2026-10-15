@@ -3,7 +3,6 @@ title: "Models: Defining Database Tables as Python Classes"
 summary: Write typed SQLAlchemy 2.0 models — columns, nullability, defaults, constraints, indexes, timestamps and enums — so Python and PostgreSQL agree on the rules.
 type: lesson
 source: core
-sourceRef: "M2 · W4 · L3"
 roles: { be: core, fe: none, fs: core, ai: recommended, ops: optional }
 durationMinutes: 150
 tags: [flask, sqlalchemy, models, orm, constraints]

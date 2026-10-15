@@ -3,7 +3,6 @@ title: "DOM Manipulation & Event Handling"
 summary: Make pages interactive without a framework — find and create elements, show data safely, react to clicks and typing, keep data and screen in sync, and clean up afterwards.
 type: lesson
 source: core
-sourceRef: "M3 · W1 · L4"
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 180
 tags: [javascript, dom, events, xss, event-delegation]

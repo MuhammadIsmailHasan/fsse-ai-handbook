@@ -2,9 +2,8 @@
 title: "Lesson Title"
 summary: One sentence (max 240 characters) shown in lists and search.
 type: lesson
-source: original            # or: core (then sourceRef is required)
-# sourceRef: "M2 · W4 · L1"
-# split: true               # if this lesson was split from one the bootcamp lesson
+source: original            # or: core
+# split: true               # if this lesson was split from one long curriculum lesson
 roles: { be: core, fe: optional, fs: core, ai: recommended, ops: optional }
 durationMinutes: 150
 tags: [topic, another-topic]

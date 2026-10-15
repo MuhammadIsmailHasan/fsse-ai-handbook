@@ -3,7 +3,6 @@ title: "Build Optimization"
 summary: Make the Next.js production build fast and small — reading next build output, the bundle analyzer, Server Components vs browser code, next/dynamic, next/image, next/font, outside scripts, caching and a performance budget.
 type: lesson
 source: core
-sourceRef: "M3 · W6 · L4"
 roles: { be: none, fe: core, fs: core, ai: optional, ops: recommended }
 durationMinutes: 150
 tags: [performance, nextjs, bundling, images, fonts, lazy-loading]

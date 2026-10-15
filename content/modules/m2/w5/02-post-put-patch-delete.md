@@ -3,7 +3,6 @@ title: "POST, PUT, PATCH & DELETE: Creating and Changing Data"
 summary: Write endpoints that create, replace, partially update and delete resources correctly — status codes, Location headers, partial update semantics and idempotency keys.
 type: lesson
 source: core
-sourceRef: "M2 · W5 · L2"
 roles: { be: core, fe: recommended, fs: core, ai: recommended, ops: optional }
 durationMinutes: 180
 tags: [rest, api-design, idempotency, flask, crud]

@@ -3,7 +3,6 @@ title: "Data Containers: Variables & Data Types"
 summary: How programs remember things — variables, Python's core data types, and converting between them safely.
 type: lesson
 source: core
-sourceRef: "M1 · W0 · L1"
 split: true
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 150

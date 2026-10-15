@@ -3,7 +3,6 @@ title: "TypeScript Arrays & Objects"
 summary: Type lists and lookup tables precisely — readonly arrays, tuples, `as const`, `keyof`, `Record`, `satisfies`, and updating data without changing the original, all checked by TypeScript.
 type: lesson
 source: core
-sourceRef: "M3 · W2 · L3"
 split: true
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 120

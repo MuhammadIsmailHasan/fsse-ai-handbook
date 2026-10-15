@@ -39,3 +39,12 @@ exercises/web/**/test-results/
 exercises/web/**/playwright-report/
 exercises/web/**/playwright/.auth/
 exercises/web/.grader-tmp/
+
+# Terraform (state holds practice credentials; .tfvars holds your IP/password)
+infra/**/.terraform/
+infra/**/.terraform.lock.hcl
+infra/**/terraform.tfstate
+infra/**/terraform.tfstate.*
+infra/**/*.tfvars
+!infra/**/*.tfvars.example
+infra/**/tfplan

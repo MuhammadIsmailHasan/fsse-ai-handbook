@@ -3,7 +3,6 @@ title: "File-based Routing, Pages & Layouts"
 summary: How the Next.js App Router turns folders into URLs — pages, shared layouts, dynamic URLs like /jobs/42, route groups, private folders, loading and not-found screens, and where to keep code.
 type: lesson
 source: core
-sourceRef: "M3 · W4 · L1"
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 150
 tags: [nextjs, app-router, routing, layouts, dynamic-routes]

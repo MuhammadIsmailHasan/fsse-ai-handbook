@@ -3,7 +3,6 @@ title: "Sorting Algorithms"
 summary: Put data in order — how sorting works inside, how to sort by any field in Python, and why stability matters.
 type: lesson
 source: core
-sourceRef: "M1 · W1 · L3"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 150
 tags: [algorithms, sorting, lambda, python]

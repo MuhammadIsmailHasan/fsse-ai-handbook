@@ -110,12 +110,12 @@ export const LINKEDIN_POSTS: Record<Locale, PostGuide> = {
 export const LINKEDIN_RULES: Record<Locale, string[]> = {
   en: [
     'Rewrite the template in your own voice — recruiters notice copy-paste posts.',
-    'Don’t share the bootcamp’s paid course material (slides, lesson text, assignment briefs).',
+    'Don’t share any paid course material you studied from (slides, lesson text, assignment briefs).',
     'Suggested hashtags: pick 3–5, e.g. #LearningInPublic #FullStack #Python #React #AIEngineering',
   ],
   id: [
     'Tulis ulang template dengan gayamu sendiri — recruiter bisa mengenali post hasil copy-paste.',
-    'Jangan bagikan materi berbayar the bootcamp (slide, teks materi, brief tugas).',
+    'Jangan bagikan materi kursus berbayar yang kamu pelajari (slide, teks materi, brief tugas).',
     'Saran hashtag: pilih 3–5, misalnya #LearningInPublic #FullStack #Python #React #AIEngineering',
   ],
 }

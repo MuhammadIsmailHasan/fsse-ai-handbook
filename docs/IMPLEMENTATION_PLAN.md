@@ -51,7 +51,7 @@ This document is the roadmap for the whole project: **what** we build (a local h
 - **Taken from the bootcamp:** only the course **outline** — module, week and lesson **titles** and their order. Saved in [`content/outline.json`](../content/outline.json).
 - **Not taken from the bootcamp:** lesson text, bullet points, code, diagrams, quizzes, assignment briefs, logo or branding.
 - **Written originally:** every explanation, example, exercise, project brief and template in this repo.
-- Lessons based on a the bootcamp lesson carry a small `sourceRef` tag (e.g. `M2 · W4 · L1`) so you can match them with your class.
+- Lessons based on a the bootcamp lesson carry a `source: core` tag so you can match them with your class.
 - Bonus material is marked 🔥 **Bonus**.
 
 ---
@@ -61,7 +61,7 @@ This document is the roadmap for the whole project: **what** we build (a local h
 | Item | Value |
 |---|---|
 | Progress in the bootcamp | Finished through **Module 2 (Backend)** |
-| Existing portfolio | [RevoShop backend](https://github.com/Bootcamp-FSSE-Jun26/module-2-MuhammadIsmailHasan) — Flask, flask-smorest, SQLAlchemy, Flask-Migrate, JWT + RBAC, Midtrans webhooks, pytest, Locust, Docker, layered architecture |
+| Existing portfolio | RevoShop backend — Flask, flask-smorest, SQLAlchemy, Flask-Migrate, JWT + RBAC, Midtrans webhooks, pytest, Locust, Docker, layered architecture |
 | Honest gap | Much of RevoShop was implemented with Kiro → understanding is weaker than the code suggests |
 | Study time | ~3 h/day → planned as **6 days/week ≈ 18 h/week** (buffer for missed days) |
 | Machine | Python and Node already installed |
@@ -88,7 +88,7 @@ This document is the roadmap for the whole project: **what** we build (a local h
 | D7 | Long lessons | Split into smaller lessons | Keep each lesson readable |
 | D8 | Ports | Non-default, configurable via `.env`, strict port | Avoid conflicts with other local services |
 | D9 | AI-assisted dev module | **Tool-agnostic** (Kiro, Claude Code, Cursor, Copilot…) | Skills transfer across tools |
-| D10 | Next.js | Taught as the bootcamp does; the handbook app itself stays on Vite | Follow curriculum; keep reader simple |
+| D10 | Next.js | Taught as the curriculum does; the handbook app itself stays on Vite | Follow curriculum; keep reader simple |
 | D11 | DSA | **Parallel track in Python** | Interview skill needs spaced practice |
 | D12 | Architecture | **Parallel track** (principles → patterns → system design), starting in Module 1 | Learner wants it early |
 | D13 | Main project | ⭐ **CareerPilot** — AI job-hunt assistant | Useful to learner; strong interview story |
@@ -140,7 +140,7 @@ This document is the roadmap for the whole project: **what** we build (a local h
 ### Other badges
 | Badge | Meaning |
 |---|---|
-| 🔥 Bonus | Not in the bootcamp outline |
+| 🔥 Bonus | Not in bootcamp outline |
 | 🚫🤖 No-AI / 🤖✅ AI-allowed | Exercise AI policy |
 | 🟢 Free / 🟡 Small cost / 🔴 Concept only | AWS cost badge |
 | 🕒 Last reviewed | Date, on fast-changing topics (AI, cloud) |
@@ -170,14 +170,14 @@ Per-lesson labels are set in each lesson's frontmatter while writing content (th
 
 ```
 MODULES (in order)                               PARALLEL TRACKS
-1  Algorithm & Programming      (the bootcamp M1)      ┌ 🧩 DSA for Interviews (Python)
-2  Backend: Flask               (the bootcamp M2)      │
+1  Algorithm & Programming           ┌ 🧩 DSA for Interviews (Python)
+2  Backend: Flask                    │
 3  Backend: FastAPI             (🔥 bonus)      │ 🏛️ Architecture:
-4  Frontend: Next.js            (the bootcamp M3)      │   principles → design patterns
+4  Frontend: Next.js                 │   principles → design patterns
 5  Cloud, DevOps & AWS          (🔥 bonus)      │   → system design
-6  AI-Assisted Development      (the bootcamp M4)      │
+6  AI-Assisted Development           │
 7  AI Engineering in Production (🔥 bonus)      └
-8  Career & Portfolio           (the bootcamp Special + 🔥 bonus) — unlocks at Milestone 1
+8  Career & Portfolio           — unlocks at Milestone 1
 
 ⭐ CareerPilot: Phase 1 (M1) → Phase 7 (M7), monolith → microservices on AWS
 🧠 SupportDesk AI (M7)  ·  StudyMind (extra practice)
@@ -192,9 +192,9 @@ MODULES (in order)                               PARALLEL TRACKS
 
 ## 7. Modules in Detail
 
-Legend: `L` = the bootcamp-based lesson · `S` = split from a the bootcamp lesson · 🔥 = bonus · 📋 = project/assignment · ✅ = placement check
+Legend: `L` = core-curriculum lesson · `S` = split from a long curriculum lesson · 🔥 = bonus · 📋 = project/assignment · ✅ = placement check
 
-### Module 1 — Algorithm & Programming *(the bootcamp M1)*
+### Module 1 — Algorithm & Programming
 **Language:** Python. **Default roles:** all 🟢.
 
 | Week | Lessons |
@@ -204,7 +204,7 @@ Legend: `L` = the bootcamp-based lesson · `S` = split from a the bootcamp lesso
 
 Tracks alongside: 🧩 DSA Stage 1 (Big-O, memory, recursion) · 🏛️ Architecture Stages A–B.
 
-### Module 2 — Backend: Flask *(the bootcamp M2)* — "Rebuild with understanding"
+### Module 2 — Backend: Flask — "Rebuild with understanding"
 Every week includes 🔍 **Find it in RevoShop** boxes and 🔄 **In FastAPI…** boxes (W4–W6).
 
 | Week | Lessons |
@@ -223,7 +223,7 @@ Every week includes 🔍 **Find it in RevoShop** boxes and 🔄 **In FastAPI…*
 | **W2 Core** | async/await: When It Helps and When It Doesn't · Dependency Injection · Database with SQLAlchemy 2.0 (and SQLModel) · JWT Auth |
 | **W3 Real Apps** | Testing with pytest & TestClient · Project Structure for Real Apps · Background Tasks & Streaming Responses · Flask vs FastAPI Decision Guide · 📋 **CareerPilot Phase 3** (AI service) |
 
-### Module 4 — Frontend: Next.js *(the bootcamp M3)*
+### Module 4 — Frontend: Next.js
 | Week | Lessons |
 |---|---|
 | **W1 HTML, CSS, JavaScript** | ✅ · S HTML Structure & Semantics · S CSS Fundamentals · L Layout & Responsive Design · L JS Basics & Functions · L DOM & Events · L Arrays & Exercise · 🔥 Async JS: Promises, `fetch`, async/await · 🔥 Accessibility Basics |
@@ -248,7 +248,7 @@ Every week includes 🔍 **Find it in RevoShop** boxes and 🔄 **In FastAPI…*
 
 Every hands-on AWS lesson: cost badge + 🧹 cleanup checklist.
 
-### Module 6 — AI-Assisted Development *(the bootcamp M4, tool-agnostic)*
+### Module 6 — AI-Assisted Development
 | Week | Lessons |
 |---|---|
 | **W1 AI Dev Lifecycle & Requirements** | L AI Development Lifecycle · L Requirements Gathering for AI Projects · L Spec-Driven Workflow (requirements → design → tasks) · L Reviewing AI-Generated Documents · L Iterating AI Output to Production Quality |
@@ -277,7 +277,7 @@ Every hands-on AWS lesson: cost badge + 🧹 cleanup checklist.
 6. Internal knowledge assistant
 7. Operations agent with tools (ticket triage)
 
-### Module 8 — Career & Portfolio *(the bootcamp Special + 🔥 bonus)* — unlocks at Milestone 1
+### Module 8 — Career & Portfolio — unlocks at Milestone 1
 L Enhancing Your Portfolio · GitHub Profile README · LinkedIn Profile (headline, About, Featured) · Learning in Public · Tech CV / Resume · Job Search Strategy (Indonesia + remote) · The Hiring Process · Behavioral Interviews (STAR) · Live Coding Interviews · System Design Interviews · Working in a Team: Git Workflow, Code Review, Agile · Salary Negotiation Basics
 
 ---
@@ -357,9 +357,8 @@ The **file path** decides the lesson's id, module/week and URL:
 title: "Flask Routes & App Structure"
 summary: One sentence shown in lists and search (max 240 chars).
 type: lesson                  # lesson | placement-check | project | case-study | career | guide
-source: core                 # core | original (bonus)
-sourceRef: "M2 · W4 · L1"      # only when source = core
-split: false                  # true if split from a the bootcamp lesson
+source: core                  # core | original (bonus)
+split: false                  # true if split from a long curriculum lesson
 roles: { be: core, fe: optional, fs: core, ai: recommended, ops: recommended }
 durationMinutes: 150
 tags: [flask, routing]
@@ -480,7 +479,7 @@ Project starter kits (`exercises/projects/…`) have acceptance tests but **no**
 | Module finished | 🎓 Reflection | `reflection` |
 | Milestone reached | 🎯 Open to work / skills summary | `milestone` |
 
-Each template: filled-in draft with topic info · copy button · tips (hook, structure, visual, hashtags) · reminder to rewrite in your own voice · reminder **not to share the bootcamp paid material**.
+Each template: filled-in draft with topic info · copy button · tips (hook, structure, visual, hashtags) · reminder to rewrite in your own voice · reminder **not to share paid course material**.
 
 Module 8 adds: LinkedIn profile guide, GitHub profile README template, portfolio README template.
 
@@ -578,7 +577,7 @@ fsse-handbook/
 │   ├── LEARN_THE_CODEBASE.md
 │   └── ADDING_CONTENT.md
 ├── content/
-│   ├── outline.json             ← the bootcamp outline (titles only)
+│   ├── outline.json             ← bootcamp outline (titles only)
 │   ├── course.json              ← handbook structure: modules, weeks, tracks, order
 │   ├── modules/m1/w0/01-how-the-web-works.md
 │   ├── tracks/dsa/…  tracks/architecture/…
@@ -619,7 +618,6 @@ type LessonMeta = {
   order: number
   type: 'lesson' | 'placement-check' | 'project' | 'case-study' | 'career'
   source: 'core' | 'original'
-  sourceRef?: string
   roles: RoleLabels
   durationMinutes: number
   tags: string[]
@@ -673,7 +671,7 @@ type LessonMeta = {
 ✋ = stop for learner review.
 
 ### B0 — Plan ✋
-- [x] Map the bootcamp outline → `content/outline.json`
+- [x] Map bootcamp outline → `content/outline.json`
 - [x] Market check → `docs/MARKET_CHECK.md`
 - [x] Learner approves this plan
 
@@ -819,7 +817,7 @@ interface ReviewProvider {
 
 ## 19. Out of Scope
 
-- Copying the bootcamp lesson content, assignments or branding
+- Copying any paid course lesson content, assignments or branding
 - Login, user accounts, backend for the handbook
 - Deploying the handbook publicly
 - Posting to LinkedIn automatically

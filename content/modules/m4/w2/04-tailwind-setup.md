@@ -3,7 +3,6 @@ title: "Tailwind CSS Setup (v4)"
 summary: What "utility-first" CSS means and why teams use it, installing Tailwind v4 with Vite or Next.js, adding your own colors and settings with @theme, and editor tools.
 type: lesson
 source: core
-sourceRef: "M3 · W2 · L3"
 split: true
 roles: { be: optional, fe: core, fs: core, ai: optional, ops: none }
 durationMinutes: 90

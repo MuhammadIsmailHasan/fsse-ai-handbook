@@ -3,7 +3,6 @@ title: "Environment Variables & Metadata"
 summary: Configure Next.js safely — server-only vs NEXT_PUBLIC_ variables, .env files, checking settings at startup — and make pages look good when shared or searched, with page titles and link previews.
 type: lesson
 source: core
-sourceRef: "M3 · W4 · L3"
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: recommended }
 durationMinutes: 120
 tags: [nextjs, environment-variables, security, metadata, seo, open-graph]

@@ -2,14 +2,14 @@
 
 ## What is this?
 
-A personal, local study app for becoming an **AI full-stack software engineer**. It follows the *structure* of the the bootcamp Full Stack Software Engineering course (module and lesson titles only), and fills every lesson with **original**, beginner-friendly material — plus extra modules the job market asks for today.
+A personal, local study app for becoming an **AI full-stack software engineer**. It follows the *structure* of a Full Stack Software Engineering bootcamp (module and lesson titles only), and fills every lesson with **original**, beginner-friendly material — plus extra modules the job market asks for today.
 
 You run it on your own computer (`npm run dev`) and read it in the browser. Your progress stays in your browser.
 
 ## Who is it for?
 
 Someone who:
-- is learning (or has learned) the the bootcamp FSSE curriculum and wants **deeper understanding**,
+- is learning (or has learned) a full-stack bootcamp curriculum and wants **deeper understanding**,
 - wants to understand code written with AI tools, not just generate it,
 - wants a **portfolio** and a clear path to a first developer job.
 
@@ -39,7 +39,7 @@ flowchart TB
 
 | Part | What you get |
 |---|---|
-| **8 modules** | The the bootcamp outline (Modules 1, 2, 4, 6, 8) plus bonus modules: FastAPI (3), Cloud & AWS (5), AI Engineering (7) |
+| **8 modules** | The bootcamp outline (Modules 1, 2, 4, 6, 8) plus bonus modules: FastAPI (3), Cloud & AWS (5), AI Engineering (7) |
 | **DSA track** | Data structures & algorithm patterns for coding interviews, in Python, with spaced review |
 | **Architecture track** | Clean code → design patterns → system design, learned when you need each idea |
 | **Projects** | CareerPilot (7 phases, CLI → AI microservices on AWS), SupportDesk AI, StudyMind |
@@ -61,7 +61,7 @@ Key terms are underlined with a **Bahasa Indonesia** explanation, and each lesso
 |---|---|
 | 🟢 Core · 🔵 Recommended · ⚪ Optional · ➖ Not needed | Importance for a job role (Backend, Frontend, Full-Stack, AI Engineer, Cloud/DevOps, or ⭐ AI Full-Stack) |
 | 🚫🤖 No-AI · 🤖✅ AI-allowed | Whether you may use AI for an exercise |
-| 📘 the bootcamp ref · 🔥 Bonus | Based on the the bootcamp outline, or extra material |
+| 🔥 Bonus | Extra material, beyond the core curriculum outline |
 | 🟢 Free · 🟡 Small cost · 🔴 Concept only | AWS cost of a hands-on cloud lesson |
 
 ## How to study with it
@@ -97,4 +97,4 @@ You don't need to finish everything to get hired — **start applying at Milesto
 
 ## Content policy
 
-Only the the bootcamp **outline** (titles and order) was used, saved in `content/outline.json`. All explanations, code, exercises, projects and templates are original. Don't add the bootcamp's paid material (slides, lesson text, assignment briefs) to this repository.
+Only the bootcamp **outline** (titles and order) was used, saved in `content/outline.json`. All explanations, code, exercises, projects and templates are original. Don't add paid course material (slides, lesson text, assignment briefs) to this repository.

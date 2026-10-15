@@ -3,7 +3,6 @@ title: "Code Editor & Markdown"
 summary: Set up your editor like a professional and write clear documentation in Markdown — starting with a README recruiters actually read.
 type: lesson
 source: core
-sourceRef: "M2 · W1 · L2"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 120
 tags: [tooling, vscode, markdown, documentation, readme]

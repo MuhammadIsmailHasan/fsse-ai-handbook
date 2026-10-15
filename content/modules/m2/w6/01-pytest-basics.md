@@ -3,7 +3,6 @@ title: "Introduction to Testing & pytest Basics"
 summary: Why automated tests matter, how to write clear pytest tests with fixtures and parametrization, and how to know whether your tests would actually catch bugs.
 type: lesson
 source: core
-sourceRef: "M2 · W6 · L1"
 roles: { be: core, fe: recommended, fs: core, ai: core, ops: recommended }
 durationMinutes: 180
 tags: [testing, pytest, fixtures, tdd, coverage]

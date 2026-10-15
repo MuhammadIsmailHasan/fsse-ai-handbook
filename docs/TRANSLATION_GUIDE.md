@@ -22,7 +22,7 @@ src/i18n/messages.ts                                          ← app UI text
    sourceHash: 000000000000
    ---
    ```
-   Roles, duration, tags, `sourceRef`… come from the English file automatically.
+   Roles, duration, tags… come from the English file automatically.
 3. Translate the body.
 4. `npm run i18n -- stamp content/.../<name>.id.md` — records which English version you translated.
 5. `npm run content:check` — must pass. `npm run i18n` shows coverage.

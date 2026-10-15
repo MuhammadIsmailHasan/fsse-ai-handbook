@@ -3,7 +3,6 @@ title: "How the Web Works: Client, Server & HTTP"
 summary: What really happens between typing a URL and seeing a page — clients, servers, requests, responses and status codes.
 type: lesson
 source: core
-sourceRef: "M1 · W0 · L1"
 split: true
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 120

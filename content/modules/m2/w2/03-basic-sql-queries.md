@@ -3,7 +3,6 @@ title: "Basic SQL Queries: INSERT, SELECT, UPDATE, DELETE"
 summary: Create, read, update and delete data safely — filtering, sorting, NULL handling, aggregates with GROUP BY and HAVING, and parameterized queries.
 type: lesson
 source: core
-sourceRef: "M2 · W2 · L3"
 roles: { be: core, fe: optional, fs: core, ai: recommended, ops: recommended }
 durationMinutes: 180
 tags: [sql, postgresql, crud, aggregates]

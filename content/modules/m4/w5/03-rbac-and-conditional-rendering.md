@@ -3,7 +3,6 @@ title: "RBAC & Conditional Rendering"
 summary: Show the right screens to each role and enforce it where it matters — permission tables instead of role checks, ownership rules, filtered menus, a Can component, and checks on the server.
 type: lesson
 source: core
-sourceRef: "M3 · W5 · L3"
 roles: { be: recommended, fe: core, fs: core, ai: optional, ops: none }
 durationMinutes: 150
 tags: [rbac, authorization, permissions, conditional-rendering, security, nextjs]

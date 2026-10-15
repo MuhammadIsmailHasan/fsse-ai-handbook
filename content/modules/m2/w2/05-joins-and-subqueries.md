@@ -3,7 +3,6 @@ title: "Advanced Queries: JOINs, Subqueries & CTEs"
 summary: Combine tables with INNER and LEFT JOINs, find what's missing with anti-joins, and structure complex questions with subqueries, CTEs and window functions.
 type: lesson
 source: core
-sourceRef: "M2 · W2 · L5"
 roles: { be: core, fe: optional, fs: core, ai: recommended, ops: optional }
 durationMinutes: 180
 tags: [sql, postgresql, joins, subqueries, cte, window-functions]

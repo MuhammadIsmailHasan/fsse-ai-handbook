@@ -3,7 +3,6 @@ title: "Next.js Setup & React Components"
 summary: Create a Next.js 16 app on a non-default port, understand its folders, and learn React's core idea — components that turn data into screens with JSX — plus the first idea of Server and Client Components.
 type: lesson
 source: core
-sourceRef: "M3 · W3 · L1"
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 180
 tags: [react, nextjs, components, jsx, app-router]

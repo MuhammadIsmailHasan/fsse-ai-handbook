@@ -3,7 +3,6 @@ title: "Tailwind: Typography, Responsive Design & Components"
 summary: Build real screens with utility classes — text sizes, spacing, colors, hover and focus states, mobile-first prefixes, dark mode, and turning repeated class lists into components.
 type: lesson
 source: core
-sourceRef: "M3 · W2 · L4"
 roles: { be: optional, fe: core, fs: core, ai: optional, ops: none }
 durationMinutes: 150
 tags: [tailwind, responsive, typography, components, dark-mode]

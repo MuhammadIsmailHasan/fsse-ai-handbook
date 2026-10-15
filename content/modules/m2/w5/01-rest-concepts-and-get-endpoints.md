@@ -3,7 +3,6 @@ title: "REST Concepts & GET Endpoints"
 summary: Design resource-oriented APIs and build GET endpoints that filter, sort and paginate safely — with consistent response envelopes clients love.
 type: lesson
 source: core
-sourceRef: "M2 · W5 · L1"
 roles: { be: core, fe: recommended, fs: core, ai: recommended, ops: optional }
 durationMinutes: 180
 tags: [rest, api-design, pagination, filtering, flask]

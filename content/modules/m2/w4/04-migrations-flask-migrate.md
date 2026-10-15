@@ -3,7 +3,6 @@ title: "Migrations: Managing Schema Changes with Flask-Migrate"
 summary: Change a live database safely — Alembic revisions, autogenerate and review, data migrations, expand/contract, locks, and running migrations in deployments.
 type: lesson
 source: core
-sourceRef: "M2 · W4 · L4"
 roles: { be: core, fe: none, fs: core, ai: optional, ops: recommended }
 durationMinutes: 180
 tags: [flask, alembic, migrations, postgresql, deployment]

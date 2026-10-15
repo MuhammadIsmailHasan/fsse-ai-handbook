@@ -75,7 +75,7 @@ EXPERIENCE
 • …
 
 EDUCATION & TRAINING
-the bootcamp — Full-Stack Software Engineering program                                           2026
+[Bootcamp] — Full-Stack Software Engineering program                                           2026
 [Degree], [University]                                                                    2021
 ```
 

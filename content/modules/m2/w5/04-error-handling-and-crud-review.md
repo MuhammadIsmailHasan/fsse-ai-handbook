@@ -3,7 +3,6 @@ title: "Error Handling & Complete CRUD Review"
 summary: Put it all together — a complete CRUD resource with central error handlers, translated database errors, request IDs, safe logging, and a review checklist for every endpoint.
 type: lesson
 source: core
-sourceRef: "M2 · W5 · L5"
 roles: { be: core, fe: recommended, fs: core, ai: recommended, ops: recommended }
 durationMinutes: 180
 tags: [error-handling, crud, logging, request-id, api-design]

@@ -3,7 +3,6 @@ title: "JavaScript Arrays & Data Transformation"
 summary: Turn API data into what the page needs — map, filter, reduce, find, some/every, flatMap, sorting without changing the original, grouping and Sets — explained with Python comparisons.
 type: lesson
 source: core
-sourceRef: "M3 · W1 · L5"
 roles: { be: recommended, fe: core, fs: core, ai: core, ops: optional }
 durationMinutes: 150
 tags: [javascript, arrays, functional-programming, immutability]

@@ -3,7 +3,6 @@ title: "Data Structures: Lists, Dicts, Sets & Tuples"
 summary: Choose the right built-in collection for the job, know their costs, and use the collections module and dataclasses for clearer data.
 type: lesson
 source: core
-sourceRef: "M2 · W3 · L4"
 roles: { be: core, fe: optional, fs: core, ai: core, ops: recommended }
 durationMinutes: 150
 tags: [python, data-structures, dict, set, collections, dataclasses]

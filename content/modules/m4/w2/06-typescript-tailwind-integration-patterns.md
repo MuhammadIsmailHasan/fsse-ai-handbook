@@ -3,7 +3,6 @@ title: "TypeScript + Tailwind: Integration Patterns"
 summary: Combine types and Tailwind classes into reusable building blocks — the cn() helper, typed variant tables, class-variance-authority (CVA), safe class overrides, and where to keep these files.
 type: lesson
 source: core
-sourceRef: "M3 · W2 · L5"
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 120
 tags: [typescript, tailwind, variants, cva, tailwind-merge, design-system]

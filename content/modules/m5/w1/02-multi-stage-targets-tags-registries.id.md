@@ -1,7 +1,7 @@
 ---
 title: "Multi-stage Build: Target, Tag & Registry"
 summary: Lebih dari satu image production — target dev, test, dan prod, build arg dan label OCI, tag berbasis Git, GHCR dan ECR, image untuk beberapa jenis CPU, cache di CI, scanning, SBOM, dan signing.
-sourceHash: fe853ac77acb
+sourceHash: 6265a839d6f9
 ---
 
 ::part[Pelajari Konsepnya]{n="1"}
@@ -232,7 +232,7 @@ flowchart LR
 2. **Dependency dev itu berat.** Buka `requirements-dev.txt`: Locust membawa `gevent`, `pyzmq`, `psutil`, dan lainnya. Perkirakan tambahan ukurannya di image production, dan kenapa menyimpannya di target `test` itu penting.
 3. **Tag untuk branch-mu.** Repo-mu punya `main`, `dev`, dan `dev-docs`. Pakai `image_meta.py` dari latihan: `image_tags("ghcr.io/<you>/revoshop-api", ref="refs/heads/dev-docs", sha=$(git rev-parse HEAD))`. Tag apa yang dihasilkan push ke `dev`, dan branch mana yang sebaiknya mendapat `edge`?
 4. **Label.** `docker image inspect module-2-muhammadismailhasan-web --format '{{json .Config.Labels}}'` → tidak ada label OCI. Empat label mana yang paling membantu kalau production rusak di malam hari?
-5. **Rencana registry.** Repository the bootcamp-mu milik sebuah organisasi. Ke mana kamu akan push image — GHCR di akun pribadimu (Week 2) atau ECR (Week 4)? Tulis nama image lengkapnya sekarang.
+5. **Rencana registry.** Repository bootcamp-mu milik sebuah organisasi. Ke mana kamu akan push image — GHCR di akun pribadimu (Week 2) atau ECR (Week 4)? Tulis nama image lengkapnya sekarang.
 :::
 
 ::part[Jelaskan & Rancang]{n="2"}

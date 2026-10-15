@@ -3,7 +3,6 @@ title: "Controlled Inputs & Forms"
 summary: Build forms React can manage — controlled inputs of every type, one state object per form, validation users can find, converting input text into clean data, refs for focus, and when uncontrolled inputs are better.
 type: lesson
 source: core
-sourceRef: "M3 · W3 · L5"
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 180
 tags: [react, forms, controlled-components, validation, refs]

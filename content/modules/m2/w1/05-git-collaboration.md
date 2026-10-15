@@ -3,7 +3,6 @@ title: "Git Collaboration: Remotes, Pull Requests & Conflicts"
 summary: Work on a shared codebase — GitHub flow, pull requests, code review, merge vs rebase, and resolving conflicts without panic.
 type: lesson
 source: core
-sourceRef: "M2 · W1 · L5"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 150
 tags: [git, github, pull-requests, code-review, collaboration]

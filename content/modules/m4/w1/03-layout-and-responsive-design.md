@@ -3,7 +3,6 @@ title: "CSS Layout & Responsive Design"
 summary: Place things on the page with Flexbox and Grid, build for phones first, and make images, text and spacing adapt to any screen size.
 type: lesson
 source: core
-sourceRef: "M3 · W1 · L2"
 roles: { be: optional, fe: core, fs: core, ai: optional, ops: none }
 durationMinutes: 150
 tags: [css, flexbox, grid, responsive, media-queries, mobile-first]

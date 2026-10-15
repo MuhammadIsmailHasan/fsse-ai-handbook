@@ -3,7 +3,6 @@ title: "Lists and Loops: Repeating Work"
 summary: Store many values in a list and process them with for and while loops — the accumulator pattern you'll use every day.
 type: lesson
 source: core
-sourceRef: "M1 · W0 · L4"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 150
 tags: [python, lists, loops, iteration]

@@ -3,7 +3,6 @@ title: "Playwright Setup"
 summary: Start end-to-end testing properly — what these tests are for, installing Playwright, a real config (webServer, projects, retries, traces, reporters), locators, assertions that wait, and the debugging tools.
 type: lesson
 source: core
-sourceRef: "M3 · W6 · L1"
 roles: { be: optional, fe: core, fs: core, ai: optional, ops: recommended }
 durationMinutes: 150
 tags: [playwright, e2e, testing, configuration, ci]

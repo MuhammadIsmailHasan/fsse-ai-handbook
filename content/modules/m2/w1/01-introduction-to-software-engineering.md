@@ -3,7 +3,6 @@ title: "Introduction to Software Engineering"
 summary: What software engineers actually do all day — the lifecycle of a feature, how teams work, and what separates engineering from just coding.
 type: lesson
 source: core
-sourceRef: "M2 · W1 · L1"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 120
 tags: [software-engineering, sdlc, agile, teamwork]

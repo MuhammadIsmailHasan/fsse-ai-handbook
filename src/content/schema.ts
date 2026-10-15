@@ -44,7 +44,6 @@ export const lessonFrontmatterSchema = z
     summary: z.string().min(1).max(240),
     type: z.enum(LESSON_TYPES),
     source: z.enum(['core', 'original']),
-    sourceRef: z.string().optional(),
     split: z.boolean().default(false),
     roles: roleLabelsSchema,
     durationMinutes: z.number().int().positive(),
@@ -55,10 +54,6 @@ export const lessonFrontmatterSchema = z
       .optional(),
     awsCost: z.enum(['free', 'small', 'concept']).optional(),
     draft: z.boolean().default(false),
-  })
-  .refine((data) => data.source !== 'core' || Boolean(data.sourceRef), {
-    message: 'sourceRef is required when source is "core"',
-    path: ['sourceRef'],
   })
 
 // ── Translations (`01-lesson.id.md` next to `01-lesson.md`) ──────────────────
@@ -91,7 +86,6 @@ export const courseSchema = z.strictObject({
       number: z.number().int().positive(),
       title: z.string().min(1),
       source: z.enum(['core', 'original', 'mixed']),
-      sourceRef: z.string().optional(),
       summary: z.string().min(1),
       roles: roleLabelsSchema,
       weeks: z.array(sectionSchema),

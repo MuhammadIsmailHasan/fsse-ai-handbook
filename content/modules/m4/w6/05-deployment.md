@@ -3,7 +3,6 @@ title: "Deploying the Next.js Frontend"
 summary: Put the Next.js app online — Vercel vs self-hosting, environment variables per environment, checking config at startup, standalone output, a safe multi-stage Dockerfile, health checks, CI/CD with previews, and rollbacks.
 type: lesson
 source: core
-sourceRef: "M3 · W6 · L5"
 roles: { be: optional, fe: core, fs: core, ai: optional, ops: core }
 durationMinutes: 180
 tags: [deployment, docker, vercel, ci-cd, environment-variables, nextjs]

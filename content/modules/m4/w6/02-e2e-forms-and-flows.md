@@ -3,7 +3,6 @@ title: "E2E: Forms & Flows"
 summary: Test forms and multi-step flows end to end — page objects, filling and submitting forms, validation and server errors, success redirects, dialogs, separate test data, faking network calls, and checking test quality with mutants.
 type: lesson
 source: core
-sourceRef: "M3 · W6 · L2"
 roles: { be: optional, fe: core, fs: core, ai: optional, ops: optional }
 durationMinutes: 180
 tags: [playwright, e2e, forms, page-object-model, test-data, mutation-testing]

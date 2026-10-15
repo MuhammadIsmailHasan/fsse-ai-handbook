@@ -1,7 +1,7 @@
 ---
 title: "Tech CV / Resume"
 summary: Tulis CV satu halaman yang lolos filter ATS dan yakinkan engineer — struktur, impact bullet dengan rumus XYZ, proyek untuk career switcher, skill yang cocok lowongan, tailoring per aplikasi, dan konvensi CV Indonesia.
-sourceHash: a84309f3b3a3
+sourceHash: 9a3192c6fb57
 ---
 
 ::part[Pelajari Konsepnya]{n="1"}
@@ -71,7 +71,7 @@ EXPERIENCE
 • …
 
 EDUCATION & TRAINING
-the bootcamp — Full-Stack Software Engineering program                                           2026
+[Bootcamp] — Full-Stack Software Engineering program                                           2026
 [Degree], [University]                                                                    2021
 ```
 

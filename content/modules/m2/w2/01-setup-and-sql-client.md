@@ -3,7 +3,6 @@ title: "PostgreSQL Setup & SQL Client"
 summary: What a relational database is, running PostgreSQL locally with Docker, connecting with psql and a GUI client, and choosing the right column types.
 type: lesson
 source: core
-sourceRef: "M2 · W2 · L1"
 roles: { be: core, fe: optional, fs: core, ai: recommended, ops: recommended }
 durationMinutes: 150
 tags: [postgresql, sql, database, docker, psql]

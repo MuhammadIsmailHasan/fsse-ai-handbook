@@ -3,7 +3,6 @@ title: "Loops Deep Dive: Iterators, Generators & itertools"
 summary: How for-loops really work, generators that process huge data with tiny memory, and the itertools toolbox for batching, grouping and pipelines.
 type: lesson
 source: core
-sourceRef: "M2 · W3 · L2"
 roles: { be: core, fe: optional, fs: core, ai: core, ops: recommended }
 durationMinutes: 150
 tags: [python, iterators, generators, itertools, memory]

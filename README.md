@@ -2,13 +2,13 @@
 
 A **local, beginner-friendly handbook** for becoming an **AI full-stack software engineer** — built with React, TypeScript and Tailwind CSS.
 
-- 📘 8 modules following the the bootcamp FSSE outline (titles only) plus bonus modules: FastAPI, Cloud & AWS, AI Engineering
+- 📘 8 modules following the bootcamp outline (titles only) plus bonus modules: FastAPI, Cloud & AWS, AI Engineering
 - 🧩 Parallel tracks: **DSA for Interviews** and **Architecture** (design patterns + system design)
 - 🧸 Every lesson: *Learn the concept → Explain & design → Toy exercise*, with automatic tests
 - ⭐ Portfolio projects: **CareerPilot**, **SupportDesk AI**, **StudyMind**
 - 🎯 Role labels, job-ready milestones, weekly plan, spaced review, LinkedIn templates
 
-> All lesson content in this repository is original. Only the course outline (module/lesson titles) follows the bootcamp's syllabus.
+> All lesson content in this repository is original. Only the course outline (module/lesson titles) follows the bootcamp syllabus.
 
 ---
 

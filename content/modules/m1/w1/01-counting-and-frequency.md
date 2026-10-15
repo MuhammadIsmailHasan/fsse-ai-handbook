@@ -3,7 +3,6 @@ title: "Counting & Frequency Algorithms"
 summary: Count occurrences with dictionaries — the pattern behind analytics, duplicate detection, and your CareerPilot skill report.
 type: lesson
 source: core
-sourceRef: "M1 · W1 · L1"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 150
 tags: [algorithms, dictionaries, counting, python]

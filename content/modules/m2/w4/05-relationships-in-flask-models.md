@@ -3,7 +3,6 @@ title: "Relationships: One-to-Many & Many-to-Many in Flask Models"
 summary: Connect models with relationship(), choose cascades deliberately, load related data efficiently, and find and fix the N+1 query problem.
 type: lesson
 source: core
-sourceRef: "M2 · W4 · L5"
 roles: { be: core, fe: none, fs: core, ai: recommended, ops: optional }
 durationMinutes: 180
 tags: [flask, sqlalchemy, relationships, n-plus-one, performance]

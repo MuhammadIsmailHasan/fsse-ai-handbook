@@ -28,9 +28,8 @@ Copy [`docs/templates/lesson-template.md`](templates/lesson-template.md). It con
 title: "Flask Routes & App Structure"
 summary: One sentence, max 240 characters.
 type: lesson              # lesson | placement-check | project | case-study | career | guide
-source: core             # core | original
-sourceRef: "M2 · W4 · L1"  # required when source is core
-split: false              # true if split from one the bootcamp lesson
+source: core              # core | original
+split: false              # true if split from one long curriculum lesson
 roles: { be: core, fe: optional, fs: core, ai: recommended, ops: recommended }
 durationMinutes: 150      # total study time incl. exercises
 tags: [flask, routing]
@@ -108,7 +107,7 @@ bash scripts/check-exercises.sh m2/w3
 - Include **🏆 Best practices** with current, industry-standard advice. Link official docs.
 - Key terms get a `:term` with a Bahasa explanation, and the glossary table at the end.
 - Short paragraphs, tables for comparisons, code blocks under ~25 lines.
-- Only original material — never paste the bootcamp (or any paid course) content.
+- Only original material — never paste paid course content.
 
 ## 7. Check before committing
 

@@ -3,7 +3,6 @@ title: "Side Effects with useEffect"
 summary: Connect React to the outside world correctly — what effects are for, dependencies and cleanup, race conditions with AbortController, useSyncExternalStore, browser APIs that work with SSR, custom hooks, and effects you don't need.
 type: lesson
 source: core
-sourceRef: "M3 · W5 · L5"
 split: true
 roles: { be: none, fe: core, fs: core, ai: optional, ops: none }
 durationMinutes: 150

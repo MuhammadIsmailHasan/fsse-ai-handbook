@@ -3,7 +3,6 @@ title: "Validation & Status Codes"
 summary: Never trust input — validate request data with marshmallow schemas, return precise field errors, and choose the right HTTP status code every time.
 type: lesson
 source: core
-sourceRef: "M2 · W5 · L3"
 roles: { be: core, fe: recommended, fs: core, ai: recommended, ops: optional }
 durationMinutes: 180
 tags: [validation, marshmallow, http-status-codes, api-design, security]

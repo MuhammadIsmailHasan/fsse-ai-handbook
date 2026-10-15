@@ -3,7 +3,6 @@ title: "Terminal & CLI"
 summary: Work confidently in the terminal — navigate, search, pipe commands together, read environment variables, and write small shell scripts.
 type: lesson
 source: core
-sourceRef: "M2 · W1 · L3"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 150
 tags: [terminal, shell, bash, cli, tooling]

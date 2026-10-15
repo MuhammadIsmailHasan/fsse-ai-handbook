@@ -3,7 +3,6 @@ title: "Operators: Arithmetic, Comparison, and Logic"
 summary: Calculate, compare and combine conditions — including the operators beginners misuse most (//, %, and, or).
 type: lesson
 source: core
-sourceRef: "M1 · W0 · L2"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 120
 tags: [python, operators, boolean-logic]

@@ -3,7 +3,6 @@ title: "Relationships & Foreign Keys"
 summary: Model one-to-many, many-to-many and one-to-one relationships, choose ON DELETE behavior deliberately, and index your foreign keys.
 type: lesson
 source: core
-sourceRef: "M2 · W2 · L4"
 roles: { be: core, fe: optional, fs: core, ai: recommended, ops: optional }
 durationMinutes: 150
 tags: [postgresql, relationships, foreign-keys, referential-integrity]

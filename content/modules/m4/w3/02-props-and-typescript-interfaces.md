@@ -3,7 +3,6 @@ title: "Props & TypeScript Interfaces"
 summary: Design how components are used — typed props, default values, children and slots, accepting normal HTML attributes, callback props, and simple rules that keep components easy to use.
 type: lesson
 source: core
-sourceRef: "M3 · W3 · L2"
 roles: { be: optional, fe: core, fs: core, ai: recommended, ops: none }
 durationMinutes: 150
 tags: [react, props, typescript, component-api]

@@ -3,7 +3,6 @@ title: "Problem Solving Process"
 summary: A repeatable way to go from a vague problem to working, tested code — the skill interviews and real jobs actually test.
 type: lesson
 source: core
-sourceRef: "M1 · W1 · L5"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 180
 tags: [problem-solving, pseudocode, testing, interviews]

@@ -3,7 +3,6 @@ title: "SQLAlchemy: Connecting Flask to PostgreSQL"
 summary: How an ORM talks to your database — engines, connection pools, sessions and transactions, SQLAlchemy 2.0 select() queries, and wiring it into a Flask app safely.
 type: lesson
 source: core
-sourceRef: "M2 · W4 · L2"
 roles: { be: core, fe: none, fs: core, ai: recommended, ops: optional }
 durationMinutes: 180
 tags: [flask, sqlalchemy, orm, postgresql, sessions]

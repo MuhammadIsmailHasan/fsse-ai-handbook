@@ -3,7 +3,6 @@ title: "Python Functions: Arguments, Closures & Decorators"
 summary: Master the function features frameworks are built on — flexible arguments, first-class functions, closures, and decorators like Flask's @app.route.
 type: lesson
 source: core
-sourceRef: "M2 · W3 · L3"
 roles: { be: core, fe: optional, fs: core, ai: core, ops: optional }
 durationMinutes: 180
 tags: [python, functions, closures, decorators]

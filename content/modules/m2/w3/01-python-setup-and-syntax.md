@@ -3,7 +3,6 @@ title: "Python Setup & Pythonic Syntax"
 summary: Beyond "it runs" — the Python data model in one page, idiomatic syntax, PEP 8 with Ruff, and the habits that make code review go smoothly.
 type: lesson
 source: core
-sourceRef: "M2 · W3 · L1"
 split: true
 roles: { be: core, fe: optional, fs: core, ai: core, ops: recommended }
 durationMinutes: 120

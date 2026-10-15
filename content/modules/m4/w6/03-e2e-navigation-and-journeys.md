@@ -3,7 +3,6 @@ title: "E2E: Navigation & User Journeys"
 summary: Test how users move through the app — logging in once with storageState, protected pages, active links, URL state, the back button, 404s, titles and breadcrumbs, full journeys with test.step, and running E2E in CI.
 type: lesson
 source: core
-sourceRef: "M3 · W6 · L3"
 roles: { be: optional, fe: core, fs: core, ai: optional, ops: recommended }
 durationMinutes: 180
 tags: [playwright, e2e, navigation, authentication, storage-state, ci]

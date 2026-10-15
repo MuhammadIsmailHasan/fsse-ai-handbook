@@ -3,7 +3,6 @@ title: "Security: Environment Variables & GitHub"
 summary: Keep configuration out of code and secrets out of Git — typed fail-fast settings, .env files done right, secret scanning, GitHub account and repository security, and what to do when a secret leaks.
 type: lesson
 source: core
-sourceRef: "M2 · W6 · L4"
 roles: { be: core, fe: core, fs: core, ai: core, ops: core }
 durationMinutes: 150
 tags: [security, configuration, secrets, environment-variables, github, twelve-factor]
