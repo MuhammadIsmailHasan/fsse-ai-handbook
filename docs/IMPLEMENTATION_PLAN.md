@@ -787,6 +787,15 @@ type LessonMeta = {
 - [x] Architecture Stage H Distributed Systems: 4 lessons (CAP & eventual consistency, queues & async messaging, retries/backoff/circuit breaker, saga & distributed transactions), 4 exercises — EN + ID
 - [x] Architecture Stage I System Design Practice: 5 lessons (framework + URL shortener, rate limiter & notifications, chat & file upload, RAG at scale, LLM gateway), 5 exercises — EN + ID
 
+#### C8 — progress
+- [x] DSA Stage 5 lesson 1 Backtracking: choose/explore/un-choose template, subsets vs permutations, duplicate handling, grid marking, N-Queens, pruning as the algorithm; 4 exercises (subsets & permutations, combination sum + equal groups, word search + route counting, N-Queens) — EN + ID
+- [ ] DSA Stage 5 lessons 2–5: DP 1-D, DP 2-D, greedy & intervals, bit manipulation & tries
+- [ ] DSA Stage 6 Interview Skills — **scope needs narrowing**: Module 8 W2 already covers the hiring process, STAR, live coding and system design interviews, so this stage must be the *drilling* layer (pattern recognition from an unseen problem, timed practice, spaced review plan, self-scoring mocks), not a second pass at interview theory
+- [ ] Architecture Stage J Interviews
+- [ ] **Learner reviews C8** ✋
+
+Started out of numerical order (before C6/C7) because the interview-facing gap blocks Milestone 3 soonest; the milestone-path rule above allows it.
+
 Batch order follows the **milestone path**, not module numbers.
 
 ---
